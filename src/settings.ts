@@ -1,15 +1,15 @@
 import {App, PluginSettingTab, Setting} from "obsidian";
 import MyPlugin from "./main";
 
-export interface MyPluginSettings {
-	mySetting: string;
+export interface CSVCodeViewSettings {
+	csvCodeView: string;
 }
 
-export const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default'
+export const DEFAULT_SETTINGS: CSVCodeViewSettings = {
+	csvCodeView: 'enabled' as 'enabled' | 'disabled'
 }
 
-export class SampleSettingTab extends PluginSettingTab {
+export class CSVCodeViewSettingTab extends PluginSettingTab {
 	plugin: MyPlugin;
 
 	constructor(app: App, plugin: MyPlugin) {
@@ -19,18 +19,16 @@ export class SampleSettingTab extends PluginSettingTab {
 
 	display(): void {
 		const {containerEl} = this;
-
 		containerEl.empty();
-
 		new Setting(containerEl)
-			.setName('Settings #1')
-			.setDesc('It\'s a secret')
-			.addText(text => text
-				.setPlaceholder('Enter your secret')
-				.setValue(this.plugin.settings.mySetting)
-				.onChange(async (value) => {
-					this.plugin.settings.mySetting = value;
+			.setName('CSV Table View')
+			.setDesc('将代码当中的csv数据转换为表格')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.csvCodeView === 'enabled')
+				.onChange(async (value: boolean) => {
+					this.plugin.settings.csvCodeView = value ? 'enabled' : 'disabled';
 					await this.plugin.saveSettings();
 				}));
+			
 	}
 }
