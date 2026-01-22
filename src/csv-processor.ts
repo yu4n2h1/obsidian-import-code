@@ -1,16 +1,53 @@
 import {MarkdownPostProcessorContext, TFile, App, setIcon} from 'obsidian';
+import { FileProcessor } from './file-processor';
 
 export interface CSVProcessorSettings {
 	csvCodeView: string;
 }
 
-export class CSVProcessor {
-	settings: CSVProcessorSettings;
-	app: App;
-
+export class CSVProcessor extends FileProcessor {
 	constructor(app: App, settings: CSVProcessorSettings) {
-		this.app = app;
-		this.settings = settings;
+		super(app, settings);
+	}
+
+	/**
+	 * 实现内容处理：将 CSV 字符串解析为行和列
+	 */
+	processContent(content: string): string[][] {
+		return content.split("\n")
+			.filter((row) => row.trim().length > 0)
+			.map(row => row.split(","));
+	}
+
+	/**
+	 * 实现渲染逻辑：将解析后的行数据转换为 HTML 表格
+	 */
+	async render(rows: string[][], el: HTMLElement, filePath: string, sourcePath: string): Promise<void> {
+		const container = el.createDiv({ cls: 'csv-table-container' });
+
+		// 添加“打开文件”按钮
+		const openButton = container.createDiv({ cls: 'csv-open-btn' });
+		setIcon(openButton, 'external-link');
+		openButton.setAttribute('aria-label', 'Open CSV file');
+		openButton.addEventListener('click', (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			this.app.workspace.openLinkText(filePath, sourcePath);
+		});
+
+		const table = container.createEl("table");
+		const body = table.createEl("tbody");
+
+		for (const cols of rows) {
+			const row = body.createEl("tr");
+			for (const col_text of cols) {
+				row.createEl("td", { text: col_text.trim() });
+			}
+		}
+	}
+
+	protected isOpenButton(target: HTMLElement): boolean {
+		return !!target.closest('.csv-open-btn');
 	}
 
 	/**
@@ -25,7 +62,8 @@ export class CSVProcessor {
 			this.renderAsPlainText(source, el);
 			return;
 		}
-		this.renderAsTable(source, el);
+		const rows = this.processContent(source);
+		this.render(rows, el, "", ctx.sourcePath); // Path is empty for raw source
 	}
 
 	/**
@@ -36,174 +74,10 @@ export class CSVProcessor {
 	}
 
 	/**
-	 * Render CSV as HTML table (public method)
-	 */
-	renderTable(source: string, el: HTMLElement): void {
-		this.renderAsTable(source, el);
-	}
-
-	/**
-	 * Render CSV as HTML table (private implementation)
-	 */
-	private renderAsTable(source: string, el: HTMLElement): void {
-		const rows = source.split("\n").filter((row) => row.length > 0);
-
-		const table = el.createEl("table");
-		const body = table.createEl("tbody");
-
-		for (let i = 0; i < rows.length; i++) {
-			const row_text = rows[i];
-			if (!row_text) continue;
-			
-			const cols = row_text.split(",");
-			const row = body.createEl("tr");
-
-			for (let j = 0; j < cols.length; j++) {
-				const col_text = cols[j];
-				if (col_text !== undefined) {
-					row.createEl("td", { text: col_text });
-				}
-			}
-		}
-	}
-
-	/**
-	 * Process markdown post-processor to replace ![](file.csv) with table
-	 * @param el - Container element
-	 * @param ctx - Markdown processor context
-	 */
-	async processMarkdownImages(el: HTMLElement, ctx: MarkdownPostProcessorContext): Promise<void> {
-		// Check if CSV table view is enabled
-		if (this.settings.csvCodeView !== 'enabled') {
-			return;
-		}
-
-		// Debug: Log to see what elements we're processing
-		console.log('Processing markdown post-processor for element:', el.tagName, el.className);
-
-		// Check if the current element itself is a file-embed for CSV
-		if (el.classList.contains('internal-embed') && el.classList.contains('file-embed')) {
-			const src = el.getAttribute('src');
-			console.log('Current element is file-embed, src:', src);
-			if (src && src.toLowerCase().endsWith('.csv')) {
-				console.log('Processing current element as CSV embed');
-				await this.renderCSVFileAndReplace(src, el, ctx);
-				return; // Early return after processing
-			}
-		}
-
-		// Priority 1: Handle file-embed containers (for ![[file.csv]] syntax)
-		// Use a broader selector to catch all possible CSV embeds
-		const fileEmbeds = el.querySelectorAll('[src$=".csv"], [src$=".CSV"]');
-		console.log('Found elements with .csv src:', fileEmbeds.length);
-		
-		for (let i = 0; i < fileEmbeds.length; i++) {
-			const embed = fileEmbeds[i] as HTMLElement;
-			if (!embed) continue;
-
-			// Get file path from src attribute
-			const src = embed.getAttribute('src');
-			const alt = embed.getAttribute('alt');
-			
-			console.log('Processing element with CSV src:', src, 'element:', embed.tagName, embed.className);
-			
-			if (!src) continue;
-
-			console.log('Found CSV embed, rendering:', src);
-			await this.renderCSVFileAndReplace(src, embed, ctx);
-		}
-
-		// Priority 2: Find all img elements (standard markdown images)
-		const images = el.querySelectorAll('img[src$=".csv"], img[src$=".CSV"]');
-		console.log('Found img elements with .csv:', images.length);
-		
-		for (let i = 0; i < images.length; i++) {
-			const img = images[i] as HTMLElement;
-			if (!img) continue;
-
-			const src = img.getAttribute('src');
-			console.log('Processing img with CSV src:', src);
-			
-			if (!src) continue;
-
-			await this.renderCSVFileAndReplace(src, img, ctx);
-		}
-
-		// Priority 3: Handle Obsidian internal links with .csv in data-href
-		const internalLinks = el.querySelectorAll('a.internal-link[data-href$=".csv"], a.internal-link[data-href$=".CSV"]');
-		console.log('Found internal-link elements with .csv:', internalLinks.length);
-		
-		for (let i = 0; i < internalLinks.length; i++) {
-			const link = internalLinks[i] as HTMLElement;
-			if (!link) continue;
-
-			const dataHref = link.getAttribute('data-href');
-			const href = link.getAttribute('href');
-			const linkPath = dataHref || href;
-			
-			console.log('Processing internal link with CSV:', linkPath);
-			
-			if (!linkPath) continue;
-
-			// Check if this is an embed (has parent with class 'internal-embed')
-			const embedContainer = link.closest('.internal-embed');
-			if (embedContainer) {
-				console.log('Found CSV embed container, rendering...');
-				await this.renderCSVFileAndReplace(linkPath, embedContainer as HTMLElement, ctx);
-			}
-		}
-	}
-
-	/**
 	 * Render CSV file content and replace target element
 	 */
-	private async renderCSVFileAndReplace(filePath: string, targetElement: HTMLElement, ctx: MarkdownPostProcessorContext): Promise<void> {
-		try {
-			// Get the CSV file
-			const file = this.app.metadataCache.getFirstLinkpathDest(filePath, ctx.sourcePath);
-			
-			if (file instanceof TFile) {
-				console.log('Reading CSV file:', file.path);
-				const content = await this.app.vault.read(file);
-				
-				// Create container for table
-				const container = createDiv();
-				container.addClass('csv-table-container');
-				
-				// Prevent click from opening file
-				container.addEventListener('click', (e) => {
-					e.preventDefault();
-					e.stopPropagation();
-				});
-				
-				// Add "Open File" button
-				const openButton = container.createDiv({ cls: 'csv-open-btn' });
-				setIcon(openButton, 'external-link');
-				openButton.setAttribute('aria-label', 'Open CSV file');
-				openButton.addEventListener('click', (e) => {
-					e.preventDefault();
-					e.stopPropagation();
-					this.app.workspace.openLinkText(filePath, ctx.sourcePath);
-				});
-				
-				this.renderAsTable(content, container);
-				
-				// Replace target element with table
-				if (targetElement.parentElement) {
-					targetElement.parentElement.replaceChild(container, targetElement);
-					console.log('Successfully rendered CSV table');
-				} else {
-					// If no parent, empty the element and append table
-					targetElement.empty();
-					targetElement.appendChild(container);
-					console.log('Successfully appended CSV table');
-				}
-			} else {
-				console.warn('CSV file not found:', filePath);
-			}
-		} catch (error) {
-			console.error(`Failed to read CSV file: ${filePath}`, error);
-		}
+	public async renderCSVFileAndReplace(filePath: string, targetElement: HTMLElement, ctx: MarkdownPostProcessorContext): Promise<void> {
+		await this.processFile(filePath, targetElement, ctx.sourcePath);
 	}
 
 	/**
@@ -220,29 +94,12 @@ export class CSVProcessor {
 		}
 
 		const filePath = source.trim();
-		console.log('Processing CSV file path from code block:', filePath);
-
 		if (!filePath) {
 			el.createEl("div", { text: "Error: No file path provided", cls: "csv-error" });
 			return;
 		}
 
-		try {
-			const file = this.app.metadataCache.getFirstLinkpathDest(filePath, ctx.sourcePath);
-			
-			if (file instanceof TFile) {
-				console.log('Reading CSV file for code block:', file.path);
-				const content = await this.app.vault.read(file);
-				const container = createDiv();
-				container.addClass('csv-table-container');
-				this.renderAsTable(content, container);
-				el.appendChild(container);
-			} else {
-				el.createEl("div", { text: `CSV file not found: ${filePath}`, cls: "csv-error" });
-			}
-		} catch (error) {
-			el.createEl("div", { text: `Error loading CSV: ${error}`, cls: "csv-error" });
-		}
+		await this.processFile(filePath, el, ctx.sourcePath);
 	}
 
 	/**
@@ -250,5 +107,41 @@ export class CSVProcessor {
 	 */
 	updateSettings(settings: CSVProcessorSettings): void {
 		this.settings = settings;
+	}
+
+	/**
+	 * 获取支持的文件扩展名列表
+	 */
+	getSupportedExtensions(): string[] {
+		return ['csv'];
+	}
+
+	/**
+	 * 检查文件扩展名是否被支持
+	 */
+	isExtensionSupported(filePath: string): boolean {
+		const lowerPath = filePath.toLowerCase();
+		return lowerPath.endsWith('.csv');
+	}
+
+	/**
+	 * 检查功能是否启用
+	 */
+	isFeatureEnabled(): boolean {
+		return (this.settings as CSVProcessorSettings).csvCodeView === 'enabled';
+	}
+
+	/**
+	 * 获取 Live Preview 处理完成后的 CSS 类名
+	 */
+	getProcessedClassName(): string {
+		return 'csv-embed-lp-processed';
+	}
+
+	/**
+	 * 获取 Widget 的 CSS 类名
+	 */
+	getWidgetClassName(): string {
+		return 'csv-embed-widget';
 	}
 }

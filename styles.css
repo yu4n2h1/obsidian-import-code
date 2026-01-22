@@ -39,20 +39,20 @@ available in the app when your plugin is enabled.
 	pointer-events: auto;
 }
 
-.code-embed-container .code-embed-container {
+/* .code-embed-container .code-embed-container {
 	margin: 0;
-}
+} */
 
-/* Wrapper for the rendered code block */
+/* Wrapper for the rendered code block
 .code-embed-wrapper {
 	text-align: left;
-}
+} */
 
 /* Ensure the rendered code block inherits Obsidian's native styling */
-.code-embed-wrapper pre {
+/* .code-embed-wrapper pre {
 	margin: 0 !important;
 	border-radius: 0 !important;
-}
+} */
 
 /* Override any font-size changes to match Obsidian's default */
 .code-embed-wrapper pre code {
@@ -113,13 +113,49 @@ available in the app when your plugin is enabled.
 .code-embed-widget {
 	display: block;
 	margin: 1em 0;
-	-webkit-user-select: none;
-	user-select: none;
+	-webkit-user-select: text;
+	user-select: text;
 	cursor: default;
 }
 
 .code-embed-widget[contenteditable="false"] {
 	pointer-events: auto;
+}
+
+/* Live Preview 模式下的代码嵌入样式 */
+.code-embed-lp-processed {
+	display: block;
+	pointer-events: auto;
+}
+
+.code-embed-lp-processed .code-embed-container {
+	pointer-events: auto;
+}
+
+/* 确保 Live Preview 中的代码块样式与阅读模式一致 */
+.cm-embed-block .code-embed-container,
+.code-embed-lp-processed .code-embed-container {
+	position: relative;
+	margin: 1em 0;
+	border-radius: 6px;
+	overflow: hidden;
+	background-color: var(--background-secondary);
+	text-align: left;
+}
+
+/* Live Preview 中代码块的滚动支持 */
+.cm-embed-block .code-embed-wrapper pre,
+.code-embed-lp-processed .code-embed-wrapper pre {
+	max-height: 500px;
+	overflow: auto;
+	margin: 0;
+}
+
+/* 确保在 Live Preview 中代码字体大小一致 */
+.cm-embed-block .code-embed-wrapper pre code,
+.code-embed-lp-processed .code-embed-wrapper pre code {
+	font-size: var(--code-size) !important;
+	font-family: var(--font-monospace) !important;
 }
 
 .code-embed-loading {
@@ -160,4 +196,51 @@ available in the app when your plugin is enabled.
 .csv-open-btn svg {
 	width: 14px;
 	height: 14px;
+}
+
+/* CSV Live Preview 模式样式 */
+.csv-embed-widget {
+	display: block;
+	margin: 1em 0;
+	-webkit-user-select: text;
+	user-select: text;
+	cursor: default;
+}
+
+.csv-embed-widget[contenteditable="false"] {
+	pointer-events: auto;
+}
+
+.csv-embed-lp-processed {
+	display: block;
+	pointer-events: auto;
+}
+
+.csv-embed-lp-processed .csv-table-container {
+	pointer-events: auto;
+}
+
+/* 确保 Live Preview 中的 CSV 表格样式与阅读模式一致 */
+.cm-embed-block .csv-table-container,
+.csv-embed-lp-processed .csv-table-container {
+	position: relative;
+	margin: 1em 0;
+}
+
+/* 通用文件嵌入 Widget 样式 */
+.file-embed-widget {
+	display: block;
+	margin: 1em 0;
+	-webkit-user-select: text;
+	user-select: text;
+	cursor: default;
+}
+
+.file-embed-widget[contenteditable="false"] {
+	pointer-events: auto;
+}
+
+.file-embed-lp-processed {
+	display: block;
+	pointer-events: auto;
 }
