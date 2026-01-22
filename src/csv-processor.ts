@@ -46,7 +46,18 @@ export class CSVProcessor extends FileProcessor {
 		}
 	}
 
-	protected isOpenButton(target: HTMLElement): boolean {
+	protected setupClickInterceptor(targetElement: HTMLElement): void {
+		targetElement.addEventListener('click', (e) => {
+			const target = e.target as HTMLElement;
+			if (!this.isToolbarButton(target)) {
+				e.preventDefault();
+				e.stopPropagation();
+				e.stopImmediatePropagation();
+			}
+		}, true);
+	}
+
+	protected isToolbarButton(target: HTMLElement): boolean {
 		return !!target.closest('.csv-open-btn');
 	}
 

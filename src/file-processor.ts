@@ -1,6 +1,11 @@
 import { App, TFile, MarkdownView, Plugin } from 'obsidian';
 import { EditorView, ViewPlugin, ViewUpdate, PluginValue } from '@codemirror/view';
 
+/**
+ * 文件处理器抽象基类
+ * 提供文件读取、渲染、Live Preview 支持和文件变化刷新等通用功能
+ */
+
 export abstract class FileProcessor {
 	app: App;
 	settings: any;
@@ -46,18 +51,15 @@ export abstract class FileProcessor {
 				
 				targetElement.empty();
 				
-				// 2. 通用的点击拦截逻辑
-				targetElement.addEventListener('click', (e) => {
-					const target = e.target as HTMLElement;
-					if (!this.isOpenButton(target)) {
-						e.preventDefault();
-						e.stopPropagation();
-						e.stopImmediatePropagation();
-					}
-				}, true);
-
-				// 3. 执行特定渲染
+				// 2. 执行特定渲染
 				await this.render(processedData, targetElement, filePath, sourcePath);
+
+				// 3. 设置点击拦截（需在渲染后执行，因为目标容器由render创建）
+				this.setupClickInterceptor(targetElement);
+				
+				// 4. 移除包裹 targetElement 的多余 <p> 标签
+				this.unwrapFromParagraph(targetElement);
+				
 				return true;
 			} else {
 				this.renderError(targetElement, `File not found: ${filePath}`);
@@ -69,6 +71,44 @@ export abstract class FileProcessor {
 			return false;
 		}
 	}
+
+	/**
+	 * 移除包裹在 targetElement 外面的多余 <p> 标签
+	 * Obsidian 在渲染 Markdown 段落时会自动生成 <p dir="auto"> 包裹嵌入元素
+	 */
+	protected unwrapFromParagraph(targetElement: HTMLElement): void {
+		const parent = targetElement.parentElement;
+		if (parent && parent.tagName.toLowerCase() === 'p') {
+			const grandparent = parent.parentElement;
+			if (grandparent) {
+				// 将 targetElement 移动到 <p> 的前面
+				grandparent.insertBefore(targetElement, parent);
+				// 如果 <p> 现在是空的，则删除它
+				if (!parent.hasChildNodes() || parent.textContent?.trim() === '') {
+					parent.remove();
+				}
+			}
+		}
+	}
+
+	/**
+	 * 设置点击事件拦截器
+	 * 阻止非"打开文件"按钮的点击事件传播，避免意外触发其他交互
+	 * @param targetElement - 需要设置拦截的目标元素
+	 */
+	protected setupClickInterceptor(targetElement: HTMLElement): void {
+		targetElement.addEventListener('click', (e) => {
+			const target = e.target as HTMLElement;
+			if (!this.isToolbarButton(target)) {
+				e.preventDefault();
+				e.stopPropagation();
+				e.stopImmediatePropagation();
+			}
+		}, true);
+	}
+	
+
+
 
 	/**
 	 * 渲染加载状态
@@ -89,7 +129,7 @@ export abstract class FileProcessor {
 	/**
 	 * 检查点击的元素是否为“打开文件”按钮
 	 */
-	protected abstract isOpenButton(target: HTMLElement): boolean;
+	protected abstract isToolbarButton(target: HTMLElement): boolean;
 
 	/**
 	 * 注册编辑器扩展，实现 Live Preview 模式下的文件嵌入
@@ -297,6 +337,90 @@ export abstract class FileProcessor {
 		}
 
 		return selectors.join(', ');
+	}
+
+	// ==================== 文件变化刷新相关方法 ====================
+
+	/**
+	 * 刷新指定视图中引用某文件的所有嵌入元素
+	 * @param view - Markdown 视图
+	 * @param modifiedFilePath - 被修改的文件路径
+	 * @param sourcePath - 当前视图的文件路径
+	 * @returns 是否成功刷新了至少一个元素
+	 */
+	async refreshEmbedsInView(view: MarkdownView, modifiedFilePath: string, sourcePath: string): Promise<boolean> {
+		let refreshedCount = 0;
+		
+		try {
+			// 获取修改文件的文件名
+			const modifiedFile = this.app.vault.getAbstractFileByPath(modifiedFilePath);
+			if (!(modifiedFile instanceof TFile)) return false;
+			
+			const fileName = modifiedFile.name;
+			const fileBaseName = modifiedFile.basename;
+			
+			// 在阅读模式容器中查找嵌入元素
+			const previewContainer = view.previewMode?.containerEl;
+			if (previewContainer) {
+				const embeds = previewContainer.querySelectorAll('.internal-embed.code-link-processed');
+				
+				for (const embed of Array.from(embeds)) {
+					const src = embed.getAttribute('src') || '';
+					
+					if (this.isEmbedMatchingFile(src, fileName, fileBaseName, modifiedFilePath, sourcePath)) {
+						await this.processFile(src, embed as HTMLElement, sourcePath);
+						refreshedCount++;
+					}
+				}
+			}
+			
+			// 在编辑模式（Live Preview）容器中查找嵌入元素
+			const contentEl = view.contentEl;
+			if (contentEl) {
+				const processedClass = this.getProcessedClassName();
+				const embeds = contentEl.querySelectorAll(`.internal-embed.${processedClass}`);
+				
+				for (const embed of Array.from(embeds)) {
+					const embedEl = embed as HTMLElement;
+					const src = embedEl.getAttribute('src') || embedEl.getAttribute('alt') || '';
+					
+					if (this.isEmbedMatchingFile(src, fileName, fileBaseName, modifiedFilePath, sourcePath)) {
+						await this.processFile(src, embedEl, sourcePath);
+						refreshedCount++;
+					}
+				}
+			}
+		} catch (error) {
+			console.error('[FileProcessor] Error refreshing embeds in view:', error);
+			return false;
+		}
+		
+		return refreshedCount > 0;
+	}
+
+	/**
+	 * 检查嵌入元素的 src 是否匹配修改的文件
+	 */
+	protected isEmbedMatchingFile(
+		src: string, 
+		fileName: string, 
+		fileBaseName: string, 
+		modifiedFilePath: string,
+		sourcePath: string
+	): boolean {
+		// 首先检查是否是该处理器支持的文件类型
+		if (!this.isExtensionSupported(src)) {
+			return false;
+		}
+		
+		// 直接路径匹配
+		if (src === modifiedFilePath || src === fileName || src === fileBaseName) {
+			return true;
+		}
+		
+		// 通过 metadataCache 解析链接
+		const linkedFile = this.app.metadataCache.getFirstLinkpathDest(src, sourcePath);
+		return linkedFile?.path === modifiedFilePath;
 	}
 
 	/**

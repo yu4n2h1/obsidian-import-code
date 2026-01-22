@@ -28,7 +28,8 @@ available in the app when your plugin is enabled.
 	font-weight: bold;
 }
 
-/* Code Embed Styles */
+
+/* 外层容器 - 作为定位基准 */
 .code-embed-container {
 	position: relative;
 	margin: 1em 0;
@@ -39,39 +40,93 @@ available in the app when your plugin is enabled.
 	pointer-events: auto;
 }
 
-/* .code-embed-container .code-embed-container {
-	margin: 0;
-} */
-
-/* Wrapper for the rendered code block
+/* 代码区域 - 占据下方全部空间 */
 .code-embed-wrapper {
 	text-align: left;
-} */
+	width: 100%;
+}
 
-/* Ensure the rendered code block inherits Obsidian's native styling */
-/* .code-embed-wrapper pre {
-	margin: 0 !important;
-	border-radius: 0 !important;
-} */
+.code-embed-wrapper pre {
+	margin: 0;
+	border-radius: 0;
+	max-height: 500px;
+	overflow: auto;
+}
 
-/* Override any font-size changes to match Obsidian's default */
 .code-embed-wrapper pre code {
 	font-size: var(--code-size) !important;
+	font-family: var(--font-monospace) !important;
+}
+/* 右上角工具栏容器 */
+.code-embed-container .code-embed-toolbar {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: flex;
+    flex-direction: row;
+    /* 保持紧凑，不添加外边距 */
+    z-index: 10;
+    pointer-events: auto;
+    /* 统一半透明背景，让整体更有呼吸感 */
+    background-color: rgba(255, 255, 255, 0.05); 
+    border-bottom-left-radius: 8px; /* 只有左下角圆润，贴合边缘 */
+    overflow: hidden; /* 确保子元素不超出圆角 */
 }
 
-.code-embed-label {
-	position: absolute;
-	top: 0;
-	right: 0;
-	padding: 2px 8px;
-	font-size: 0.75em;
-	color: var(--text-muted);
-	background-color: var(--background-modifier-border);
-	border-bottom-left-radius: 4px;
-	text-transform: uppercase;
-	z-index: 1;
+/* 统一按钮基础样式 */
+.code-embed-container .code-block-flair,
+.code-embed-container .code-embed-open-btn {
+    appearance: none;
+    height: 32px;      /* 统一高度 */
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;    /* 稍微缩小字体，更精致 */
+    font-weight: 600;
+    color: var(--text-muted);
+    background: transparent !important; /* 背景交由容器处理 */
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border: none !important;
 }
 
+/* 在两个按钮之间增加一条极淡的分割线 */
+.code-embed-container .code-embed-open-btn + .code-block-flair {
+    border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 语言标签样式微调 */
+.code-embed-container .code-block-flair {
+    text-transform: uppercase;
+    letter-spacing: 1px; /* 增加字间距，更有科技感 */
+}
+
+/* 悬停交互：变亮一点 */
+.code-embed-container .code-embed-open-btn:hover,
+.code-embed-container .code-block-flair:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: var(--text-normal);
+}
+
+/* 针对图标大小的微调（如果是 SVG） */
+.code-embed-container .code-embed-open-btn svg {
+    width: 14px;
+    height: 14px;
+    opacity: 0.7;
+}
+
+.code-embed-container .code-embed-open-btn:hover {
+	color: var(--text-normal);
+	background-color: var(--background-modifier-hover);
+}
+
+.code-embed-container .code-embed-open-btn svg {
+	width: 14px;
+	height: 14px;
+}
+
+/* 错误状态 */
 .code-embed-error {
 	color: var(--text-error);
 	padding: 1em;
@@ -79,89 +134,47 @@ available in the app when your plugin is enabled.
 	border-radius: 4px;
 }
 
-/* Open File Button for Code Embeds */
-.code-embed-open-btn {
-	position: absolute;
-	top: 0;
-	right: 60px;
-	padding: 4px 8px;
-	font-size: 0.85em;
+/* 加载状态 */
+.code-embed-loading {
+	padding: 1em;
 	color: var(--text-muted);
-	background-color: var(--background-modifier-border);
-	border-bottom-left-radius: 4px;
-	border-bottom-right-radius: 4px;
-	cursor: pointer;
-	z-index: 2;
-	transition: all 0.15s ease;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	pointer-events: auto;
+	font-style: italic;
 }
 
-.code-embed-open-btn:hover {
-	color: var(--text-normal);
-	background-color: var(--background-modifier-hover);
-}
+/* ============================================
+   Live Preview 模式兼容样式
+   ============================================ */
 
-.code-embed-open-btn svg {
-	width: 14px;
-	height: 14px;
-}
-
-/* Widget styles for Live Preview mode */
-.code-embed-widget {
+.code-embed-widget,
+.code-embed-lp-processed {
 	display: block;
-	margin: 1em 0;
+	pointer-events: auto;
 	-webkit-user-select: text;
 	user-select: text;
 	cursor: default;
 }
 
-.code-embed-widget[contenteditable="false"] {
+.code-embed-widget[contenteditable="false"],
+.code-embed-lp-processed[contenteditable="false"] {
 	pointer-events: auto;
 }
 
-/* Live Preview 模式下的代码嵌入样式 */
-.code-embed-lp-processed {
-	display: block;
-	pointer-events: auto;
+/* Live Preview 模式下工具栏样式 - 确保水平排列，从右到左紧贴 */
+.cm-embed-block .code-embed-toolbar,
+.code-embed-lp-processed .code-embed-toolbar {
+	display: flex !important;
+	flex-direction: row !important;
+	flex-wrap: nowrap !important;
+	justify-content: flex-end !important;
+	gap: 1px !important;
 }
 
-.code-embed-lp-processed .code-embed-container {
-	pointer-events: auto;
-}
-
-/* 确保 Live Preview 中的代码块样式与阅读模式一致 */
-.cm-embed-block .code-embed-container,
-.code-embed-lp-processed .code-embed-container {
-	position: relative;
-	margin: 1em 0;
-	border-radius: 6px;
-	overflow: hidden;
-	background-color: var(--background-secondary);
-	text-align: left;
-}
-
-/* Live Preview 中代码块的滚动支持 */
-.cm-embed-block .code-embed-wrapper pre,
-.code-embed-lp-processed .code-embed-wrapper pre {
-	max-height: 500px;
-	overflow: auto;
-	margin: 0;
-}
-
-/* 确保在 Live Preview 中代码字体大小一致 */
-.cm-embed-block .code-embed-wrapper pre code,
-.code-embed-lp-processed .code-embed-wrapper pre code {
-	font-size: var(--code-size) !important;
-	font-family: var(--font-monospace) !important;
-}
-
-.code-embed-loading {
-	padding: 1em;
-	color: var(--text-muted);
-	font-style: italic;
+.cm-embed-block .code-block-flair,
+.code-embed-lp-processed .code-block-flair,
+.cm-embed-block .code-embed-open-btn,
+.code-embed-lp-processed .code-embed-open-btn {
+	display: inline-flex !important;
+	flex-shrink: 0 !important;	
 }
 
 /* CSV Table Open Button */
@@ -198,10 +211,14 @@ available in the app when your plugin is enabled.
 	height: 14px;
 }
 
+button.copy-code-button {
+	display: none;
+}
+
 /* CSV Live Preview 模式样式 */
 .csv-embed-widget {
 	display: block;
-	margin: 1em 0;
+	margin: 1em 1em;
 	-webkit-user-select: text;
 	user-select: text;
 	cursor: default;
