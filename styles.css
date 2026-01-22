@@ -3,6 +3,161 @@
 This CSS file will be included with your plugin, and
 available in the app when your plugin is enabled.
 
-If your plugin does not need CSS, delete this file.
-
 */
+
+/* CSV Table Styles */
+.csv-table-container table {
+	border-collapse: collapse;
+	width: 100%;
+	margin: 1em 0;
+}
+
+.csv-table-container td,
+.csv-table-container th {
+	border: 1px solid var(--background-modifier-border);
+	padding: 8px 12px;
+	text-align: left;
+}
+
+.csv-table-container tr:nth-child(even) {
+	background-color: var(--background-secondary);
+}
+
+.csv-table-container tr:first-child {
+	background-color: var(--background-modifier-hover);
+	font-weight: bold;
+}
+
+/* Code Embed Styles */
+.code-embed-container {
+	position: relative;
+	margin: 1em 0;
+	border-radius: 6px;
+	overflow: hidden;
+	background-color: var(--background-secondary);
+	text-align: left;
+	pointer-events: auto;
+}
+
+.code-embed-container .code-embed-container {
+	margin: 0;
+}
+
+/* Wrapper for the rendered code block */
+.code-embed-wrapper {
+	text-align: left;
+}
+
+/* Ensure the rendered code block inherits Obsidian's native styling */
+.code-embed-wrapper pre {
+	margin: 0 !important;
+	border-radius: 0 !important;
+}
+
+/* Override any font-size changes to match Obsidian's default */
+.code-embed-wrapper pre code {
+	font-size: var(--code-size) !important;
+}
+
+.code-embed-label {
+	position: absolute;
+	top: 0;
+	right: 0;
+	padding: 2px 8px;
+	font-size: 0.75em;
+	color: var(--text-muted);
+	background-color: var(--background-modifier-border);
+	border-bottom-left-radius: 4px;
+	text-transform: uppercase;
+	z-index: 1;
+}
+
+.code-embed-error {
+	color: var(--text-error);
+	padding: 1em;
+	background-color: var(--background-modifier-error);
+	border-radius: 4px;
+}
+
+/* Open File Button for Code Embeds */
+.code-embed-open-btn {
+	position: absolute;
+	top: 0;
+	right: 60px;
+	padding: 4px 8px;
+	font-size: 0.85em;
+	color: var(--text-muted);
+	background-color: var(--background-modifier-border);
+	border-bottom-left-radius: 4px;
+	border-bottom-right-radius: 4px;
+	cursor: pointer;
+	z-index: 2;
+	transition: all 0.15s ease;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	pointer-events: auto;
+}
+
+.code-embed-open-btn:hover {
+	color: var(--text-normal);
+	background-color: var(--background-modifier-hover);
+}
+
+.code-embed-open-btn svg {
+	width: 14px;
+	height: 14px;
+}
+
+/* Widget styles for Live Preview mode */
+.code-embed-widget {
+	display: block;
+	margin: 1em 0;
+	-webkit-user-select: none;
+	user-select: none;
+	cursor: default;
+}
+
+.code-embed-widget[contenteditable="false"] {
+	pointer-events: auto;
+}
+
+.code-embed-loading {
+	padding: 1em;
+	color: var(--text-muted);
+	font-style: italic;
+}
+
+/* CSV Table Open Button */
+.csv-table-container {
+	position: relative;
+	pointer-events: auto;
+}
+
+.csv-open-btn {
+	position: absolute;
+	top: 0;
+	right: 0;
+	padding: 4px 8px;
+	font-size: 0.85em;
+	color: var(--text-muted);
+	background-color: var(--background-modifier-border);
+	border-bottom-left-radius: 4px;
+	cursor: pointer;
+	z-index: 2;
+	transition: all 0.15s ease;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	pointer-events: auto;
+}
+
+.csv-open-btn:hover {
+	color: var(--text-normal);
+	background-color: var(--background-modifier-hover);
+}
+
+.csv-open-btn svg {
+	width: 14px;
+	height: 14px;
+}

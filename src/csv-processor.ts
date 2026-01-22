@@ -1,4 +1,4 @@
-import {MarkdownPostProcessorContext, TFile, App} from 'obsidian';
+import {MarkdownPostProcessorContext, TFile, App, setIcon} from 'obsidian';
 
 export interface CSVProcessorSettings {
 	csvCodeView: string;
@@ -25,7 +25,6 @@ export class CSVProcessor {
 			this.renderAsPlainText(source, el);
 			return;
 		}
-
 		this.renderAsTable(source, el);
 	}
 
@@ -170,6 +169,23 @@ export class CSVProcessor {
 				// Create container for table
 				const container = createDiv();
 				container.addClass('csv-table-container');
+				
+				// Prevent click from opening file
+				container.addEventListener('click', (e) => {
+					e.preventDefault();
+					e.stopPropagation();
+				});
+				
+				// Add "Open File" button
+				const openButton = container.createDiv({ cls: 'csv-open-btn' });
+				setIcon(openButton, 'external-link');
+				openButton.setAttribute('aria-label', 'Open CSV file');
+				openButton.addEventListener('click', (e) => {
+					e.preventDefault();
+					e.stopPropagation();
+					this.app.workspace.openLinkText(filePath, ctx.sourcePath);
+				});
+				
 				this.renderAsTable(content, container);
 				
 				// Replace target element with table
