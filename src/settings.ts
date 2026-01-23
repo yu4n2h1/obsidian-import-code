@@ -1,5 +1,5 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
-import MyPlugin from "./main";
+import importCode from "./main";
 
 export interface CSVCodeViewSettings {
 	csvCodeView: string;
@@ -21,10 +21,10 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 		"js,ts,py,java,c,cpp,go,rs,rb,php,sh,sql,html,css,json,yaml,xml,md",
 };
 
-export class CSVCodeViewSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
+export class importCodeSettingsTab extends PluginSettingTab {
+	plugin: importCode;
 
-	constructor(app: App, plugin: MyPlugin) {
+	constructor(app: App, plugin: importCode) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
