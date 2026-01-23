@@ -1,10 +1,7 @@
 import { App, TFile, MarkdownView, Plugin } from 'obsidian';
 import { EditorView, ViewPlugin, ViewUpdate, PluginValue } from '@codemirror/view';
 
-/**
- * 文件处理器抽象基类
- * 提供文件读取、渲染、Live Preview 支持和文件变化刷新等通用功能
- */
+
 
 export abstract class FileProcessor {
 	app: App;
@@ -27,7 +24,7 @@ export abstract class FileProcessor {
 	 * filePath: 文件路径
 	 * sourcePath: 源文件路径
 	 */
-	abstract render(data: any, targetElement: HTMLElement, filePath: string, sourcePath: string): Promise<void>;
+	abstract render(data: any, targetElement: HTMLElement, filePath: string, sourcePath: string): Promise<HTMLElement>;
 
 	/**
 	 * 抽象内容处理方法：负责对文件原始字符串进行初步处理
@@ -66,12 +63,14 @@ export abstract class FileProcessor {
 				const processedData = this.processContent(content);
 				
 				// 2. 执行特定渲染（render 内部会用新容器替换 targetElement）
-				await this.render(processedData, targetElement, filePath, sourcePath);
-				
-				return true;
-			} else {
-				return false;
+				const result = await this.render(processedData, targetElement, filePath, sourcePath);
+				if (result) {
+					targetElement.replaceWith(result);
+					return true;
+				}
 			}
+			return false;
+			
 		} catch (error) {
 			return false;
 		}
@@ -83,5 +82,6 @@ export abstract class FileProcessor {
 	protected renderLoading(el: HTMLElement): void {
 		el.empty();
 		el.createDiv({ cls: 'code-link-loading', text: 'Loading...' });
+		
 	}
 }

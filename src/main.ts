@@ -6,6 +6,7 @@ import { CodeEmbedProcessor } from './code-embed-processor';
 import { getLanguageFromPath, isExtensionSupported } from './utils';
 
 
+
 export default class importCode extends Plugin {
 	// 值为fileProcessor的map
 	fileProcessorMap: Map<string, FileProcessor> = new Map();
@@ -30,7 +31,7 @@ export default class importCode extends Plugin {
 	 * 根据设置初始化处理器
 	 */
 	initProcessors() {
-		this.fileProcessorMap = new Map();
+		this.fileProcessorMap.clear();
 		if (this.settings.csvCodeView === 'enabled') {
 			this.fileProcessorMap.set('csv', new CSVProcessor(this.app, this.settings));
 		}
@@ -38,6 +39,7 @@ export default class importCode extends Plugin {
 			this.fileProcessorMap.set('code', new CodeEmbedProcessor(this.app, this.settings, this));
 		}
 	}
+
 
 
 	/**
@@ -50,7 +52,8 @@ export default class importCode extends Plugin {
 		this.initProcessors();
 		// 添加设置选项卡
 		this.addSettingTab(new importCodeSettingsTab(this.app, this));
-		// 注册 Markdown 后处理器
+
+		// 注册 Markdown 后处理器（用于阅读模式）
 		this.registerMarkdownPostProcessor(async (el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
 			
 			const embeds = el.querySelectorAll('.internal-embed');
@@ -80,13 +83,22 @@ export default class importCode extends Plugin {
 					await processor.processFile(src, embed, ctx.sourcePath);
 				}
 			}
-		});
-
+		});		
 	}
 
 	async onunload() {
 		console.log('Unloading importCode plugin');
 		// 清空处理器映射
 		this.fileProcessorMap.clear();
+		// 重新渲染所有已打开的 Markdown 视图，清除插件渲染的内容
+		this.app.workspace.iterateAllLeaves((leaf) => {
+			if (leaf.view instanceof MarkdownView) {
+				// 强制重新加载视图
+				const state = leaf.getViewState();
+				leaf.setViewState({ type: 'empty' }).then(() => {
+					leaf.setViewState(state);
+				});
+			}
+		});
 	}
 }

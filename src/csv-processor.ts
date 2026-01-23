@@ -24,9 +24,10 @@ export class CSVProcessor extends FileProcessor {
 	/**
 	 * 实现渲染逻辑：将解析后的行数据转换为 HTML 表格
 	 */
-	async render(rows: string[][], targetElement: HTMLElement, filePath: string, sourcePath: string): Promise<void> {
+	async render(rows: string[][], targetElement: HTMLElement, filePath: string, sourcePath: string): Promise<HTMLElement> {
 		// 1. 创建新的主容器
 		const container = document.createElement('div');
+		
 		container.className = 'csv-table-container';
 	
 		// 2. 创建工具栏
@@ -54,6 +55,7 @@ export class CSVProcessor extends FileProcessor {
 		}
 	
 		// 4. 替换原有元素
-		targetElement.replaceWith(container);
+		// targetElement.replaceWith(container);
+		return container;
 	}
 }

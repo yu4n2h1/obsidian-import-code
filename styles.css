@@ -1,10 +1,3 @@
-/*
-
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
-
-*/
-
 /* CSV Table Styles */
 .csv-table-container table {
 	border-collapse: collapse;
@@ -28,156 +21,7 @@ available in the app when your plugin is enabled.
 	font-weight: bold;
 }
 
-
-/* 外层容器 - 作为定位基准 */
-.code-embed-container {
-	position: relative;
-	margin: 1em 0;
-	border-radius: 6px;
-	overflow: hidden;
-	background-color: var(--background-secondary);
-	text-align: left;
-	pointer-events: auto;
-}
-
-/* 代码区域 - 占据下方全部空间 */
-.code-embed-wrapper {
-	text-align: left;
-	width: 100%;
-}
-
-.code-embed-wrapper pre {
-	margin: 0;
-	border-radius: 0;
-	max-height: 500px;
-	overflow: auto;
-}
-
-.code-embed-wrapper pre code {
-	font-size: var(--code-size) !important;
-	font-family: var(--font-monospace) !important;
-}
-/* 右上角工具栏容器 */
-.code-embed-container .code-embed-toolbar {
-    position: absolute;
-    top: 0;
-    right: 0;
-    display: flex;
-    flex-direction: row;
-    /* 保持紧凑，不添加外边距 */
-    z-index: 10;
-    pointer-events: auto;
-    /* 统一半透明背景，让整体更有呼吸感 */
-    background-color: rgba(255, 255, 255, 0.05); 
-    border-bottom-left-radius: 8px; /* 只有左下角圆润，贴合边缘 */
-    overflow: hidden; /* 确保子元素不超出圆角 */
-}
-
-/* 统一按钮基础样式 */
-.code-embed-container .code-block-flair,
-.code-embed-container .code-embed-open-btn {
-    appearance: none;
-    height: 32px;      /* 统一高度 */
-    padding: 0 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;    /* 稍微缩小字体，更精致 */
-    font-weight: 600;
-    color: var(--text-muted);
-    background: transparent !important; /* 背景交由容器处理 */
-    transition: all 0.2s ease;
-    cursor: pointer;
-    border: none !important;
-}
-
-/* 在两个按钮之间增加一条极淡的分割线 */
-.code-embed-container .code-embed-open-btn + .code-block-flair {
-    border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
-}
-
-/* 语言标签样式微调 */
-.code-embed-container .code-block-flair {
-    text-transform: uppercase;
-    letter-spacing: 1px; /* 增加字间距，更有科技感 */
-}
-
-/* 悬停交互：变亮一点 */
-.code-embed-container .code-embed-open-btn:hover,
-.code-embed-container .code-block-flair:hover {
-    background-color: rgba(255, 255, 255, 0.1) !important;
-    color: var(--text-normal);
-}
-
-/* 针对图标大小的微调（如果是 SVG） */
-.code-embed-container .code-embed-open-btn svg {
-    width: 14px;
-    height: 14px;
-    opacity: 0.7;
-}
-
-.code-embed-container .code-embed-open-btn:hover {
-	color: var(--text-normal);
-	background-color: var(--background-modifier-hover);
-}
-
-.code-embed-container .code-embed-open-btn svg {
-	width: 14px;
-	height: 14px;
-}
-
-/* 错误状态 */
-.code-embed-error {
-	color: var(--text-error);
-	padding: 1em;
-	background-color: var(--background-modifier-error);
-	border-radius: 4px;
-}
-
-/* 加载状态 */
-.code-embed-loading {
-	padding: 1em;
-	color: var(--text-muted);
-	font-style: italic;
-}
-
-/* ============================================
-   Live Preview 模式兼容样式
-   ============================================ */
-
-.code-embed-widget,
-.code-embed-lp-processed {
-	display: block;
-	pointer-events: auto;
-	-webkit-user-select: text;
-	user-select: text;
-	cursor: default;
-}
-
-.code-embed-widget[contenteditable="false"],
-.code-embed-lp-processed[contenteditable="false"] {
-	pointer-events: auto;
-}
-
-/* Live Preview 模式下工具栏样式 - 确保水平排列，从右到左紧贴 */
-.cm-embed-block .code-embed-toolbar,
-.code-embed-lp-processed .code-embed-toolbar {
-	display: flex !important;
-	flex-direction: row !important;
-	flex-wrap: nowrap !important;
-	justify-content: flex-end !important;
-	gap: 1px !important;
-}
-
-.cm-embed-block .code-block-flair,
-.code-embed-lp-processed .code-block-flair,
-.cm-embed-block .code-embed-open-btn,
-.code-embed-lp-processed .code-embed-open-btn {
-	display: inline-flex !important;
-	flex-shrink: 0 !important;	
-}
-
-/* CSV Table Open Button */
+/* CSV Open Button */
 .csv-table-container {
 	position: relative;
 	pointer-events: auto;
@@ -211,53 +55,124 @@ available in the app when your plugin is enabled.
 	height: 14px;
 }
 
-button.copy-code-button {
-	display: none;
-}
-
-/* CSV Live Preview 模式样式 */
-.csv-embed-widget {
-	display: block;
-	margin: 1em 1em;
-	-webkit-user-select: text;
-	user-select: text;
-	cursor: default;
-}
-
-.csv-embed-widget[contenteditable="false"] {
-	pointer-events: auto;
-}
-
-.csv-embed-lp-processed {
-	display: block;
-	pointer-events: auto;
-}
-
-.csv-embed-lp-processed .csv-table-container {
-	pointer-events: auto;
-}
-
-/* 确保 Live Preview 中的 CSV 表格样式与阅读模式一致 */
-.cm-embed-block .csv-table-container,
-.csv-embed-lp-processed .csv-table-container {
+/* Code Embed Container */
+.code-embed-container {
 	position: relative;
 	margin: 1em 0;
+	border-radius: 6px;
+	overflow: hidden;
+	background-color: var(--background-secondary);
+	text-align: left;
+	pointer-events: auto;
 }
 
-/* 通用文件嵌入 Widget 样式 */
-.file-embed-widget {
-	display: block;
-	margin: 1em 0;
-	-webkit-user-select: text;
-	user-select: text;
+.code-embed-wrapper {
+	text-align: left;
+	width: 100%;
+}
+
+.code-embed-wrapper pre {
+	margin: 0;
+	border-radius: 0;
+	max-height: 500px;
+	overflow: auto;
+}
+
+.code-embed-wrapper pre code {
+	font-size: var(--code-size) !important;
+	font-family: var(--font-monospace) !important;
+}
+
+/* Code Embed Toolbar */
+.code-embed-container .code-embed-toolbar {
+	position: absolute;
+	top: 0;
+	right: 0;
+	display: flex;
+	flex-direction: row;
+	z-index: 10;
+	pointer-events: auto;
+	background-color: rgba(255, 255, 255, 0.05);
+	border-bottom-left-radius: 8px;
+	overflow: hidden;
+}
+
+.code-embed-container .code-block-flair,
+.code-embed-container .code-embed-open-btn {
+	appearance: none;
+	height: 32px;
+	padding: 0 10px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--text-muted);
+	background: transparent !important;
+	transition: all 0.2s ease;
+	cursor: pointer;
+	border: none !important;
+}
+
+.code-embed-container .code-embed-open-btn + .code-block-flair {
+	border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.code-embed-container .code-block-flair {
+	text-transform: uppercase;
+	letter-spacing: 1px;
+}
+
+.code-embed-container .code-embed-open-btn:hover,
+.code-embed-container .code-block-flair:hover {
+	background-color: rgba(255, 255, 255, 0.1) !important;
+	color: var(--text-normal);
+}
+
+.code-embed-container .code-embed-open-btn svg {
+	width: 14px;
+	height: 14px;
+	opacity: 0.7;
+}
+
+/* Editor View (Live Preview) Embed Styles */
+.code-link-editor-embed {
+	position: relative;
+	margin: 0.5em 0;
+	border-radius: 6px;
+	overflow: hidden;
+	-webkit-user-select: none;
+	user-select: none;
+	pointer-events: auto;
+}
+
+.code-link-editor-embed-content {
+	width: 100%;
+}
+
+.code-link-editor-embed-error {
+	padding: 12px 16px;
+	color: var(--text-error);
+	background-color: var(--background-modifier-error);
+	border-radius: 6px;
+	font-size: 0.9em;
+}
+
+/* 确保编辑视图中的嵌入内容不可编辑 */
+.code-link-editor-embed[contenteditable="false"] {
 	cursor: default;
 }
 
-.file-embed-widget[contenteditable="false"] {
-	pointer-events: auto;
+.code-link-editor-embed .code-embed-container,
+.code-link-editor-embed .csv-table-container {
+	margin: 0;
 }
 
-.file-embed-lp-processed {
-	display: block;
-	pointer-events: auto;
+/* 编辑模式加载状态 */
+.code-link-editor-embed .code-link-loading {
+	padding: 12px 16px;
+	color: var(--text-muted);
+	font-size: 0.9em;
+	background-color: var(--background-secondary);
+	border-radius: 6px;
 }

@@ -28,7 +28,7 @@ export class CodeEmbedProcessor extends FileProcessor {
 	/**
 	 * 实现渲染逻辑：使用 Obsidian 原生 MarkdownRenderer 渲染代码块
 	 */
-	async render(content: string, targetElement: HTMLElement, filePath: string, sourcePath: string): Promise<void> {
+	async render(content: string, targetElement: HTMLElement, filePath: string, sourcePath: string): Promise<HTMLElement> {
 		const [_, language] = getLanguageFromPath(filePath);
 
 		// 1. 创建新的主容器
@@ -72,36 +72,9 @@ export class CodeEmbedProcessor extends FileProcessor {
 		);
 
 		// 5. 替换原有元素
-		targetElement.replaceWith(container);
+		// targetElement.replaceWith(container);
+		return container;
 	}
 
-
-	/**
-	 * Update settings reference
-	 */
-	updateSettings(settings: CodeEmbedSettings): void {
-		this.settings = settings;
-	}
-
-	/**
-	 * 检查功能是否启用
-	 */
-	isFeatureEnabled(): boolean {
-		return (this.settings as CodeEmbedSettings).codeEmbedEnabled === 'enabled';
-	}
-
-	/**
-	 * 获取 Live Preview 处理完成后的 CSS 类名
-	 */
-	getProcessedClassName(): string {
-		return 'code-embed-lp-processed';
-	}
-
-	/**
-	 * 获取 Widget 的 CSS 类名
-	 */
-	getWidgetClassName(): string {
-		return 'code-embed-widget';
-	}
 }
 
