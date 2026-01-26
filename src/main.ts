@@ -4,6 +4,7 @@ import { FileProcessor } from './file-processor';
 import { CSVProcessor } from './csv-processor';
 import { CodeEmbedProcessor } from './code-embed-processor';
 import { getLanguageFromPath, isExtensionSupported } from './utils';
+import { ViewPlugin } from '@codemirror/view';
 
 
 
@@ -84,6 +85,15 @@ export default class importCode extends Plugin {
 				}
 			}
 		});		
+		this.registerEditorExtension(ViewPlugin.define((view) => {
+			return {
+				update: (view) => {
+					
+				},
+				destroy: () => {
+				}
+			}
+		}));
 	}
 
 	async onunload() {
