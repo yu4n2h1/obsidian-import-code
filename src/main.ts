@@ -1,10 +1,10 @@
-import { Plugin, MarkdownPostProcessorContext, MarkdownView, TFile } from 'obsidian';
+import { Plugin, MarkdownPostProcessorContext, MarkdownView, TFile, Editor, App } from 'obsidian';
 import { PluginSettings, DEFAULT_SETTINGS, importCodeSettingsTab } from './settings';
 import { FileProcessor } from './file-processor';
 import { CSVProcessor } from './csv-processor';
 import { CodeEmbedProcessor } from './code-embed-processor';
 import { getLanguageFromPath, isExtensionSupported } from './utils';
-import { ViewPlugin } from '@codemirror/view';
+import { EditorView, ViewPlugin } from '@codemirror/view';
 
 
 
@@ -85,12 +85,19 @@ export default class importCode extends Plugin {
 				}
 			}
 		});		
-		this.registerEditorExtension(ViewPlugin.define((view) => {
+		this.registerEditorExtension(ViewPlugin.define((view:EditorView) => {
+			const processingSet = new Set<HTMLElement>();
+
+			setTimeout(() => processEmbeds(view, processingSet, this.fileProcessorMap, this.settings, this.app), 50);
+
 			return {
-				update: (view) => {
-					
+				update: (update) => {
+					if (update.docChanged || update.viewportChanged) {
+						setTimeout(() => processEmbeds(view, processingSet, this.fileProcessorMap, this.settings, this.app), 50);
+					}
 				},
 				destroy: () => {
+					processingSet.clear();
 				}
 			}
 		}));
@@ -110,5 +117,40 @@ export default class importCode extends Plugin {
 				});
 			}
 		});
+	}
+}
+
+
+function processEmbeds(view: EditorView, processingSet: Set<HTMLElement>, fileProcessorMap: Map<string, FileProcessor>, settings: PluginSettings, app: App) {
+	const embeds = view.dom.querySelectorAll('.internal-embed');
+	for (let i = 0; i < embeds.length; i++) {
+		const embed = embeds[i] as HTMLElement;
+
+		// 跳过已处理的嵌入元素
+		if (embed.classList.contains('code-link-processed')) continue;
+		
+		// 获取嵌入元素的 src 属性
+		const src = embed.getAttribute('src');
+		if (!src) continue;
+
+		const [extension, language] = getLanguageFromPath(src);
+
+		// 根据文件类型选择处理器
+		let processor: FileProcessor | undefined;
+		if (fileProcessorMap.has('csv') && language === 'csv') {
+			processor = fileProcessorMap.get('csv');
+		} else if (settings.codeEmbedEnabled === 'enabled' && isExtensionSupported(settings, extension)) {
+			// 其他已知代码文件类型使用 code 处理器
+			processor = fileProcessorMap.get('code');
+		}
+		const activeView = app.workspace.getActiveViewOfType(MarkdownView);
+		const sourcePath = activeView?.file?.path || '';
+
+		if (processor) {
+			embed.classList.add('code-link-processed');
+			// 立即清空防止 Obsidian 默认内容显示
+			embed.empty();
+			processor.processFile(src, embed, sourcePath);
+		}
 	}
 }

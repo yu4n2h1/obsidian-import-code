@@ -54,24 +54,35 @@ export abstract class FileProcessor {
 	 */
 	async processFile(filePath: string, targetElement: HTMLElement, sourcePath: string): Promise<boolean> {
 		try {
+			// 0. 阻止 Obsidian 默认嵌入处理
+			targetElement.setAttribute('data-code-link-handled', 'true');
+			targetElement.style.display = 'block';
+			
 			// 1. 显示加载状态
 			this.renderLoading(targetElement);
+			console.log('[CodeLink] processFile:', { filePath, sourcePath });
 
 			const content = await this.readFile(filePath, sourcePath);
+			console.log('[CodeLink] readFile result:', content !== null ? 'success' : 'null');
 			
 			if (content !== null) {
 				const processedData = this.processContent(content);
 				
-				// 2. 执行特定渲染（render 内部会用新容器替换 targetElement）
+				// 2. 清空并在目标容器内渲染（不使用 replaceWith，避免破坏 CodeMirror DOM 管理）
+				targetElement.empty();
 				const result = await this.render(processedData, targetElement, filePath, sourcePath);
+				console.log('[CodeLink] render result:', result ? 'success' : 'null');
 				if (result) {
-					targetElement.replaceWith(result);
+					targetElement.appendChild(result);
 					return true;
 				}
+			} else {
+				console.log('[CodeLink] File not found or read failed');
 			}
 			return false;
 			
 		} catch (error) {
+			console.error('[CodeLink] processFile error:', error);
 			return false;
 		}
 	}
