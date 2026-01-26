@@ -61,11 +61,11 @@ export abstract class FileProcessor {
 
 			
 			// 1. 显示加载状态
-			this.renderLoading(targetElement);
-			console.log('[CodeLink] processFile:', { filePath, sourcePath });
+			targetElement.empty();
+			targetElement.createDiv({ cls: 'code-link-loading', text: 'Loading...' });
+			
 
 			const content = await this.readFile(filePath, sourcePath);
-			console.log('[CodeLink] readFile result:', content !== null ? 'success' : 'null');
 			
 			if (content !== null) {
 				const processedData = this.processContent(content);
@@ -73,7 +73,6 @@ export abstract class FileProcessor {
 				// 2. 清空并在目标容器内渲染（不使用 replaceWith，避免破坏 CodeMirror DOM 管理）
 				targetElement.empty();
 				const result = await this.render(processedData, targetElement, filePath, sourcePath);
-				console.log('[CodeLink] render result:', result ? 'success' : 'null');
 				if (result) {
 					// 从渲染的结果当中添加阻止事件冒泡
 					result.addEventListener('click', (e: MouseEvent) => {
@@ -95,22 +94,11 @@ export abstract class FileProcessor {
 					return true;
 				}
 			} else {
-				console.log('[CodeLink] File not found or read failed');
 			}
 			return false;
 			
 		} catch (error) {
-			console.error('[CodeLink] processFile error:', error);
 			return false;
 		}
-	}
-
-	/**
-	 * 渲染加载状态
-	 */
-	protected renderLoading(el: HTMLElement): void {
-		el.empty();
-		el.createDiv({ cls: 'code-link-loading', text: 'Loading...' });
-		
 	}
 }

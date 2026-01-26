@@ -1,10 +1,11 @@
-import { Plugin, MarkdownPostProcessorContext, MarkdownView, TFile, Editor, App } from 'obsidian';
+import { Plugin, MarkdownPostProcessorContext, MarkdownView, TFile, Editor, App, Command } from 'obsidian';
 import { PluginSettings, DEFAULT_SETTINGS, importCodeSettingsTab } from './settings';
 import { FileProcessor } from './file-processor';
 import { CSVProcessor } from './csv-processor';
 import { CodeEmbedProcessor } from './code-embed-processor';
 import { getLanguageFromPath, isExtensionSupported, debounce } from './utils';
 import { EditorView, ViewPlugin } from '@codemirror/view';
+import { FileModal } from './modal';
 
 
 
@@ -29,16 +30,8 @@ export default class importCode extends Plugin {
 		// 重新初始化处理器
 		this.initProcessors();
 		// 刷新所有视图
-		this.refreshViews();
-	}
-
-	/**
-	 * 刷新所有已打开的 Markdown 视图
-	 */
-	refreshViews() {
 		this.app.workspace.iterateAllLeaves((leaf) => {
-			if (leaf.view instanceof MarkdownView) {
-				// 清除已处理标记
+			if (leaf.view instanceof MarkdownView){
 				const container = leaf.view.containerEl;
 				const embeds = container.querySelectorAll('.internal-embed.code-link-processed');
 				embeds.forEach((embed: Element) => {
@@ -52,8 +45,10 @@ export default class importCode extends Plugin {
 					leaf.setViewState(state);
 				});
 			}
+				
 		});
 	}
+
 
 	/* 
 	 * 根据设置初始化处理器
@@ -80,6 +75,19 @@ export default class importCode extends Plugin {
 		this.initProcessors();
 		// 添加设置选项卡
 		this.addSettingTab(new importCodeSettingsTab(this.app, this));
+
+		// 注册创建代码文件命令
+		this.addCommand({
+			id: 'create-code-file',
+			name: '插入嵌入代码',
+			editorCallback: (editor: Editor, view: MarkdownView) => {
+				new FileModal(this.app, this.settings, (filePath: string) => {
+					// 文件创建成功后，在光标位置插入内部链接
+					const link = `![[${filePath}]]`;
+					editor.replaceSelection(link);
+				}).open();
+			}
+		});
 
 		// 注册 Markdown 后处理器（用于阅读模式）
 		this.registerMarkdownPostProcessor(async (el: HTMLElement, ctx: MarkdownPostProcessorContext) => {

@@ -10,15 +10,28 @@ export interface CodeEmbedSettings {
 	codeFileExtensions: string;
 }
 
+export interface FileStorageSettings {
+	// 存储路径类型: 'absolute' 根目录指定位置, 'relative' 相对当前文档位置
+	storagePathType: 'absolute' | 'relative';
+	// 根目录指定位置的路径
+	absoluteStoragePath: string;
+	// 相对位置的路径
+	relativeStoragePath: string;
+}
+
 export interface PluginSettings
 	extends CSVCodeViewSettings,
-		CodeEmbedSettings {}
+		CodeEmbedSettings,
+		FileStorageSettings {}
 
 export const DEFAULT_SETTINGS: PluginSettings = {
 	csvCodeView: "enabled",
 	codeEmbedEnabled: "enabled",
 	codeFileExtensions:
 		"js,ts,py,java,c,cpp,go,rs,rb,php,sh,sql,html,css,json,yaml,xml,md",
+	storagePathType: "absolute",
+	absoluteStoragePath: "assets",
+	relativeStoragePath: "./",
 };
 
 export class importCodeSettingsTab extends PluginSettingTab {
@@ -81,5 +94,51 @@ export class importCodeSettingsTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			);
+
+		// File Storage Settings
+		containerEl.createEl("h3", { text: "File Storage" });
+
+		new Setting(containerEl)
+			.setName("Storage Path Type")
+			.setDesc("选择文件存储路径类型")
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption("absolute", "根目录指定位置")
+					.addOption("relative", "相对当前文档位置")
+					.setValue(this.plugin.settings.storagePathType)
+					.onChange(async (value: "absolute" | "relative") => {
+						this.plugin.settings.storagePathType = value;
+						await this.plugin.saveSettings();
+						this.display();
+					})
+			);
+
+		if (this.plugin.settings.storagePathType === "absolute") {
+			new Setting(containerEl)
+				.setName("Absolute Storage Path")
+				.setDesc("相对于 Vault 根目录的存储路径（如：attachments/code）")
+				.addText((text) =>
+					text
+						.setPlaceholder("attachments")
+						.setValue(this.plugin.settings.absoluteStoragePath)
+						.onChange(async (value: string) => {
+							this.plugin.settings.absoluteStoragePath = value;
+							await this.plugin.saveSettings();
+						})
+				);
+		} else {
+			new Setting(containerEl)
+				.setName("Relative Storage Path")
+				.setDesc("相对于当前文档的存储路径（如：./assets 或 ../shared）")
+				.addText((text) =>
+					text
+						.setPlaceholder("./")
+						.setValue(this.plugin.settings.relativeStoragePath)
+						.onChange(async (value: string) => {
+							this.plugin.settings.relativeStoragePath = value;
+							await this.plugin.saveSettings();
+						})
+				);
+		}
 	}
 }
