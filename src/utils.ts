@@ -54,7 +54,7 @@ const EXTENSION_TO_LANGUAGE: Record<string, string> = {
 export function getLanguageFromPath(path: string): [string, string] {
 	const parts = path.split(".");
 	const extension = parts[parts.length - 1]?.toLowerCase() ?? "";
-	const language = EXTENSION_TO_LANGUAGE[extension] || "";
+	const language = EXTENSION_TO_LANGUAGE[extension] || extension;
 	return [extension, language];
 }
 

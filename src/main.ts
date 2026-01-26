@@ -77,16 +77,31 @@ export default class importCode extends Plugin {
 		this.addSettingTab(new importCodeSettingsTab(this.app, this));
 
 		// 注册创建代码文件命令
+		const insertCodeCallback = (editor: Editor) => {
+			new FileModal(this.app, this.settings, (filePath: string) => {
+				const link = `![[${filePath}]]`;
+				editor.replaceSelection(link);
+			}).open();
+		};
+
+		// 主命令
 		this.addCommand({
 			id: 'create-code-file',
 			name: '插入嵌入代码',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				new FileModal(this.app, this.settings, (filePath: string) => {
-					// 文件创建成功后，在光标位置插入内部链接
-					const link = `![[${filePath}]]`;
-					editor.replaceSelection(link);
-				}).open();
-			}
+			editorCallback: insertCodeCallback
+		});
+
+		// 命令别名
+		this.addCommand({
+			id: 'insert-embed-code',
+			name: 'Insert embed code',
+			editorCallback: insertCodeCallback
+		});
+
+		this.addCommand({
+			id: 'new-code-snippet',
+			name: '新建代码片段',
+			editorCallback: insertCodeCallback
 		});
 
 		// 注册 Markdown 后处理器（用于阅读模式）

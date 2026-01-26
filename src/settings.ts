@@ -28,7 +28,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	csvCodeView: "enabled",
 	codeEmbedEnabled: "enabled",
 	codeFileExtensions:
-		"js,ts,py,java,c,cpp,go,rs,rb,php,sh,sql,html,css,json,yaml,xml,md",
+		"js,ts,py,java,c,cpp,go,rs,rb,php,sh,sql,html,css,json,yaml,xml",
 	storagePathType: "absolute",
 	absoluteStoragePath: "assets",
 	relativeStoragePath: "./",
