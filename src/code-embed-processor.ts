@@ -85,8 +85,6 @@ export class CodeEmbedProcessor extends FileProcessor {
 			this.plugin
 		);
 
-		// 5. 替换原有元素
-		// targetElement.replaceWith(container);
 		return container;
 	}
 

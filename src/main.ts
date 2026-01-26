@@ -85,21 +85,60 @@ export default class importCode extends Plugin {
 				}
 			}
 		});		
+		// 注册编辑器模式下的处理器 
 		this.registerEditorExtension(ViewPlugin.define((view:EditorView) => {
 			const processingSet = new Set<HTMLElement>();
 
-			setTimeout(() => processEmbeds(view, processingSet, this.fileProcessorMap, this.settings, this.app), 50);
+			setTimeout(() => processEmbeds(view,  this.fileProcessorMap, this.settings, this.app), 50);
 
 			return {
 				update: (update) => {
 					if (update.docChanged || update.viewportChanged) {
-						setTimeout(() => processEmbeds(view, processingSet, this.fileProcessorMap, this.settings, this.app), 50);
+						setTimeout(() => processEmbeds(view, this.fileProcessorMap, this.settings, this.app), 50);
 					}
 				},
 				destroy: () => {
 					processingSet.clear();
 				}
 			}
+		}));
+
+		// 注册文件修改监听
+		this.registerEvent(this.app.vault.on('modify', (file: TFile) => {
+			const filePath = file.path;
+			const fileName = file.name;
+			
+			// 遍历所有已打开的 Markdown 视图
+			this.app.workspace.iterateAllLeaves((leaf) => {
+				if (leaf.view instanceof MarkdownView) {
+					const container = leaf.view.containerEl;
+					const embeds = container.querySelectorAll('.internal-embed.code-link-processed');
+					
+					embeds.forEach((embed: Element) => {
+						const embedEl = embed as HTMLElement;
+						const src = embedEl.getAttribute('src');
+						if (!src) return;
+						
+						// 检查 src 是否匹配修改的文件
+						if (src === filePath || src === fileName || filePath.endsWith(src)) {
+							const [extension, language] = getLanguageFromPath(src);
+							
+							let processor: FileProcessor | undefined;
+							if (this.settings.csvCodeView === 'enabled' && language === 'csv') {
+								processor = this.fileProcessorMap.get('csv');
+							} else if (this.settings.codeEmbedEnabled === 'enabled' && isExtensionSupported(this.settings, extension)) {
+								processor = this.fileProcessorMap.get('code');
+							}
+							
+							if (processor) {
+								const sourcePath = (leaf.view as MarkdownView).file?.path || '';
+								embedEl.empty();
+								processor.processFile(src, embedEl, sourcePath);
+							}
+						}
+					});
+				}
+			});
 		}));
 	}
 
@@ -121,7 +160,7 @@ export default class importCode extends Plugin {
 }
 
 
-function processEmbeds(view: EditorView, processingSet: Set<HTMLElement>, fileProcessorMap: Map<string, FileProcessor>, settings: PluginSettings, app: App) {
+function processEmbeds(view: EditorView,  fileProcessorMap: Map<string, FileProcessor>, settings: PluginSettings, app: App) {
 	const embeds = view.dom.querySelectorAll('.internal-embed');
 	for (let i = 0; i < embeds.length; i++) {
 		const embed = embeds[i] as HTMLElement;

@@ -112,6 +112,7 @@
 	transition: all 0.2s ease;
 	cursor: pointer;
 	border: none !important;
+	border-radius: 0 !important;
 }
 
 .code-embed-container .code-embed-open-btn + .code-block-flair {
