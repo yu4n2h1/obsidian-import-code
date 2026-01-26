@@ -58,6 +58,8 @@ export abstract class FileProcessor {
 			targetElement.setAttribute('data-code-link-handled', 'true');
 			targetElement.style.display = 'block';
 			
+
+			
 			// 1. 显示加载状态
 			this.renderLoading(targetElement);
 			console.log('[CodeLink] processFile:', { filePath, sourcePath });
@@ -73,7 +75,23 @@ export abstract class FileProcessor {
 				const result = await this.render(processedData, targetElement, filePath, sourcePath);
 				console.log('[CodeLink] render result:', result ? 'success' : 'null');
 				if (result) {
+					// 从渲染的结果当中添加阻止事件冒泡
+					result.addEventListener('click', (e: MouseEvent) => {
+						const target = e.target as HTMLElement;
+						
+						// 如果点击的是按钮或按钮内部元素，直接返回，让按钮自己处理
+						if (target.closest('button')) {
+							e.stopPropagation();
+							return;
+						}
+						
+						// 否则阻止 .internal-embed 的默认跳转
+						e.preventDefault();
+						e.stopPropagation();
+					});
+					
 					targetElement.appendChild(result);
+
 					return true;
 				}
 			} else {

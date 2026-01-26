@@ -39,7 +39,7 @@ export class CodeEmbedProcessor extends FileProcessor {
 		const toolbar = container.createDiv({ cls: 'code-embed-toolbar' });
 		
 		// 2.1 添加"打开文件"按钮
-		const openButton = toolbar.createDiv({ cls: 'code-embed-open-btn' });
+		const openButton = toolbar.createEl('button', { cls: 'code-embed-open-btn' });
 		openButton.addEventListener('click', (e) => {
 			e.preventDefault();
 			e.stopPropagation();
@@ -48,13 +48,27 @@ export class CodeEmbedProcessor extends FileProcessor {
 		setIcon(openButton, 'external-link');
 		openButton.setAttribute('aria-label', 'Open file');
 		
-		// 2.2 添加语言标签
-		toolbar.createSpan({ 
+		// 2.2 添加复制按钮
+		const langLabel = toolbar.createEl('button', { 
 			cls: 'code-block-flair', 
 			text: language,
 			attr: {
-				'aria-label': '复制',
-				'contenteditable': 'false'
+				'aria-label': '复制'
+			}
+		});
+		langLabel.addEventListener('click', async (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			try {
+				await navigator.clipboard.writeText(content);
+				// 显示复制成功反馈
+				const originalText = langLabel.textContent;
+				langLabel.textContent = '已复制';
+				setTimeout(() => {
+					langLabel.textContent = originalText;
+				}, 1500);
+			} catch (err) {
+				console.error('复制失败:', err);
 			}
 		});
 
