@@ -66,3 +66,22 @@ export function getSupportedExtensions(settings: CodeEmbedSettings): string[] {
 export function isExtensionSupported(settings: CodeEmbedSettings, extension: string): boolean {
 	return getSupportedExtensions(settings).includes(extension);
 }
+
+/**
+ * 防抖函数
+ */
+export function debounce<T extends (...args: any[]) => void>(
+	fn: T,
+	delay: number
+): T {
+	let timeoutId: number | null = null;
+	return ((...args: any[]) => {
+		if (timeoutId !== null) {
+			window.clearTimeout(timeoutId);
+		}
+		timeoutId = window.setTimeout(() => {
+			fn(...args);
+			timeoutId = null;
+		}, delay);
+	}) as T;
+}

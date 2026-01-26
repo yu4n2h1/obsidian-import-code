@@ -3,7 +3,7 @@ import { PluginSettings, DEFAULT_SETTINGS, importCodeSettingsTab } from './setti
 import { FileProcessor } from './file-processor';
 import { CSVProcessor } from './csv-processor';
 import { CodeEmbedProcessor } from './code-embed-processor';
-import { getLanguageFromPath, isExtensionSupported } from './utils';
+import { getLanguageFromPath, isExtensionSupported, debounce } from './utils';
 import { EditorView, ViewPlugin } from '@codemirror/view';
 
 
@@ -22,10 +22,37 @@ export default class importCode extends Plugin {
 	}
 
 	/**
-	 * 保存设置到data.js当中
+	 * 保存设置到data.js当中，并刷新视图
 	 */
 	async saveSettings() {
 		await this.saveData(this.settings);
+		// 重新初始化处理器
+		this.initProcessors();
+		// 刷新所有视图
+		this.refreshViews();
+	}
+
+	/**
+	 * 刷新所有已打开的 Markdown 视图
+	 */
+	refreshViews() {
+		this.app.workspace.iterateAllLeaves((leaf) => {
+			if (leaf.view instanceof MarkdownView) {
+				// 清除已处理标记
+				const container = leaf.view.containerEl;
+				const embeds = container.querySelectorAll('.internal-embed.code-link-processed');
+				embeds.forEach((embed: Element) => {
+					embed.classList.remove('code-link-processed');
+					(embed as HTMLElement).removeAttribute('data-code-link-handled');
+				});
+				
+				// 强制重新渲染
+				const state = leaf.getViewState();
+				leaf.setViewState({ type: 'empty' }).then(() => {
+					leaf.setViewState(state);
+				});
+			}
+		});
 	}
 
 	/* 
@@ -103,8 +130,8 @@ export default class importCode extends Plugin {
 			}
 		}));
 
-		// 注册文件修改监听
-		this.registerEvent(this.app.vault.on('modify', (file: TFile) => {
+		// 注册文件修改监听（300ms 防抖）
+		const handleFileModify = debounce((file: TFile) => {
 			const filePath = file.path;
 			const fileName = file.name;
 			
@@ -139,17 +166,40 @@ export default class importCode extends Plugin {
 					});
 				}
 			});
-		}));
+		}, 300);
+		
+		this.registerEvent(this.app.vault.on('modify', handleFileModify));
 	}
 
 	async onunload() {
 		console.log('Unloading importCode plugin');
-		// 清空处理器映射
+		
+		// 1. 清空处理器映射
 		this.fileProcessorMap.clear();
-		// 重新渲染所有已打开的 Markdown 视图，清除插件渲染的内容
+		
+		// 2. 清除所有已处理嵌入元素的标记和自定义内容
 		this.app.workspace.iterateAllLeaves((leaf) => {
 			if (leaf.view instanceof MarkdownView) {
-				// 强制重新加载视图
+				const container = leaf.view.containerEl;
+				const embeds = container.querySelectorAll('.internal-embed.code-link-processed');
+				
+				embeds.forEach((embed: Element) => {
+					const embedEl = embed as HTMLElement;
+					// 移除处理标记
+					embedEl.classList.remove('code-link-processed');
+					// 移除自定义属性
+					embedEl.removeAttribute('data-code-link-handled');
+					embedEl.removeAttribute('data-source-path');
+					embedEl.removeAttribute('data-embed-file');
+					// 清空内容
+					embedEl.empty();
+				});
+			}
+		});
+		
+		// 3. 重新渲染所有已打开的 Markdown 视图，恢复默认状态
+		this.app.workspace.iterateAllLeaves((leaf) => {
+			if (leaf.view instanceof MarkdownView) {
 				const state = leaf.getViewState();
 				leaf.setViewState({ type: 'empty' }).then(() => {
 					leaf.setViewState(state);
