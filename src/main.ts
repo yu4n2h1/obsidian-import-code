@@ -79,7 +79,8 @@ export default class importCode extends Plugin {
 		// 注册创建代码文件命令
 		const insertCodeCallback = (editor: Editor) => {
 			new FileModal(this.app, this.settings, (filePath: string) => {
-				const link = `![[${filePath}]]`;
+				const fileName = filePath.split('/').pop() || filePath;
+				const link = `![${fileName}](${filePath})`;
 				editor.replaceSelection(link);
 			}).open();
 		};

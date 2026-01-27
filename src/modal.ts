@@ -17,8 +17,9 @@ export class FileModal extends Modal {
 	private settings: PluginSettings;
 	private fileContent: string = '';
 	private fileExt: string = 'txt';
+	private customFileName: string = '';  // 用户自定义文件名（不含扩展名）
 	private generatedFileName: string = '';
-	private fileNameDisplay: HTMLInputElement;
+	private fileNameInput: HTMLInputElement;
 	private onSubmit: (filePath: string, content: string) => void;
 
 	constructor(app: App, settings: PluginSettings, onSubmit: (filePath: string, content: string) => void) {
@@ -51,15 +52,18 @@ export class FileModal extends Modal {
 				});
 			});
 
-		// 文件名显示（只读）
+		// 文件名输入（可编辑，空则自动生成MD5）
 		new Setting(contentEl)
-			.setName('生成的文件名')
-			.setDesc('基于文件内容 MD5 自动生成')
+			.setName('文件名')
+			.setDesc('留空则基于内容 MD5 自动生成')
 			.addText((text) => {
-				this.fileNameDisplay = text.inputEl;
-				text.setDisabled(true);
-				text.setPlaceholder('输入内容后自动生成');
+				this.fileNameInput = text.inputEl;
+				text.setPlaceholder('留空自动生成');
 				text.inputEl.style.width = '300px';
+				text.onChange((value) => {
+					this.customFileName = value.trim();
+					this.updateFileNameDisplay();
+				});
 			});
 
 		// 存储路径显示
@@ -88,7 +92,7 @@ export class FileModal extends Modal {
 
 		textarea.addEventListener('input', async () => {
 			this.fileContent = textarea.value;
-			await this.updateFileName();
+			await this.updateFileNameFromContent();
 		});
 
 		// 按钮容器
@@ -111,15 +115,32 @@ export class FileModal extends Modal {
 		});
 	}
 
+	// 根据内容更新 MD5 文件名（仅在用户未输入自定义名称时生效）
+	private async updateFileNameFromContent() {
+		if (!this.customFileName && this.fileContent.trim()) {
+			const hash = await md5(this.fileContent);
+			this.generatedFileName = `${hash}.${this.fileExt}`;
+		}
+		this.updateFileNameDisplay();
+	}
+
+	// 更新显示的文件名
+	private updateFileNameDisplay() {
+		if (this.customFileName) {
+			// 用户输入了自定义文件名
+			this.generatedFileName = `${this.customFileName}.${this.fileExt}`;
+		}
+	}
+
+	// 扩展名变化时更新文件名
 	private async updateFileName() {
-		if (this.fileContent.trim()) {
+		if (this.customFileName) {
+			this.generatedFileName = `${this.customFileName}.${this.fileExt}`;
+		} else if (this.fileContent.trim()) {
 			const hash = await md5(this.fileContent);
 			this.generatedFileName = `${hash}.${this.fileExt}`;
 		} else {
 			this.generatedFileName = '';
-		}
-		if (this.fileNameDisplay) {
-			this.fileNameDisplay.value = this.generatedFileName;
 		}
 	}
 
@@ -163,6 +184,24 @@ export class FileModal extends Modal {
 		}
 	}
 
+	// 获取用于链接的路径（相对模式返回相对路径，绝对模式返回完整路径）
+	private getLinkPath(fullPath: string): string {
+		if (this.settings.storagePathType === 'relative') {
+			// 相对模式：返回相对于当前文档的路径
+			const relativePath = this.settings.relativeStoragePath;
+			if (relativePath === './' || relativePath === '.') {
+				return this.generatedFileName;
+			}
+			let linkPath = relativePath;
+			if (linkPath.startsWith('./')) {
+				linkPath = linkPath.slice(2);
+			}
+			return `${linkPath}/${this.generatedFileName}`;
+		}
+		// 绝对模式：返回完整路径
+		return fullPath;
+	}
+
 	private async handleSubmit() {
 		if (!this.fileContent.trim()) {
 			new Notice('请输入文件内容');
@@ -192,7 +231,9 @@ export class FileModal extends Modal {
 				new Notice(`文件已创建: ${fullPath}`);
 			}
 
-			this.onSubmit(fullPath, this.fileContent);
+			// 获取用于链接的路径
+			const linkPath = this.getLinkPath(fullPath);
+			this.onSubmit(linkPath, this.fileContent);
 			this.close();
 		} catch (error) {
 			new Notice(`创建文件失败: ${error}`);
