@@ -12,7 +12,7 @@ export interface CodeEmbedSettings {
 
 export interface FileStorageSettings {
 	// 存储路径类型: 'absolute' 根目录指定位置, 'relative' 相对当前文档位置
-	storagePathType: 'absolute' | 'relative';
+	storagePathType: "absolute" | "relative";
 	// 根目录指定位置的路径
 	absoluteStoragePath: string;
 	// 相对位置的路径
@@ -116,7 +116,9 @@ export class importCodeSettingsTab extends PluginSettingTab {
 		if (this.plugin.settings.storagePathType === "absolute") {
 			new Setting(containerEl)
 				.setName("Absolute Storage Path")
-				.setDesc("相对于 Vault 根目录的存储路径（如：attachments/code）")
+				.setDesc(
+					"相对于 Vault 根目录的存储路径（如：attachments/code）"
+				)
 				.addText((text) =>
 					text
 						.setPlaceholder("attachments")
@@ -129,7 +131,9 @@ export class importCodeSettingsTab extends PluginSettingTab {
 		} else {
 			new Setting(containerEl)
 				.setName("Relative Storage Path")
-				.setDesc("相对于当前文档的存储路径（如：./assets 或 ../shared）")
+				.setDesc(
+					"相对于当前文档的存储路径（如：./assets 或 ../shared）"
+				)
 				.addText((text) =>
 					text
 						.setPlaceholder("./")

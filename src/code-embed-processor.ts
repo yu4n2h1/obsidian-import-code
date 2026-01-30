@@ -1,6 +1,11 @@
-import {TFile, App, MarkdownRenderer, Component, setIcon, MarkdownView, Plugin} from 'obsidian';
-import { getLanguageFromPath } from './utils';
-import { FileProcessor } from './file-processor';
+import {
+	App,
+	MarkdownRenderer,
+	Component,
+	setIcon
+} from "obsidian";
+import { getLanguageFromPath } from "./utils";
+import { FileProcessor } from "./file-processor";
 
 export interface CodeEmbedSettings {
 	codeEmbedEnabled: string;
@@ -8,7 +13,7 @@ export interface CodeEmbedSettings {
 }
 
 export class CodeEmbedProcessor extends FileProcessor {
-	plugin: Component;  // Use plugin as Component for proper lifecycle
+	plugin: Component; // Use plugin as Component for proper lifecycle
 
 	/**
 	 * 构造函数
@@ -16,7 +21,7 @@ export class CodeEmbedProcessor extends FileProcessor {
 	constructor(app: App, settings: CodeEmbedSettings, plugin: Component) {
 		super(app, settings);
 		this.plugin = plugin;
-	} 
+	}
 
 	/**
 	 * 实现内容处理：代码文件目前直接返回原始内容
@@ -28,55 +33,62 @@ export class CodeEmbedProcessor extends FileProcessor {
 	/**
 	 * 实现渲染逻辑：使用 Obsidian 原生 MarkdownRenderer 渲染代码块
 	 */
-	async render(content: string, targetElement: HTMLElement, filePath: string, sourcePath: string): Promise<HTMLElement> {
+	async render(
+		content: string,
+		targetElement: HTMLElement,
+		filePath: string,
+		sourcePath: string
+	): Promise<HTMLElement> {
 		const [_, language] = getLanguageFromPath(filePath);
 
 		// 1. 创建新的主容器
-		const container = document.createElement('div');
-		container.className = 'code-embed-container';
+		const container = document.createElement("div");
+		container.className = "code-embed-container";
 
 		// 2. 创建工具栏
-		const toolbar = container.createDiv({ cls: 'code-embed-toolbar' });
-		
+		const toolbar = container.createDiv({ cls: "code-embed-toolbar" });
+
 		// 2.1 添加"打开文件"按钮
-		const openButton = toolbar.createEl('button', { cls: 'code-embed-open-btn' });
-		openButton.addEventListener('click', (e) => {
+		const openButton = toolbar.createEl("button", {
+			cls: "code-embed-open-btn",
+		});
+		openButton.addEventListener("click", (e) => {
 			e.preventDefault();
 			e.stopPropagation();
 			this.app.workspace.openLinkText(filePath, sourcePath);
 		});
-		setIcon(openButton, 'external-link');
-		openButton.setAttribute('aria-label', 'Open file');
-		
+		setIcon(openButton, "external-link");
+		openButton.setAttribute("aria-label", "Open file");
+
 		// 2.2 添加复制按钮
-		const langLabel = toolbar.createEl('button', { 
-			cls: 'code-block-flair', 
+		const langLabel = toolbar.createEl("button", {
+			cls: "code-block-flair",
 			text: language,
 			attr: {
-				'aria-label': '复制'
-			}
+				"aria-label": "复制",
+			},
 		});
-		langLabel.addEventListener('click', async (e) => {
+		langLabel.addEventListener("click", async (e) => {
 			e.preventDefault();
 			e.stopPropagation();
 			try {
 				await navigator.clipboard.writeText(content);
 				// 显示复制成功反馈
 				const originalText = langLabel.textContent;
-				langLabel.textContent = '已复制';
+				langLabel.textContent = "已复制";
 				setTimeout(() => {
 					langLabel.textContent = originalText;
 				}, 1500);
 			} catch (err) {
-				console.error('复制失败:', err);
+				console.error("复制失败:", err);
 			}
 		});
 
 		// 3. 创建代码包裹容器
-		const wrapper = container.createDiv({ cls: 'code-embed-wrapper' });
-	
+		const wrapper = container.createDiv({ cls: "code-embed-wrapper" });
+
 		// 4. 渲染代码内容
-		const markdownCodeBlock = '```' + language + '\n' + content + '\n```';
+		const markdownCodeBlock = "```" + language + "\n" + content + "\n```";
 		await MarkdownRenderer.render(
 			this.app,
 			markdownCodeBlock,
@@ -87,6 +99,4 @@ export class CodeEmbedProcessor extends FileProcessor {
 
 		return container;
 	}
-
 }
-

@@ -1,7 +1,4 @@
-import { App, TFile, MarkdownView, Plugin } from 'obsidian';
-import { EditorView, ViewPlugin, ViewUpdate, PluginValue } from '@codemirror/view';
-
-
+import { App, TFile } from "obsidian";
 
 export abstract class FileProcessor {
 	app: App;
@@ -24,7 +21,12 @@ export abstract class FileProcessor {
 	 * filePath: 文件路径
 	 * sourcePath: 源文件路径
 	 */
-	abstract render(data: any, targetElement: HTMLElement, filePath: string, sourcePath: string): Promise<HTMLElement>;
+	abstract render(
+		data: any,
+		targetElement: HTMLElement,
+		filePath: string,
+		sourcePath: string
+	): Promise<HTMLElement>;
 
 	/**
 	 * 抽象内容处理方法：负责对文件原始字符串进行初步处理
@@ -37,8 +39,14 @@ export abstract class FileProcessor {
 	 * filePath: 文件路径
 	 * sourcePath: 源文件路径
 	 */
-	async readFile(filePath: string, sourcePath: string): Promise<string | null> {
-		const file = this.app.metadataCache.getFirstLinkpathDest(filePath, sourcePath);
+	async readFile(
+		filePath: string,
+		sourcePath: string
+	): Promise<string | null> {
+		const file = this.app.metadataCache.getFirstLinkpathDest(
+			filePath,
+			sourcePath
+		);
 		if (file instanceof TFile) {
 			return await this.app.vault.read(file);
 		}
@@ -52,43 +60,52 @@ export abstract class FileProcessor {
 	 * sourcePath: 源文件路径
 	 * 返回值表示是否成功处理文件
 	 */
-	async processFile(filePath: string, targetElement: HTMLElement, sourcePath: string): Promise<boolean> {
+	async processFile(
+		filePath: string,
+		targetElement: HTMLElement,
+		sourcePath: string
+	): Promise<boolean> {
 		try {
 			// 0. 阻止 Obsidian 默认嵌入处理
-			targetElement.setAttribute('data-code-link-handled', 'true');
-			targetElement.style.display = 'block';
-			
+			targetElement.setAttribute("data-code-link-handled", "true");
+			targetElement.style.display = "block";
 
-			
 			// 1. 显示加载状态
 			targetElement.empty();
-			targetElement.createDiv({ cls: 'code-link-loading', text: 'Loading...' });
-			
+			targetElement.createDiv({
+				cls: "code-link-loading",
+				text: "Loading...",
+			});
 
 			const content = await this.readFile(filePath, sourcePath);
-			
+
 			if (content !== null) {
 				const processedData = this.processContent(content);
-				
+
 				// 2. 清空并在目标容器内渲染（不使用 replaceWith，避免破坏 CodeMirror DOM 管理）
 				targetElement.empty();
-				const result = await this.render(processedData, targetElement, filePath, sourcePath);
+				const result = await this.render(
+					processedData,
+					targetElement,
+					filePath,
+					sourcePath
+				);
 				if (result) {
 					// 从渲染的结果当中添加阻止事件冒泡
-					result.addEventListener('click', (e: MouseEvent) => {
+					result.addEventListener("click", (e: MouseEvent) => {
 						const target = e.target as HTMLElement;
-						
+
 						// 如果点击的是按钮或按钮内部元素，直接返回，让按钮自己处理
-						if (target.closest('button')) {
+						if (target.closest("button")) {
 							e.stopPropagation();
 							return;
 						}
-						
+
 						// 否则阻止 .internal-embed 的默认跳转
 						e.preventDefault();
 						e.stopPropagation();
 					});
-					
+
 					targetElement.appendChild(result);
 
 					return true;
@@ -96,7 +113,6 @@ export abstract class FileProcessor {
 			} else {
 			}
 			return false;
-			
 		} catch (error) {
 			return false;
 		}
