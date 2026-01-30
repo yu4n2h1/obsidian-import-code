@@ -95,11 +95,5 @@ npm run build
 npm run lint
 ```
 
-## License
-
-MIT
 
 
-# 当前仍然存在的问题
-
-- 使用命令创建文件之后，会一直显示在加载中 
