@@ -3,6 +3,7 @@ import {
 	MarkdownPostProcessorContext,
 	MarkdownView,
 	TFile,
+	TAbstractFile,
 	Editor,
 	App
 } from "obsidian";
@@ -12,7 +13,6 @@ import {
 	importCodeSettingsTab,
 } from "./settings";
 import { FileProcessor } from "./file-processor";
-import { CSVProcessor } from "./csv-processor";
 import { CodeEmbedProcessor } from "./code-embed-processor";
 import { getLanguageFromPath, isExtensionSupported, debounce } from "./utils";
 import { EditorView, ViewPlugin } from "@codemirror/view";
@@ -21,7 +21,7 @@ import { FileModal } from "./modal";
 export default class importCode extends Plugin {
 	// 值为fileProcessor的map
 	fileProcessorMap: Map<string, FileProcessor> = new Map();
-	settings: PluginSettings;
+	settings: PluginSettings = DEFAULT_SETTINGS;
 	
 	/* 
 	 * 根据文件路径获取处理器
@@ -29,10 +29,8 @@ export default class importCode extends Plugin {
 	 * @returns 处理器
 	 */
 	private getProcessor(filePath: string): FileProcessor | undefined {
-		const [extension, language] = getLanguageFromPath(filePath);
-		if (this.settings.csvCodeView === "enabled" && language === "csv") {
-			return this.fileProcessorMap.get("csv");
-		} else if (
+		const [extension] = getLanguageFromPath(filePath);
+		if (
 			this.settings.codeEmbedEnabled === "enabled" &&
 			isExtensionSupported(this.settings, extension)
 		) {
@@ -91,7 +89,6 @@ export default class importCode extends Plugin {
 		/* 
 		 * 无论设置如何都应该初始化处理器，因为用户有可能挂载后再打开
 		 */
-		this.fileProcessorMap.set("csv", new CSVProcessor(this.app, this.settings));
 		this.fileProcessorMap.set("code", new CodeEmbedProcessor(this.app, this.settings, this));
 	}
 
@@ -198,7 +195,9 @@ export default class importCode extends Plugin {
 		);
 
 		// 注册文件修改监听（300ms 防抖）
-		const handleFileModify = debounce((file: TFile) => {
+		const handleFileModify = debounce((file: TAbstractFile) => {
+			// 只处理文件，跳过文件夹
+			if (!(file instanceof TFile)) return;
 			const filePath = file.path;
 			const fileName = file.name;
 
@@ -221,16 +220,11 @@ export default class importCode extends Plugin {
 							src === fileName ||
 							filePath.endsWith(src)
 						) {
-							const [extension, language] =
+							const [extension] =
 								getLanguageFromPath(src);
 
 							let processor: FileProcessor | undefined;
 							if (
-								this.settings.csvCodeView === "enabled" &&
-								language === "csv"
-							) {
-								processor = this.fileProcessorMap.get("csv");
-							} else if (
 								this.settings.codeEmbedEnabled === "enabled" &&
 								isExtensionSupported(this.settings, extension)
 							) {
@@ -310,17 +304,14 @@ function processEmbeds(
 		const src = embed.getAttribute("src");
 		if (!src) continue;
 
-		const [extension, language] = getLanguageFromPath(src);
-
+		const [extension] = getLanguageFromPath(src);
+		
 		// 根据文件类型选择处理器
 		let processor: FileProcessor | undefined;
-		if (fileProcessorMap.has("csv") && language === "csv") {
-			processor = fileProcessorMap.get("csv");
-		} else if (
+		if (
 			settings.codeEmbedEnabled === "enabled" &&
 			isExtensionSupported(settings, extension)
 		) {
-			// 其他已知代码文件类型使用 code 处理器
 			processor = fileProcessorMap.get("code");
 		}
 		const activeView = app.workspace.getActiveViewOfType(MarkdownView);

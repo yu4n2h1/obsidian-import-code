@@ -47,7 +47,6 @@ const EXTENSION_TO_LANGUAGE: Record<string, string> = {
 	svelte: "svelte",
 	jsx: "jsx",
 	tsx: "tsx",
-	csv: "csv",
 };
 
 // Get the language identifier for a file path

@@ -1,10 +1,6 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import importCode from "./main";
 
-export interface CSVCodeViewSettings {
-	csvCodeView: string;
-}
-
 export interface CodeEmbedSettings {
 	codeEmbedEnabled: string;
 	codeFileExtensions: string;
@@ -20,12 +16,10 @@ export interface FileStorageSettings {
 }
 
 export interface PluginSettings
-	extends CSVCodeViewSettings,
-		CodeEmbedSettings,
+	extends CodeEmbedSettings,
 		FileStorageSettings {}
 
 export const DEFAULT_SETTINGS: PluginSettings = {
-	csvCodeView: "enabled",
 	codeEmbedEnabled: "enabled",
 	codeFileExtensions:
 		"js,ts,py,java,c,cpp,go,rs,rb,php,sh,sql,html,css,json,yaml,xml",
@@ -45,23 +39,6 @@ export class importCodeSettingsTab extends PluginSettingTab {
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
-
-		// CSV Table View Setting
-		containerEl.createEl("h3", { text: "CSV Table View" });
-
-		new Setting(containerEl)
-			.setName("Enable CSV Table View")
-			.setDesc("将内部链接引用的 CSV 文件渲染为表格")
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.csvCodeView === "enabled")
-					.onChange(async (value: boolean) => {
-						this.plugin.settings.csvCodeView = value
-							? "enabled"
-							: "disabled";
-						await this.plugin.saveSettings();
-					})
-			);
 
 		// Code Embed Setting
 		containerEl.createEl("h3", { text: "Code Embed" });
@@ -106,8 +83,8 @@ export class importCodeSettingsTab extends PluginSettingTab {
 					.addOption("absolute", "根目录指定位置")
 					.addOption("relative", "相对当前文档位置")
 					.setValue(this.plugin.settings.storagePathType)
-					.onChange(async (value: "absolute" | "relative") => {
-						this.plugin.settings.storagePathType = value;
+					.onChange(async (value) => {
+						this.plugin.settings.storagePathType = value as "absolute" | "relative";
 						await this.plugin.saveSettings();
 						this.display();
 					})

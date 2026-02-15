@@ -29,7 +29,6 @@ export class FileModal extends Modal {
 	private fileExt: string = "txt";
 	private customFileName: string = ""; // 用户自定义文件名（不含扩展名）
 	private generatedFileName: string = "";
-	private fileNameInput: HTMLInputElement;
 	private onSubmit: (filePath: string, content: string) => void;
 
 	constructor(
@@ -73,7 +72,6 @@ export class FileModal extends Modal {
 			.setName("文件名")
 			.setDesc("留空则基于内容 MD5 自动生成")
 			.addText((text) => {
-				this.fileNameInput = text.inputEl;
 				text.setPlaceholder("留空自动生成");
 				text.inputEl.style.width = "300px";
 				text.onChange((value) => {
