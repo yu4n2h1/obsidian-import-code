@@ -41,10 +41,10 @@ export class importCodeSettingsTab extends PluginSettingTab {
 		containerEl.empty();
 
 		// Code Embed Setting
-		containerEl.createEl("h3", { text: "Code Embed" });
+		new Setting(containerEl).setName("Code embed").setHeading();
 
 		new Setting(containerEl)
-			.setName("Enable Code Embed")
+			.setName("Enable code embed")
 			.setDesc("将内部链接引用的代码文件渲染为代码块")
 			.addToggle((toggle) =>
 				toggle
@@ -60,10 +60,11 @@ export class importCodeSettingsTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Supported File Extensions")
+			.setName("Supported file extensions")
 			.setDesc("支持的代码文件后缀名，用逗号分隔（如：js,ts,py,java）")
 			.addText((text) =>
 				text
+					// eslint-disable-next-line obsidianmd/ui/sentence-case
 					.setPlaceholder("js,ts,py,java,c,cpp")
 					.setValue(this.plugin.settings.codeFileExtensions)
 					.onChange(async (value: string) => {
@@ -73,10 +74,10 @@ export class importCodeSettingsTab extends PluginSettingTab {
 			);
 
 		// File Storage Settings
-		containerEl.createEl("h3", { text: "File Storage" });
+		new Setting(containerEl).setName("File storage").setHeading();
 
 		new Setting(containerEl)
-			.setName("Storage Path Type")
+			.setName("Storage path type")
 			.setDesc("选择文件存储路径类型")
 			.addDropdown((dropdown) =>
 				dropdown
@@ -92,13 +93,15 @@ export class importCodeSettingsTab extends PluginSettingTab {
 
 		if (this.plugin.settings.storagePathType === "absolute") {
 			new Setting(containerEl)
-				.setName("Absolute Storage Path")
+				.setName("Absolute storage path")
 				.setDesc(
+					// eslint-disable-next-line obsidianmd/ui/sentence-case
 					"相对于 Vault 根目录的存储路径（如：attachments/code）"
 				)
 				.addText((text) =>
 					text
-						.setPlaceholder("attachments")
+						// eslint-disable-next-line obsidianmd/ui/sentence-case
+						.setPlaceholder("E.g. attachments")
 						.setValue(this.plugin.settings.absoluteStoragePath)
 						.onChange(async (value: string) => {
 							this.plugin.settings.absoluteStoragePath = value;
@@ -107,7 +110,7 @@ export class importCodeSettingsTab extends PluginSettingTab {
 				);
 		} else {
 			new Setting(containerEl)
-				.setName("Relative Storage Path")
+				.setName("Relative storage path")
 				.setDesc(
 					"相对于当前文档的存储路径（如：./assets 或 ../shared）"
 				)

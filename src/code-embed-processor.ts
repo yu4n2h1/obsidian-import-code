@@ -19,7 +19,7 @@ export class CodeEmbedProcessor extends FileProcessor {
 	 * 构造函数
 	 */
 	constructor(app: App, settings: CodeEmbedSettings, plugin: Component) {
-		super(app, settings);
+		super(app, settings as unknown as Record<string, unknown>);
 		this.plugin = plugin;
 	}
 
@@ -39,7 +39,7 @@ export class CodeEmbedProcessor extends FileProcessor {
 		filePath: string,
 		sourcePath: string
 	): Promise<HTMLElement> {
-		const [_, language] = getLanguageFromPath(filePath);
+		const [, language] = getLanguageFromPath(filePath);
 
 		// 1. 创建新的主容器
 		const container = document.createElement("div");
@@ -55,7 +55,7 @@ export class CodeEmbedProcessor extends FileProcessor {
 		openButton.addEventListener("click", (e) => {
 			e.preventDefault();
 			e.stopPropagation();
-			this.app.workspace.openLinkText(filePath, sourcePath);
+			void this.app.workspace.openLinkText(filePath, sourcePath);
 		});
 		setIcon(openButton, "external-link");
 		openButton.setAttribute("aria-label", "Open file");
@@ -68,20 +68,22 @@ export class CodeEmbedProcessor extends FileProcessor {
 				"aria-label": "复制",
 			},
 		});
-		langLabel.addEventListener("click", async (e) => {
+		langLabel.addEventListener("click", (e) => {
 			e.preventDefault();
 			e.stopPropagation();
-			try {
-				await navigator.clipboard.writeText(content);
-				// 显示复制成功反馈
-				const originalText = langLabel.textContent;
-				langLabel.textContent = "已复制";
-				setTimeout(() => {
-					langLabel.textContent = originalText;
-				}, 1500);
-			} catch (err) {
-				console.error("复制失败:", err);
-			}
+			void (async () => {
+				try {
+					await navigator.clipboard.writeText(content);
+					// 显示复制成功反馈
+					const originalText = langLabel.textContent;
+					langLabel.textContent = "已复制";
+					setTimeout(() => {
+						langLabel.textContent = originalText;
+					}, 1500);
+				} catch (err) {
+					console.error("复制失败:", err);
+				}
+			})();
 		});
 
 		// 3. 创建代码包裹容器

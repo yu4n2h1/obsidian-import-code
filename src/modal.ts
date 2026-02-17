@@ -73,7 +73,7 @@ export class FileModal extends Modal {
 			.setDesc("留空则基于内容 MD5 自动生成")
 			.addText((text) => {
 				text.setPlaceholder("留空自动生成");
-				text.inputEl.style.width = "300px";
+				text.inputEl.addClass("file-name-input");
 				text.onChange((value) => {
 					this.customFileName = value.trim();
 					this.updateFileNameDisplay();
@@ -100,24 +100,16 @@ export class FileModal extends Modal {
 				rows: "10",
 			},
 		});
-		textarea.style.width = "100%";
-		textarea.style.minHeight = "200px";
-		textarea.style.fontFamily = "monospace";
-		textarea.style.resize = "vertical";
 
-		textarea.addEventListener("input", async () => {
+		textarea.addEventListener("input", () => {
 			this.fileContent = textarea.value;
-			await this.updateFileNameFromContent();
+			void this.updateFileNameFromContent();
 		});
 
 		// 按钮容器
 		const buttonContainer = contentEl.createEl("div", {
 			cls: "modal-button-container",
 		});
-		buttonContainer.style.display = "flex";
-		buttonContainer.style.justifyContent = "flex-end";
-		buttonContainer.style.gap = "10px";
-		buttonContainer.style.marginTop = "20px";
 
 		// 取消按钮
 		const cancelBtn = buttonContainer.createEl("button", { text: "取消" });
@@ -130,8 +122,8 @@ export class FileModal extends Modal {
 			text: "创建文件",
 			cls: "mod-cta",
 		});
-		confirmBtn.addEventListener("click", async () => {
-			await this.handleSubmit();
+		confirmBtn.addEventListener("click", () => {
+			void this.handleSubmit();
 		});
 	}
 
@@ -263,8 +255,9 @@ export class FileModal extends Modal {
 			const linkPath = this.getLinkPath(fullPath);
 			this.onSubmit(linkPath, this.fileContent);
 			this.close();
-		} catch (error) {
-			new Notice(`创建文件失败: ${error}`);
+		} catch (error: unknown) {
+			const message = error instanceof Error ? error.message : String(error);
+			new Notice(`创建文件失败: ${message}`);
 		}
 	}
 

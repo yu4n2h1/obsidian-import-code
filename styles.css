@@ -301,6 +301,30 @@
 	display: none !important;
 }
 
+/* File Modal Styles */
+.file-modal .file-content-input {
+	width: 100%;
+	min-height: 200px;
+	font-family: var(--font-monospace);
+	resize: vertical;
+}
+
+.file-modal .modal-button-container {
+	display: flex;
+	justify-content: flex-end;
+	gap: 10px;
+	margin-top: 20px;
+}
+
+.file-modal .setting-item .file-name-input {
+	width: 300px;
+}
+
+/* Code link block display */
+.code-link-block {
+	display: block;
+}
+
 /* 修正 .code-block-flair 在编辑模式下的样式，重置 Obsidian 默认样式 */
 .markdown-source-view.mod-cm6 .code-embed-container .code-block-flair {
 	position: static;

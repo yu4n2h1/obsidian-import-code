@@ -44,10 +44,11 @@ export default class importCode extends Plugin {
 	 */
 	async loadSettings() {
 		// 从data.js当中读取并加载配置
+		const loadedData = (await this.loadData()) as Partial<PluginSettings> | null;
 		this.settings = Object.assign(
 			{},
 			DEFAULT_SETTINGS,
-			await this.loadData()
+			loadedData ?? {}
 		);
 	}
 
@@ -74,8 +75,8 @@ export default class importCode extends Plugin {
 
 				// 强制重新渲染
 				const state = leaf.getViewState();
-				leaf.setViewState({ type: "empty" }).then(() => {
-					leaf.setViewState(state);
+				void leaf.setViewState({ type: "empty" }).then(() => {
+					void leaf.setViewState(state);
 				});
 			}
 		});
@@ -236,7 +237,7 @@ export default class importCode extends Plugin {
 									(leaf.view as MarkdownView).file?.path ||
 									"";
 								embedEl.empty();
-								processor.processFile(src, embedEl, sourcePath);
+								void processor.processFile(src, embedEl, sourcePath);
 							}
 						}
 					});
@@ -247,8 +248,8 @@ export default class importCode extends Plugin {
 		this.registerEvent(this.app.vault.on("modify", handleFileModify));
 	}
 
-	async onunload() {
-		console.log("Unloading importCode plugin");
+	onunload() {
+		console.debug("Unloading importCode plugin");
 
 		// 1. 清空处理器映射
 		this.fileProcessorMap.clear();
@@ -279,8 +280,8 @@ export default class importCode extends Plugin {
 		this.app.workspace.iterateAllLeaves((leaf) => {
 			if (leaf.view instanceof MarkdownView) {
 				const state = leaf.getViewState();
-				leaf.setViewState({ type: "empty" }).then(() => {
-					leaf.setViewState(state);
+				void leaf.setViewState({ type: "empty" }).then(() => {
+					void leaf.setViewState(state);
 				});
 			}
 		});
@@ -321,7 +322,7 @@ function processEmbeds(
 			embed.classList.add("code-link-processed");
 			// 立即清空防止 Obsidian 默认内容显示
 			embed.empty();
-			processor.processFile(src, embed, sourcePath);
+			void processor.processFile(src, embed, sourcePath);
 		}
 	}
 }

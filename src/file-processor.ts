@@ -2,14 +2,14 @@ import { App, TFile } from "obsidian";
 
 export abstract class FileProcessor {
 	app: App;
-	settings: any;
+	protected settings: Record<string, unknown>;
 
 	/*
 	 * 构造函数
 	 * app: Obsidian 应用实例
 	 * settings: 插件设置
 	 */
-	constructor(app: App, settings: any) {
+	constructor(app: App, settings: Record<string, unknown>) {
 		this.app = app;
 		this.settings = settings;
 	}
@@ -22,7 +22,7 @@ export abstract class FileProcessor {
 	 * sourcePath: 源文件路径
 	 */
 	abstract render(
-		data: any,
+		data: unknown,
 		targetElement: HTMLElement,
 		filePath: string,
 		sourcePath: string
@@ -32,7 +32,7 @@ export abstract class FileProcessor {
 	 * 抽象内容处理方法：负责对文件原始字符串进行初步处理
 	 * content: 文件原始字符串
 	 */
-	abstract processContent(content: string): any;
+	abstract processContent(content: string): unknown;
 
 	/**
 	 * 异步读取文件内容
@@ -68,7 +68,7 @@ export abstract class FileProcessor {
 		try {
 			// 0. 阻止 Obsidian 默认嵌入处理
 			targetElement.setAttribute("data-code-link-handled", "true");
-			targetElement.style.display = "block";
+			targetElement.addClass("code-link-block");
 
 			// 1. 显示加载状态
 			targetElement.empty();
@@ -80,7 +80,7 @@ export abstract class FileProcessor {
 			const content = await this.readFile(filePath, sourcePath);
 
 			if (content !== null) {
-				const processedData = this.processContent(content);
+				const processedData: unknown = this.processContent(content);
 
 				// 2. 清空并在目标容器内渲染（不使用 replaceWith，避免破坏 CodeMirror DOM 管理）
 				targetElement.empty();
@@ -110,10 +110,9 @@ export abstract class FileProcessor {
 
 					return true;
 				}
-			} else {
 			}
 			return false;
-		} catch (error) {
+		} catch {
 			return false;
 		}
 	}
