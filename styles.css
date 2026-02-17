@@ -81,6 +81,8 @@
 .code-embed-wrapper pre code {
 	font-size: var(--code-size) !important;
 	font-family: var(--font-monospace) !important;
+	min-height: calc(3 * 1.5em);
+	display: block;
 }
 
 /* Code Embed Toolbar */
@@ -173,6 +175,8 @@
 .markdown-source-view.mod-cm6 .code-embed-wrapper pre code {
 	font-size: var(--code-size) !important;
 	font-family: var(--font-monospace) !important;
+	min-height: calc(3 * 1.5em);
+	display: block;
 }
 
 /* 编辑模式下的工具栏 */

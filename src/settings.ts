@@ -13,6 +13,8 @@ export interface FileStorageSettings {
 	absoluteStoragePath: string;
 	// 相对位置的路径
 	relativeStoragePath: string;
+	// 文件名生成策略: 'md5' 基于内容MD5哈希, 'content' 直接使用用户输入内容
+	fileNameStrategy: "md5" | "content";
 }
 
 export interface PluginSettings
@@ -26,6 +28,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	storagePathType: "absolute",
 	absoluteStoragePath: "assets",
 	relativeStoragePath: "./",
+	fileNameStrategy: "md5",
 };
 
 export class importCodeSettingsTab extends PluginSettingTab {
@@ -124,5 +127,20 @@ export class importCodeSettingsTab extends PluginSettingTab {
 						})
 				);
 		}
+
+		// File name strategy
+		new Setting(containerEl)
+			.setName("File name strategy")
+			.setDesc("选择文件名生成策略")
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption("md5", "MD5哈希（用户输入作为链接显示文本）")
+					.addOption("content", "直接使用输入内容作为文件名")
+					.setValue(this.plugin.settings.fileNameStrategy)
+					.onChange(async (value) => {
+						this.plugin.settings.fileNameStrategy = value as "md5" | "content";
+						await this.plugin.saveSettings();
+					})
+			);
 	}
 }

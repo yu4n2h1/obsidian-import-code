@@ -108,7 +108,7 @@ export default class importCode extends Plugin {
 		const insertCodeCallback = (editor: Editor) => {
 			new FileModal(this.app, this.settings, (filePath: string) => {
 				const fileName = filePath.split("/").pop() || filePath;
-				const link = `![${fileName}](${filePath})`;
+				const link = `![[${filePath}|${fileName}]]`;
 				editor.replaceSelection(link);
 			}).open();
 		};
