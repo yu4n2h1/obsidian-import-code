@@ -1,4 +1,4 @@
-import { App, TFile } from "obsidian";
+import { App, TFile, requestUrl } from "obsidian";
 
 export abstract class FileProcessor {
 	app: App;
@@ -36,13 +36,25 @@ export abstract class FileProcessor {
 
 	/**
 	 * 异步读取文件内容
-	 * filePath: 文件路径
+	 * filePath: 文件路径或网络 URL
 	 * sourcePath: 源文件路径
 	 */
 	async readFile(
 		filePath: string,
 		sourcePath: string
 	): Promise<string | null> {
+		// 检测是否为网络 URL
+		if (filePath.startsWith("https://") || filePath.startsWith("http://")) {
+			try {
+				const response = await requestUrl({ url: filePath });
+				return response.text;
+			} catch (err) {
+				console.error(`Error fetching ${filePath}:`, err);
+				return null;
+			}
+		}
+
+		// 本地文件读取
 		const file = this.app.metadataCache.getFirstLinkpathDest(
 			filePath,
 			sourcePath
@@ -50,6 +62,7 @@ export abstract class FileProcessor {
 		if (file instanceof TFile) {
 			return await this.app.vault.read(file);
 		}
+		
 		return null;
 	}
 
