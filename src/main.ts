@@ -14,13 +14,23 @@ import {
 } from "./settings";
 import { FileProcessor } from "./file-processor";
 import { CodeEmbedProcessor } from "./code-embed-processor";
+
+function processEmbedElement(
+	embed: HTMLElement,
+	src: string,
+	processor: CodeEmbedProcessor,
+	sourcePath: string
+): void {
+	embed.classList.add("code-link-processed");
+	embed.empty();
+	void processor.processFile(src, embed, sourcePath);
+}
 import { getLanguageFromPath, isExtensionSupported, debounce } from "./utils";
 import { EditorView, ViewPlugin } from "@codemirror/view";
 import { FileModal } from "./modal";
 
 export default class importCode extends Plugin {
-	// 值为fileProcessor的map
-	fileProcessorMap: Map<string, FileProcessor> = new Map();
+	codeProcessor!: CodeEmbedProcessor;
 	settings: PluginSettings = DEFAULT_SETTINGS;
 	
 	/* 
@@ -28,13 +38,13 @@ export default class importCode extends Plugin {
 	 * @param filePath 文件路径
 	 * @returns 处理器
 	 */
-	private getProcessor(filePath: string): FileProcessor | undefined {
+	private getProcessor(filePath: string): CodeEmbedProcessor | undefined {
 		const [extension] = getLanguageFromPath(filePath);
 		if (
 			this.settings.codeEmbedEnabled === "enabled" &&
 			isExtensionSupported(this.settings, extension)
 		) {
-			return this.fileProcessorMap.get("code");
+			return this.codeProcessor;
 		}
 		return undefined;
 	}
@@ -86,11 +96,7 @@ export default class importCode extends Plugin {
 	 * 根据设置初始化处理器
 	 */
 	initProcessors() {
-		this.fileProcessorMap.clear();
-		/* 
-		 * 无论设置如何都应该初始化处理器，因为用户有可能挂载后再打开
-		 */
-		this.fileProcessorMap.set("code", new CodeEmbedProcessor(this.app, this.settings, this));
+		this.codeProcessor = new CodeEmbedProcessor(this.app, this.settings, this);
 	}
 
 	/**
@@ -107,8 +113,16 @@ export default class importCode extends Plugin {
 		// 注册创建代码文件命令
 		const insertCodeCallback = (editor: Editor) => {
 			new FileModal(this.app, this.settings, (filePath: string) => {
-				const fileName = filePath.split("/").pop() || filePath;
-				const link = `![[${filePath}|${fileName}]]`;
+				// If the returned path already contains an alias ("|") we
+				// shouldn't append another one. The modal may include a
+				// display name for MD5 strategy, e.g. "foo.txt|测试".
+				let link: string;
+				if (filePath.includes("|")) {
+					link = `![[${filePath}]]`;
+				} else {
+					const fileName = filePath.split("/").pop() || filePath;
+					link = `![[${filePath}|${fileName}]]`;
+				}
 				editor.replaceSelection(link);
 			}).open();
 		};
@@ -166,7 +180,7 @@ export default class importCode extends Plugin {
 					() =>
 						processEmbeds(
 							view,
-							this.fileProcessorMap,
+							this.codeProcessor,
 							this.settings,
 							this.app
 						),
@@ -180,7 +194,7 @@ export default class importCode extends Plugin {
 								() =>
 									processEmbeds(
 										view,
-										this.fileProcessorMap,
+										this.codeProcessor,
 										this.settings,
 										this.app
 									),
@@ -221,23 +235,12 @@ export default class importCode extends Plugin {
 							src === fileName ||
 							filePath.endsWith(src)
 						) {
-							const [extension] =
-								getLanguageFromPath(src);
-
-							let processor: FileProcessor | undefined;
-							if (
-								this.settings.codeEmbedEnabled === "enabled" &&
-								isExtensionSupported(this.settings, extension)
-							) {
-								processor = this.fileProcessorMap.get("code");
-							}
-
+							const processor = this.getProcessor(src);
 							if (processor) {
 								const sourcePath =
 									(leaf.view as MarkdownView).file?.path ||
 									"";
-								embedEl.empty();
-								void processor.processFile(src, embedEl, sourcePath);
+								processEmbedElement(embedEl, src, processor, sourcePath);
 							}
 						}
 					});
@@ -251,10 +254,7 @@ export default class importCode extends Plugin {
 	onunload() {
 		console.debug("Unloading importCode plugin");
 
-		// 1. 清空处理器映射
-		this.fileProcessorMap.clear();
-
-		// 2. 清除所有已处理嵌入元素的标记和自定义内容
+		// 1. 清除所有已处理嵌入元素的标记和自定义内容
 		this.app.workspace.iterateAllLeaves((leaf) => {
 			if (leaf.view instanceof MarkdownView) {
 				const container = leaf.view.containerEl;

@@ -1,67 +1,9 @@
-/* CSV Table Styles */
-.csv-table-container table {
-	border-collapse: collapse;
-	width: 100%;
-	margin: 1em 0;
-}
-
-.csv-table-container td,
-.csv-table-container th {
-	border: 1px solid var(--background-modifier-border);
-	padding: 8px 12px;
-	text-align: left;
-}
-
-.csv-table-container tr:nth-child(even) {
-	background-color: var(--background-secondary);
-}
-
-.csv-table-container tr:first-child {
-	background-color: var(--background-modifier-hover);
-	font-weight: bold;
-}
-
-/* CSV Open Button */
-.csv-table-container {
-	position: relative;
-	pointer-events: auto;
-}
-
-.csv-open-btn {
-	position: absolute;
-	top: 0;
-	right: 0;
-	padding: 4px 8px;
-	font-size: 0.85em;
-	color: var(--text-muted);
-	background-color: var(--background-modifier-border);
-	border-bottom-left-radius: 4px;
-	cursor: pointer;
-	z-index: 2;
-	transition: all 0.15s ease;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	pointer-events: auto;
-}
-
-.csv-open-btn:hover {
-	color: var(--text-normal);
-	background-color: var(--background-modifier-hover);
-}
-
-.csv-open-btn svg {
-	width: 14px;
-	height: 14px;
-}
-
 /* Code Embed Container */
 .code-embed-container {
 	position: relative;
 	margin: 1em 0;
 	border-radius: 6px;
 	overflow: hidden;
-	background-color: var(--background-secondary);
 	text-align: left;
 	pointer-events: auto;
 }
@@ -79,10 +21,11 @@
 }
 
 .code-embed-wrapper pre code {
-	font-size: var(--code-size) !important;
+	font-size: var(--font-smaller) !important;
 	font-family: var(--font-monospace) !important;
 	min-height: calc(3 * 1.5em);
 	display: block;
+	white-space: pre !important;
 }
 
 /* Code Embed Toolbar */
@@ -94,7 +37,7 @@
 	flex-direction: row;
 	z-index: 10;
 	pointer-events: auto;
-	background-color: rgba(255, 255, 255, 0.05);
+
 	border-bottom-left-radius: 8px;
 	overflow: hidden;
 }
@@ -107,10 +50,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	font-size: 11px;
-	font-weight: 600;
-	color: var(--text-muted);
-	background: transparent !important;
+	background: var(--code-bracket-background);
 	transition: all 0.2s ease;
 	cursor: pointer;
 	border: none !important;
@@ -118,18 +58,12 @@
 }
 
 .code-embed-container .code-embed-open-btn + .code-block-flair {
-	border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
+	border-left: 2px solid rgba(255, 255, 255, 0.1) !important;
 }
 
 .code-embed-container .code-block-flair {
 	text-transform: uppercase;
 	letter-spacing: 1px;
-}
-
-.code-embed-container .code-embed-open-btn:hover,
-.code-embed-container .code-block-flair:hover {
-	background-color: rgba(255, 255, 255, 0.1) !important;
-	color: var(--text-normal);
 }
 
 .code-embed-container .code-embed-open-btn svg {
@@ -154,7 +88,6 @@
 	margin: 0;
 	border-radius: 6px;
 	overflow: hidden;
-	background-color: var(--background-secondary);
 	text-align: left;
 	pointer-events: auto;
 }
@@ -173,7 +106,7 @@
 }
 
 .markdown-source-view.mod-cm6 .code-embed-wrapper pre code {
-	font-size: var(--code-size) !important;
+	
 	font-family: var(--font-monospace) !important;
 	min-height: calc(3 * 1.5em);
 	display: block;
@@ -188,7 +121,6 @@
 	flex-direction: row;
 	z-index: 10;
 	pointer-events: auto;
-	background-color: rgba(255, 255, 255, 0.05);
 	border-bottom-left-radius: 8px;
 	overflow: hidden;
 }
@@ -201,24 +133,15 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	font-size: 11px;
-	font-weight: 600;
-	color: var(--text-muted);
-	background: transparent !important;
 	transition: all 0.2s ease;
 	cursor: pointer;
 	border: none !important;
 }
 
 .markdown-source-view.mod-cm6 .code-embed-container .code-embed-open-btn + .code-block-flair {
-	border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
+	border-left: 2px solid rgba(255, 255, 255, 0.1) !important;
 }
 
-.markdown-source-view.mod-cm6 .code-embed-container .code-embed-open-btn:hover,
-.markdown-source-view.mod-cm6 .code-embed-container .code-block-flair:hover {
-	background-color: rgba(255, 255, 255, 0.1) !important;
-	color: var(--text-normal);
-}
 
 .markdown-source-view.mod-cm6 .code-embed-container .code-embed-open-btn svg {
 	width: 14px;
@@ -226,63 +149,10 @@
 	opacity: 0.7;
 }
 
-/* 编辑模式下的 CSV 表格容器 */
-.markdown-source-view.mod-cm6 .csv-table-container {
-	position: relative;
-	pointer-events: auto;
-	margin: 0;
-}
-
-.markdown-source-view.mod-cm6 .csv-table-container table {
-	border-collapse: collapse;
-	width: 100%;
-}
-
-.markdown-source-view.mod-cm6 .csv-table-container td,
-.markdown-source-view.mod-cm6 .csv-table-container th {
-	border: 1px solid var(--background-modifier-border);
-	padding: 8px 12px;
-	text-align: left;
-}
-
-.markdown-source-view.mod-cm6 .csv-table-container tr:nth-child(even) {
-	background-color: var(--background-secondary);
-}
-
-.markdown-source-view.mod-cm6 .csv-table-container tr:first-child {
-	background-color: var(--background-modifier-hover);
-	font-weight: bold;
-}
-
-.markdown-source-view.mod-cm6 .csv-open-btn {
-	position: absolute;
-	top: 0;
-	right: 0;
-	padding: 4px 8px;
-	font-size: 0.85em;
-	color: var(--text-muted);
-	background-color: var(--background-modifier-border);
-	border-bottom-left-radius: 4px;
-	cursor: pointer;
-	z-index: 2;
-	transition: all 0.15s ease;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	pointer-events: auto;
-}
-
-.markdown-source-view.mod-cm6 .csv-open-btn:hover {
-	color: var(--text-normal);
-	background-color: var(--background-modifier-hover);
-}
 
 /* 编辑模式下的加载状态 */
 .markdown-source-view.mod-cm6 .code-link-loading {
 	padding: 12px 16px;
-	color: var(--text-muted);
-	font-size: 0.9em;
-	background-color: var(--background-secondary);
 	border-radius: 6px;
 }
 
@@ -351,3 +221,6 @@
 button.copy-code-button {
 	display: none !important;
 }
+
+
+

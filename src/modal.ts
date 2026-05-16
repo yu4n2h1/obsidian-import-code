@@ -11,7 +11,7 @@ import { PluginSettings } from "./settings";
 /**
  * 计算字符串的 MD5 哈希值
  */
-async function md5(content: string): Promise<string> {
+async function computeFileHash(content: string): Promise<string> {
 	const encoder = new TextEncoder();
 	const data = encoder.encode(content);
 	const hashBuffer = await crypto.subtle.digest("SHA-256", data);
@@ -27,9 +27,8 @@ export class FileModal extends Modal {
 	private settings: PluginSettings;
 	private fileContent: string = "";
 	private fileExt: string = "txt";
-	private userInput: string = ""; // 用户输入的内容（MD5策略作为显示文本，内容策略作为文件名）
+	private customFileName: string = ""; // 用户自定义文件名（不含扩展名）
 	private generatedFileName: string = "";
-	private displayName: string = ""; // 链接显示文本（仅MD5策略使用）
 	private onSubmit: (filePath: string, content: string) => void;
 
 	constructor(
@@ -68,20 +67,15 @@ export class FileModal extends Modal {
 				});
 			});
 
-		// 文件名/显示文本输入
-		const ismd5Strategy = this.settings.fileNameStrategy === "md5";
+		// 文件名输入（可编辑，空则自动生成MD5）
 		new Setting(contentEl)
-			.setName(ismd5Strategy ? "链接显示文本" : "文件名")
-			.setDesc(
-				ismd5Strategy
-					? "用于内部链接的显示文本（文件名基于内容MD5自动生成）"
-					: "输入文件名（不含扩展名）"
-			)
+			.setName("文件名")
+			.setDesc("留空则基于内容 MD5 自动生成")
 			.addText((text) => {
-				text.setPlaceholder(ismd5Strategy ? "可选显示文本" : "请输入文件名");
+				text.setPlaceholder("留空自动生成");
 				text.inputEl.addClass("file-name-input");
 				text.onChange((value) => {
-					this.userInput = value.trim();
+					this.customFileName = value.trim();
 					this.updateFileNameDisplay();
 				});
 			});
@@ -133,57 +127,32 @@ export class FileModal extends Modal {
 		});
 	}
 
-	// 根据内容更新文件名
+	// 根据内容更新 MD5 文件名（仅在用户未输入自定义名称时生效）
 	private async updateFileNameFromContent() {
-		if (this.settings.fileNameStrategy === "md5") {
-			// MD5策略：始终基于内容生成文件名
-			if (this.fileContent.trim()) {
-				const hash = await md5(this.fileContent);
-				this.generatedFileName = `${hash}.${this.fileExt}`;
-				this.displayName = this.userInput; // 用户输入作为显示文本
-			}
-		} else {
-			// 内容策略：仅在有用户输入时更新
-			if (this.userInput) {
-				this.generatedFileName = `${this.userInput}.${this.fileExt}`;
-				this.displayName = "";
-			}
+		if (!this.customFileName && this.fileContent.trim()) {
+			const hash = await computeFileHash(this.fileContent);
+			this.generatedFileName = `${hash}.${this.fileExt}`;
 		}
+		this.updateFileNameDisplay();
 	}
 
 	// 更新显示的文件名
 	private updateFileNameDisplay() {
-		if (this.settings.fileNameStrategy === "md5") {
-			// MD5策略：显示文本更新
-			this.displayName = this.userInput;
-		} else {
-			// 内容策略：用户输入作为文件名
-			if (this.userInput) {
-				this.generatedFileName = `${this.userInput}.${this.fileExt}`;
-			}
-			this.displayName = "";
+		if (this.customFileName) {
+			// 用户输入了自定义文件名
+			this.generatedFileName = `${this.customFileName}.${this.fileExt}`;
 		}
 	}
 
 	// 扩展名变化时更新文件名
 	private async updateFileName() {
-		if (this.settings.fileNameStrategy === "md5") {
-			// MD5策略：始终基于内容生成文件名
-			if (this.fileContent.trim()) {
-				const hash = await md5(this.fileContent);
-				this.generatedFileName = `${hash}.${this.fileExt}`;
-			} else {
-				this.generatedFileName = "";
-			}
-			this.displayName = this.userInput;
+		if (this.customFileName) {
+			this.generatedFileName = `${this.customFileName}.${this.fileExt}`;
+		} else if (this.fileContent.trim()) {
+			const hash = await computeFileHash(this.fileContent);
+			this.generatedFileName = `${hash}.${this.fileExt}`;
 		} else {
-			// 内容策略：用户输入作为文件名
-			if (this.userInput) {
-				this.generatedFileName = `${this.userInput}.${this.fileExt}`;
-			} else {
-				this.generatedFileName = "";
-			}
-			this.displayName = "";
+			this.generatedFileName = "";
 		}
 	}
 
@@ -232,40 +201,25 @@ export class FileModal extends Modal {
 
 	// 获取用于链接的路径（相对模式返回相对路径，绝对模式返回完整路径），证明目前无法自动处理末尾存在/的情况
 	private getLinkPath(fullPath: string): string {
-		let basePath: string;
 		if (this.settings.storagePathType === "relative") {
 			// 相对模式：返回相对于当前文档的路径
 			const relativePath = this.settings.relativeStoragePath;
 			if (relativePath === "./" || relativePath === ".") {
-				basePath = this.generatedFileName;
-			} else {
-				let linkPath = relativePath;
-				if (linkPath.startsWith("./")) {
-					linkPath = linkPath.slice(2);
-				}
-				basePath = `${linkPath}/${this.generatedFileName}`;
+				return this.generatedFileName;
 			}
-		} else {
-			// 绝对模式：返回完整路径
-			basePath = fullPath;
+			let linkPath = relativePath;
+			if (linkPath.startsWith("./")) {
+				linkPath = linkPath.slice(2);
+			}
+			return `${linkPath}/${this.generatedFileName}`;
 		}
-
-		// MD5策略且有显示文本时，添加别名格式
-		if (this.settings.fileNameStrategy === "md5" && this.displayName) {
-			return `${basePath}|${this.displayName}`;
-		}
-		return basePath;
+		// 绝对模式：返回完整路径
+		return fullPath;
 	}
 
 	private async handleSubmit() {
 		if (!this.fileContent.trim()) {
 			new Notice("请输入文件内容");
-			return;
-		}
-
-		// 内容策略时必须有用户输入的文件名
-		if (this.settings.fileNameStrategy === "content" && !this.userInput) {
-			new Notice("请输入文件名");
 			return;
 		}
 
