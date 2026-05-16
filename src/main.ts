@@ -12,7 +12,6 @@ import {
 	DEFAULT_SETTINGS,
 	importCodeSettingsTab,
 } from "./settings";
-import { FileProcessor } from "./file-processor";
 import { CodeEmbedProcessor } from "./code-embed-processor";
 
 function processEmbedElement(
@@ -276,7 +275,7 @@ export default class importCode extends Plugin {
 			}
 		});
 
-		// 3. 重新渲染所有已打开的 Markdown 视图，恢复默认状态
+		// 2. 重新渲染所有已打开的 Markdown 视图，恢复默认状态
 		this.app.workspace.iterateAllLeaves((leaf) => {
 			if (leaf.view instanceof MarkdownView) {
 				const state = leaf.getViewState();
@@ -290,7 +289,7 @@ export default class importCode extends Plugin {
 
 function processEmbeds(
 	view: EditorView,
-	fileProcessorMap: Map<string, FileProcessor>,
+	codeProcessor: CodeEmbedProcessor,
 	settings: PluginSettings,
 	app: App
 ) {
@@ -301,28 +300,19 @@ function processEmbeds(
 		// 跳过已处理的嵌入元素
 		if (embed.classList.contains("code-link-processed")) continue;
 
-		// 获取嵌入元素的 src 属性
 		const src = embed.getAttribute("src");
 		if (!src) continue;
 
 		const [extension] = getLanguageFromPath(src);
-		
-		// 根据文件类型选择处理器
-		let processor: FileProcessor | undefined;
 		if (
-			settings.codeEmbedEnabled === "enabled" &&
-			isExtensionSupported(settings, extension)
+			settings.codeEmbedEnabled !== "enabled" ||
+			!isExtensionSupported(settings, extension)
 		) {
-			processor = fileProcessorMap.get("code");
+			continue;
 		}
+
 		const activeView = app.workspace.getActiveViewOfType(MarkdownView);
 		const sourcePath = activeView?.file?.path || "";
-
-		if (processor) {
-			embed.classList.add("code-link-processed");
-			// 立即清空防止 Obsidian 默认内容显示
-			embed.empty();
-			void processor.processFile(src, embed, sourcePath);
-		}
+		processEmbedElement(embed, src, codeProcessor, sourcePath);
 	}
 }

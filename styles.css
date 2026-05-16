@@ -1,4 +1,5 @@
-/* Code Embed Container */
+/* === Base Styles (Reading + Editing Mode) === */
+
 .code-embed-container {
 	position: relative;
 	margin: 1em 0;
@@ -28,7 +29,7 @@
 	white-space: pre !important;
 }
 
-/* Code Embed Toolbar */
+/* Toolbar */
 .code-embed-container .code-embed-toolbar {
 	position: absolute;
 	top: 0;
@@ -37,7 +38,6 @@
 	flex-direction: row;
 	z-index: 10;
 	pointer-events: auto;
-
 	border-bottom-left-radius: 8px;
 	overflow: hidden;
 }
@@ -72,96 +72,34 @@
 	opacity: 0.7;
 }
 
-/* Editor View (Live Preview) Embed Styles */
-/* ========================================= */
+/* Code link block display */
+.code-link-block {
+	display: block;
+}
 
-/* 编辑模式下的 .internal-embed 容器 */
+/* Hide global copy button */
+button.copy-code-button {
+	display: none !important;
+}
+
+/* === Editor Mode Override Styles === */
+
 .markdown-source-view.mod-cm6 .internal-embed.code-link-processed {
 	display: block;
 	margin: 1em 0;
 	pointer-events: auto;
 }
 
-/* 编辑模式下的代码嵌入容器 - 与阅读模式保持一致 */
-.markdown-source-view.mod-cm6 .code-embed-container {
-	position: relative;
-	margin: 0;
-	border-radius: 6px;
-	overflow: hidden;
-	text-align: left;
-	pointer-events: auto;
+.markdown-source-view.mod-cm6 .internal-embed.code-link-processed[contenteditable="false"] {
+	cursor: default;
 }
 
-/* 编辑模式下的代码包裹器 */
-.markdown-source-view.mod-cm6 .code-embed-wrapper {
-	text-align: left;
-	width: 100%;
-}
-
-.markdown-source-view.mod-cm6 .code-embed-wrapper pre {
-	margin: 0;
-	border-radius: 0;
-	max-height: 500px;
-	overflow: auto;
-}
-
-.markdown-source-view.mod-cm6 .code-embed-wrapper pre code {
-	
-	font-family: var(--font-monospace) !important;
-	min-height: calc(3 * 1.5em);
-	display: block;
-}
-
-/* 编辑模式下的工具栏 */
-.markdown-source-view.mod-cm6 .code-embed-container .code-embed-toolbar {
-	position: absolute;
-	top: 0;
-	right: 0;
-	display: flex;
-	flex-direction: row;
-	z-index: 10;
-	pointer-events: auto;
-	border-bottom-left-radius: 8px;
-	overflow: hidden;
-}
-
-.markdown-source-view.mod-cm6 .code-embed-container .code-block-flair,
-.markdown-source-view.mod-cm6 .code-embed-container .code-embed-open-btn {
-	appearance: none;
-	height: 32px;
-	padding: 0 10px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	transition: all 0.2s ease;
-	cursor: pointer;
-	border: none !important;
-}
-
-.markdown-source-view.mod-cm6 .code-embed-container .code-embed-open-btn + .code-block-flair {
-	border-left: 2px solid rgba(255, 255, 255, 0.1) !important;
-}
-
-
-.markdown-source-view.mod-cm6 .code-embed-container .code-embed-open-btn svg {
-	width: 14px;
-	height: 14px;
-	opacity: 0.7;
-}
-
-
-/* 编辑模式下的加载状态 */
 .markdown-source-view.mod-cm6 .code-link-loading {
 	padding: 12px 16px;
 	border-radius: 6px;
 }
 
-/* 编辑模式下确保嵌入内容不可编辑但不影响整体编辑功能 */
-.markdown-source-view.mod-cm6 .internal-embed.code-link-processed[contenteditable="false"] {
-	cursor: default;
-}
-
-/* 允许代码内容区域的文本选择和复制 */
+/* Allow text selection in embeds */
 .markdown-source-view.mod-cm6 .code-embed-wrapper,
 .markdown-source-view.mod-cm6 .code-embed-wrapper pre,
 .markdown-source-view.mod-cm6 .code-embed-wrapper code {
@@ -170,12 +108,31 @@
 	cursor: text;
 }
 
-/* 隐藏复制按钮 */
+/* Hide Obsidian's built-in copy button in editor */
 .markdown-source-view.mod-cm6 button.copy-code-button {
 	display: none !important;
 }
 
-/* File Modal Styles */
+/* Reset Obsidian's default .code-block-flair styles in editor */
+.markdown-source-view.mod-cm6 .code-embed-container .code-block-flair {
+	position: static;
+	text-transform: uppercase;
+	border: none !important;
+	border-radius: 0 !important;
+	border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
+	box-shadow: none !important;
+	outline: none !important;
+}
+
+.markdown-source-view.mod-cm6 .code-embed-container .code-embed-open-btn {
+	border: none !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	outline: none !important;
+}
+
+/* === File Modal Styles === */
+
 .file-modal .file-content-input {
 	width: 100%;
 	min-height: 200px;
@@ -193,34 +150,3 @@
 .file-modal .setting-item .file-name-input {
 	width: 300px;
 }
-
-/* Code link block display */
-.code-link-block {
-	display: block;
-}
-
-/* 修正 .code-block-flair 在编辑模式下的样式，重置 Obsidian 默认样式 */
-.markdown-source-view.mod-cm6 .code-embed-container .code-block-flair {
-	position: static;
-	text-transform: uppercase;
-	border: none !important;
-	border-radius: 0 !important;
-	border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
-	box-shadow: none !important;
-	outline: none !important;
-}
-
-/* 确保编辑模式下的按钮也没有额外的边框和圆角 */
-.markdown-source-view.mod-cm6 .code-embed-container .code-embed-open-btn {
-	border: none !important;
-	border-radius: 0 !important;
-	box-shadow: none !important;
-	outline: none !important;
-}
-
-button.copy-code-button {
-	display: none !important;
-}
-
-
-
