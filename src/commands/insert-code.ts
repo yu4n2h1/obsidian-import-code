@@ -3,15 +3,13 @@ import { PluginSettings, EmbedLinkInfo, LastFileReference } from "../types";
 import { FileModal } from "../ui/modal";
 import { EditLinkModal } from "../ui/edit-link-modal";
 
-export interface LastFileRefStore {
-	loadLastFileReference(): Promise<LastFileReference | null>;
-	saveLastFileReference(ref: LastFileReference): Promise<void>;
-}
-
 export function createInsertCodeCallback(
 	app: App,
 	settings: PluginSettings,
-	refStore: LastFileRefStore
+	refStore: {
+		loadLastFileReference(): Promise<LastFileReference | null>;
+		saveLastFileReference(ref: LastFileReference): Promise<void>;
+	}
 ): (editor: Editor) => void {
 	return (editor: Editor) => {
 		new FileModal(app, settings, (info: EmbedLinkInfo) => {
@@ -39,7 +37,10 @@ export function createInsertCodeCallback(
 
 export function createEditLastCodeCallback(
 	app: App,
-	refStore: LastFileRefStore
+	refStore: {
+		loadLastFileReference(): Promise<LastFileReference | null>;
+		saveLastFileReference(ref: LastFileReference): Promise<void>;
+	}
 ): (editor: Editor) => void {
 	return async (editor: Editor) => {
 		const lastRef = await refStore.loadLastFileReference();

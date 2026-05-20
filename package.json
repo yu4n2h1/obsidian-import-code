@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-sample-plugin",
+	"name": "obsidian-import-code",
 	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"description": "Embed and render code files in Obsidian notes via ![[file.ext]] syntax with syntax highlighting",
 	"main": "main.js",
 	"type": "module",
 	"scripts": {

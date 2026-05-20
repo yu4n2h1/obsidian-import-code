@@ -8,15 +8,11 @@ import {
 import { PluginSettings, DEFAULT_SETTINGS, LastFileReference } from "./types";
 import { importCodeSettingsTab } from "./settings";
 import { CodeEmbedProcessor } from "./ui/code-embed";
-import { debounce } from "./utils/debounce";
-import { parseEmbedSource, isRemoteUrl } from "./utils/parse-embed-source";
-import { getLanguageFromPath } from "./utils/language";
-import { isExtensionSupported } from "./utils/settings-helpers";
-import { processEmbeds } from "./ui/embed-processor";
+import { debounce, parseEmbedSource } from "./utils/helpers";
 import { EditorView, ViewPlugin } from "@codemirror/view";
-import { createInsertCodeCallback, createEditLastCodeCallback, LastFileRefStore } from "./commands/insert-code";
+import { createInsertCodeCallback, createEditLastCodeCallback } from "./commands/insert-code";
 
-export default class importCode extends Plugin implements LastFileRefStore {
+export default class importCode extends Plugin {
 	codeProcessor!: CodeEmbedProcessor;
 	settings: PluginSettings = DEFAULT_SETTINGS;
 	private lastFileReference: LastFileReference | null = null;
@@ -37,17 +33,6 @@ export default class importCode extends Plugin implements LastFileRefStore {
 		}
 		await this.saveData(data);
 		this.initProcessors();
-		this.app.workspace.iterateAllLeaves((leaf) => {
-			if (leaf.view instanceof MarkdownView) {
-				const container = leaf.view.containerEl;
-				const embeds = container.querySelectorAll(".internal-embed.code-link-processed");
-				embeds.forEach((embed: Element) => {
-					embed.classList.remove("code-link-processed");
-					(embed as HTMLElement).removeAttribute("data-code-link-handled");
-				});
-			}
-		});
-		this.resetMarkdownViews();
 	}
 
 	initProcessors() {
@@ -77,19 +62,7 @@ export default class importCode extends Plugin implements LastFileRefStore {
 
 		this.addCommand({
 			id: "create-code-file",
-			name: "插入嵌入代码",
-			editorCallback: insertCodeCallback,
-		});
-
-		this.addCommand({
-			id: "insert-embed-code",
 			name: "Insert embed code",
-			editorCallback: insertCodeCallback,
-		});
-
-		this.addCommand({
-			id: "new-code-snippet",
-			name: "新建代码片段",
 			editorCallback: insertCodeCallback,
 		});
 
@@ -101,7 +74,7 @@ export default class importCode extends Plugin implements LastFileRefStore {
 
 		this.registerMarkdownPostProcessor(
 			(el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
-				processEmbeds(el, this.codeProcessor, this.settings, ctx.sourcePath);
+				this.codeProcessor.processEmbeds(el, ctx.sourcePath);
 			}
 		);
 
@@ -111,7 +84,7 @@ export default class importCode extends Plugin implements LastFileRefStore {
 				const sourcePath = markdownView?.file?.path || "";
 
 				setTimeout(
-					() => processEmbeds(view.dom, this.codeProcessor, this.settings, sourcePath),
+					() => this.codeProcessor.processEmbeds(view.dom, sourcePath),
 					50
 				);
 
@@ -121,7 +94,7 @@ export default class importCode extends Plugin implements LastFileRefStore {
 							const currentView = this.app.workspace.getActiveViewOfType(MarkdownView);
 							const currentSourcePath = currentView?.file?.path || "";
 							setTimeout(
-								() => processEmbeds(view.dom, this.codeProcessor, this.settings, currentSourcePath),
+								() => this.codeProcessor.processEmbeds(view.dom, currentSourcePath),
 								50
 							);
 						}
@@ -153,14 +126,7 @@ export default class importCode extends Plugin implements LastFileRefStore {
 							embedFilePath === fileName ||
 							filePath.endsWith(embedFilePath)
 						) {
-							if (this.settings.codeEmbedEnabled !== "enabled") return;
-
-							if (isRemoteUrl(embedFilePath)) {
-								if (this.settings.remoteCodeEmbedEnabled !== "enabled") return;
-							} else {
-								const [extension] = getLanguageFromPath(embedFilePath);
-								if (!isExtensionSupported(this.settings, extension)) return;
-							}
+							if (!this.codeProcessor.isProcessingAllowed(embedFilePath)) return;
 
 							const sourcePath = (leaf.view as MarkdownView).file?.path || "";
 							embedEl.classList.add("code-link-processed");
@@ -183,14 +149,8 @@ export default class importCode extends Plugin implements LastFileRefStore {
 	private resetMarkdownViews(): void {
 		this.app.workspace.iterateAllLeaves((leaf) => {
 			if (leaf.view instanceof MarkdownView) {
-				const state = leaf.getViewState();
-				leaf.setViewState({ type: "empty" }).then(() => {
-					leaf.setViewState(state).catch((err) => {
-						console.error("Failed to restore view state:", err);
-					});
-				}).catch((err) => {
-					console.error("Failed to clear view state:", err);
-				});
+				const state = leaf.view.getState();
+				leaf.view.setState(state, { history: false });
 			}
 		});
 	}
@@ -207,13 +167,9 @@ export default class importCode extends Plugin implements LastFileRefStore {
 					const embedEl = embed as HTMLElement;
 					embedEl.classList.remove("code-link-processed");
 					embedEl.removeAttribute("data-code-link-handled");
-					embedEl.removeAttribute("data-source-path");
-					embedEl.removeAttribute("data-embed-file");
 					embedEl.empty();
 				});
 			}
 		});
-
-		this.resetMarkdownViews();
 	}
 }
