@@ -300,3 +300,35 @@ export function extractSymbol(
 
 	return resultLines.join("\n");
 }
+
+/**
+ * 返回代码内容中第一个函数/类/方法的名称。
+ * 用于自动生成文件名（auto 策略）。
+ * 未找到时返回 null。
+ */
+export function extractFirstSymbolName(
+	content: string,
+	language: string
+): string | null {
+	const strategy = getStrategy(language);
+	const lines = content.split("\n");
+	const commentStripped = strategy === "braces" ? stripMultiLineComments(lines) : [];
+
+	for (let i = 0; i < lines.length; i++) {
+		if (commentStripped[i]) continue;
+		const line = lines[i];
+		if (!line) continue;
+		for (const pattern of DEF_PATTERNS) {
+			const match = pattern.regex.exec(line);
+			if (match && match[pattern.nameGroup]) {
+				// 排除关键字匹配（如 if/while/for/switch/catch/return 等）
+				const name = match[pattern.nameGroup]!;
+				if (/^(if|while|for|switch|catch|return|throw|new|delete|case|goto|using|namespace|include|import|export|try|else|do)$/.test(name)) {
+					continue;
+				}
+				return name;
+			}
+		}
+	}
+	return null;
+}

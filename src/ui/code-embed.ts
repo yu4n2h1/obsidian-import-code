@@ -6,10 +6,17 @@ import {
 	TFile,
 } from "obsidian";
 import { getLanguageFromPath } from "../utils/language";
-import { isRemoteUrl, parseLineRange } from "../utils/parse-embed-source";
+import {
+	isRemoteUrl,
+	isPartialIpv6Url,
+	tryRestoreIpv6Url,
+	parseEmbedSource,
+	parseLineRange,
+	isExtensionSupported,
+} from "../utils/helpers";
 import { CodeEmbedSettings } from "../types";
 import { extractSymbol, findSymbolLineRange } from "../utils/code-extractor";
-import { dispatchHttpRequest } from "../utils/https-module";
+import { readRemoteFile } from "../remote/remote-manager";
 
 export class CodeEmbedProcessor {
 	app: App;
@@ -22,18 +29,62 @@ export class CodeEmbedProcessor {
 		this.plugin = plugin;
 	}
 
+	/**
+	 * 检查是否允许处理指定的文件路径。
+	 * 统一入口，同时检查插件总开关、远程嵌入开关和支持的扩展名。
+	 */
+	isProcessingAllowed(filePath: string): boolean {
+		if (this.settings.codeEmbedEnabled !== "enabled") return false;
+		if (isRemoteUrl(filePath)) {
+			return this.settings.remoteCodeEmbedEnabled === "enabled";
+		}
+		const [extension] = getLanguageFromPath(filePath);
+		return isExtensionSupported(this.settings, extension);
+	}
+
+	/**
+	 * 遍历容器中的 .internal-embed 元素，对每个匹配的嵌入调用 processFile。
+	 * 处理 IPv6 URL 还原、设置检查和符号解析。
+	 */
+	processEmbeds(container: HTMLElement, sourcePath: string): void {
+		const embeds = container.querySelectorAll(".internal-embed");
+		for (let i = 0; i < embeds.length; i++) {
+			const embed = embeds[i] as HTMLElement;
+			if (embed.classList.contains("code-link-processed")) continue;
+
+			const src = embed.getAttribute("src");
+			if (!src) continue;
+
+			let { filePath, symbolName, highlightSpec } = parseEmbedSource(src);
+
+			if (isPartialIpv6Url(filePath)) {
+				const restored = tryRestoreIpv6Url(filePath, embed);
+				if (restored) {
+					filePath = restored;
+					const reparsed = parseEmbedSource(filePath);
+					symbolName = reparsed.symbolName;
+					highlightSpec = reparsed.highlightSpec;
+				}
+			}
+
+			if (!this.isProcessingAllowed(filePath)) continue;
+
+			embed.classList.add("code-link-processed");
+			embed.empty();
+			this.processFile(filePath, symbolName, embed, sourcePath, highlightSpec).catch((err) => {
+				console.error("processEmbeds failed:", err);
+				embed.setText(`Error: ${err instanceof Error ? err.message : String(err)}`);
+			});
+		}
+	}
+
 	async readFile(filePath: string, sourcePath: string): Promise<string | null> {
 		if (isRemoteUrl(filePath)) {
-			try {
-				const resp = await dispatchHttpRequest({
-					url: filePath,
-					skipSslVerify: this.settings.remoteSkipSslVerify,
-				});
-				return resp.text;
-			} catch (err) {
-				console.error(`Error fetching ${filePath}:`, err);
-				return null;
+			const content = await readRemoteFile(filePath, this.settings.remoteSkipSslVerify);
+			if (content === null) {
+				throw new Error("Failed to read remote file");
 			}
+			return content;
 		}
 
 		const file = this.app.metadataCache.getFirstLinkpathDest(filePath, sourcePath);

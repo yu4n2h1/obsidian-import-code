@@ -12,21 +12,10 @@ import {
 	RemoteServiceType,
 	RemoteServiceConfig,
 } from "../types";
-import { guessExtensionFromContent } from "../utils/language";
-import { uploadToRemote } from "../upload/upload-manager";
+import { guessExtensionFromContent, extractFirstSymbolName } from "../utils/language";
+import { uploadToRemote } from "../remote/remote-manager";
 import { SERVICE_LABELS } from "../utils/constants";
 import { buildRemoteConfigFields, RemoteConfigState } from "./remote-config-fields";
-
-async function computeFileHash(content: string): Promise<string> {
-	const encoder = new TextEncoder();
-	const data = encoder.encode(content);
-	const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-	const hashArray = Array.from(new Uint8Array(hashBuffer));
-	return hashArray
-		.slice(0, 16)
-		.map((b) => b.toString(16).padStart(2, "0"))
-		.join("");
-}
 
 export class FileModal extends Modal {
 	private settings: PluginSettings;
@@ -368,15 +357,69 @@ export class FileModal extends Modal {
 		}
 	}
 
-	private async updateFileName() {
-		if (this.customFileName) {
-			this.generatedFileName = `${this.customFileName}.${this.fileExt}`;
-		} else if (this.fileContent.trim()) {
-			const hash = await computeFileHash(this.fileContent);
-			this.generatedFileName = `${hash}.${this.fileExt}`;
-		} else {
-			this.generatedFileName = "";
+	/**
+	 * 计算文件内容的 SHA-256 哈希值，返回 16 位十六进制字符串。
+	 */
+	private async computeFileHash(content: string): Promise<string> {
+		const encoder = new TextEncoder();
+		const data = encoder.encode(content);
+		const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+		const hashArray = Array.from(new Uint8Array(hashBuffer));
+		return hashArray
+			.slice(0, 16)
+			.map((b) => b.toString(16).padStart(2, "0"))
+			.join("");
+	}
+
+	/**
+	 * 根据策略生成文件名。
+	 * - "hash": SHA-256 前 8 位
+	 * - "content"（或 "custom"）: 直接使用用户输入的名称
+	 * - "auto" / 其他回退: 提取第一个符号名并转换为 kebab-case，再回退到时间戳
+	 */
+	private async generateFileName(
+		content: string,
+		extension: string,
+		strategy: string,
+		customName: string
+	): Promise<string> {
+		if (strategy === "hash") {
+			const hash = await this.computeFileHash(content);
+			return `${hash.substring(0, 8)}.${extension}`;
 		}
+		if ((strategy === "content" || strategy === "custom") && customName.trim()) {
+			return customName.trim().endsWith(`.${extension}`)
+				? customName.trim()
+				: `${customName.trim()}.${extension}`;
+		}
+		// "auto" 模式（或 custom 策略但名称为空）
+		const symbolName = extractFirstSymbolName(content, extension);
+		if (symbolName) {
+			// 转换为 kebab-case: UserService -> user-service, getUserData -> get-user-data
+			const kebab = symbolName
+				.replace(/([a-z])([A-Z])/g, "$1-$2")
+				.replace(/([A-Z]+)([A-Z][a-z])/g, "$1-$2")
+				.replace(/[_]+/g, "-")
+				.toLowerCase();
+			return `${kebab}.${extension}`;
+		}
+		// 回退：时间戳名称
+		const now = new Date();
+		const ts = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
+		return `code-${ts}.${extension}`;
+	}
+
+	private async updateFileName() {
+		if (!this.fileContent.trim()) {
+			this.generatedFileName = "";
+			return;
+		}
+		this.generatedFileName = await this.generateFileName(
+			this.fileContent,
+			this.fileExt,
+			this.settings.fileNameStrategy,
+			this.customFileName
+		);
 	}
 
 	private getFullStoragePath(): string {
@@ -498,7 +541,12 @@ export class FileModal extends Modal {
 					return;
 				}
 
-				const remoteLinkPath = this.buildRemoteLinkPath(result.url);
+				// 内联 buildRemoteLinkPath：拼接 URL + @symbolName + #highlightSpec
+				const remoteParts: string[] = [result.url];
+				if (this.symbolName) remoteParts.push(`@${this.symbolName}`);
+				if (this.highlightSpec) remoteParts.push(`#${this.highlightSpec}`);
+				const remoteLinkPath = remoteParts.join("");
+
 				const info: EmbedLinkInfo = {
 					linkPath: remoteLinkPath,
 					displayName: this.getDisplayName(),
@@ -565,13 +613,6 @@ export class FileModal extends Modal {
 				error instanceof Error ? error.message : String(error);
 			new Notice(`创建文件失败: ${message}`);
 		}
-	}
-
-	private buildRemoteLinkPath(remoteUrl: string): string {
-		const parts: string[] = [remoteUrl];
-		if (this.symbolName) parts.push(`@${this.symbolName}`);
-		if (this.highlightSpec) parts.push(`#${this.highlightSpec}`);
-		return parts.join("");
 	}
 
 	onClose() {
