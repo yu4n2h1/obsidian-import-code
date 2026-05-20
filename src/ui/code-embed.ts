@@ -8,6 +8,8 @@ import {
 import { getLanguageFromPath } from "../utils/language";
 import {
 	isRemoteUrl,
+	isAliasPath,
+	parseAliasPath,
 	isPartialIpv6Url,
 	tryRestoreIpv6Url,
 	parseEmbedSource,
@@ -16,7 +18,7 @@ import {
 } from "../utils/helpers";
 import { CodeEmbedSettings } from "../types";
 import { extractSymbol, findSymbolLineRange } from "../utils/code-extractor";
-import { readRemoteFile } from "../remote/remote-manager";
+import { readRemoteFile, readFromService } from "../remote/remote-manager";
 
 export class CodeEmbedProcessor {
 	app: App;
@@ -35,7 +37,7 @@ export class CodeEmbedProcessor {
 	 */
 	isProcessingAllowed(filePath: string): boolean {
 		if (this.settings.codeEmbedEnabled !== "enabled") return false;
-		if (isRemoteUrl(filePath)) {
+		if (isRemoteUrl(filePath) || isAliasPath(filePath)) {
 			return this.settings.remoteCodeEmbedEnabled === "enabled";
 		}
 		const [extension] = getLanguageFromPath(filePath);
@@ -79,6 +81,24 @@ export class CodeEmbedProcessor {
 	}
 
 	async readFile(filePath: string, sourcePath: string): Promise<string | null> {
+		const aliasParsed = parseAliasPath(filePath);
+		if (aliasParsed) {
+			const sourceEntry = this.settings.remoteSources[aliasParsed.alias];
+			if (!sourceEntry) {
+				throw new Error(`Remote source alias "${aliasParsed.alias}" is not configured.`);
+			}
+			const result = await readFromService(
+				sourceEntry.serviceType,
+				sourceEntry.config,
+				aliasParsed.relativePath,
+				this.settings.remoteSkipSslVerify,
+			);
+			if (!result.success || result.content === undefined) {
+				throw new Error(result.error || `Failed to read "${aliasParsed.relativePath}" from "${aliasParsed.alias}".`);
+			}
+			return result.content;
+		}
+
 		if (isRemoteUrl(filePath)) {
 			const content = await readRemoteFile(filePath, this.settings.remoteSkipSslVerify);
 			if (content === null) {

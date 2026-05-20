@@ -1,6 +1,5 @@
 import { RemoteServiceConfig } from "../types";
-import { RemoteUploadResult, RemoteUploadOptions, RemoteReadResult } from "./types";
-import { uploadGitLike } from "./git-like-uploader";
+import { RemoteReadResult } from "./types";
 import { dispatchHttpRequest } from "./http-client";
 
 export const giteaService = {
@@ -16,22 +15,7 @@ export const giteaService = {
 			return { success: true, content: resp.text };
 		} catch (err) {
 			const message = err instanceof Error ? err.message : String(err);
-			return { success: false, error: `Gitea 读取失败: ${message}` };
+			return { success: false, error: `Gitea read failed: ${message}` };
 		}
-	},
-
-	async upload(options: RemoteUploadOptions): Promise<RemoteUploadResult> {
-		const baseUrl = options.config.url.replace(/\/+$/, "");
-		return uploadGitLike(
-			(repo, filePath) =>
-				`${baseUrl}/${repo}/contents/${filePath}`,
-			(cfg, filePath) => {
-				const repo = (cfg.repo || "").replace(/\/+$/, "");
-				const branch = cfg.branch || "main";
-				return `${baseUrl}/${repo}/raw/branch/${branch}/${filePath}`;
-			},
-			"POST",
-			options
-		);
 	},
 };

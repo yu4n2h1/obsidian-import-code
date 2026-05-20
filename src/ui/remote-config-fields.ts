@@ -17,6 +17,7 @@ function placeholderUrl(svc: RemoteServiceType): string {
 		case "gitlab": return "https://gitlab.com";
 		case "gitea": return "https://gitea.com";
 		case "github": return "https://api.github.com";
+		case "generic": return "https://example.com";
 	}
 }
 
@@ -39,7 +40,7 @@ export function buildRemoteConfigFields(
 	new Setting(container)
 		.setName(`${label} Token`)
 		.addText((text) => {
-			text.setPlaceholder("访问令牌");
+			text.setPlaceholder("Access token");
 			text.inputEl.type = "password";
 			text.setValue(state.token);
 			text.onChange((value) => onChange("token", value.trim()));
@@ -47,9 +48,9 @@ export function buildRemoteConfigFields(
 
 	if (serviceType === "webdav") {
 		new Setting(container)
-			.setName(`${label} 用户名`)
+			.setName(`${label} Username`)
 			.addText((text) => {
-				text.setPlaceholder("WebDAV 用户名（可选）");
+				text.setPlaceholder("WebDAV username (optional)");
 				text.setValue(state.username || "");
 				text.onChange((value) => onChange("username", value.trim()));
 			});
@@ -57,7 +58,7 @@ export function buildRemoteConfigFields(
 
 	if (serviceType === "github" || serviceType === "gitlab" || serviceType === "gitea") {
 		new Setting(container)
-			.setName(`${label} 仓库`)
+			.setName(`${label} Repository`)
 			.addText((text) => {
 				text.setPlaceholder("owner/repo");
 				text.setValue(state.repo || "");
@@ -65,7 +66,7 @@ export function buildRemoteConfigFields(
 			});
 
 		new Setting(container)
-			.setName(`${label} 分支`)
+			.setName(`${label} Branch`)
 			.addText((text) => {
 				text.setPlaceholder("main");
 				text.setValue(state.branch || "main");
@@ -74,7 +75,7 @@ export function buildRemoteConfigFields(
 	}
 
 	new Setting(container)
-		.setName(`${label} 上传路径`)
+		.setName(`${label} Upload path`)
 		.addText((text) => {
 			text.setPlaceholder("code-snippets");
 			text.setValue(state.uploadPath || "");

@@ -1,21 +1,23 @@
 import { RemoteServiceType, RemoteServiceConfig } from "../types";
-import { RemoteReadResult, RemoteUploadResult, RemoteUploadOptions, RemoteService } from "./types";
+import { RemoteReadResult, RemoteService } from "./types";
 import { dispatchHttpRequest } from "./http-client";
 import { githubService } from "./github";
 import { gitlabService } from "./gitlab";
 import { giteaService } from "./gitea";
 import { webdavService } from "./webdav";
+import { genericService } from "./generic";
 
 const services: Record<RemoteServiceType, RemoteService> = {
 	github: githubService,
 	gitlab: gitlabService,
 	gitea: giteaService,
 	webdav: webdavService,
+	generic: genericService,
 };
 
 /**
- * 从任意远程 URL 读取代码文件内容。
- * 返回文件内容字符串，失败时返回 null。
+ * Fetch file content from any remote URL.
+ * Returns file content string, or null on failure.
  */
 export async function readRemoteFile(
 	url: string,
@@ -31,7 +33,7 @@ export async function readRemoteFile(
 }
 
 /**
- * 从指定服务的仓库中读取文件。
+ * Read a file from a configured remote service.
  */
 export function readFromService(
 	serviceType: RemoteServiceType,
@@ -43,34 +45,8 @@ export function readFromService(
 	if (!service) {
 		return Promise.resolve({
 			success: false,
-			error: `不支持的服务类型: ${serviceType}`,
+			error: `Unsupported service type: ${serviceType}`,
 		});
 	}
 	return service.read(config, filePath, skipSslVerify);
-}
-
-/**
- * 上传文件到指定远程服务。
- */
-export function uploadToRemote(
-	serviceType: RemoteServiceType,
-	content: string,
-	fileName: string,
-	config: RemoteServiceConfig,
-	skipSslVerify: boolean = false
-): Promise<RemoteUploadResult> {
-	const service = services[serviceType];
-	if (!service) {
-		return Promise.resolve({
-			success: false,
-			error: `不支持的服务类型: ${serviceType}`,
-		});
-	}
-	const options: RemoteUploadOptions = {
-		content,
-		fileName,
-		config,
-		skipSslVerify,
-	};
-	return service.upload(options);
 }

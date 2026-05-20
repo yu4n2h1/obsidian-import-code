@@ -6,16 +6,8 @@ import {
 	MarkdownView,
 	normalizePath,
 } from "obsidian";
-import {
-	PluginSettings,
-	EmbedLinkInfo,
-	RemoteServiceType,
-	RemoteServiceConfig,
-} from "../types";
+import { PluginSettings, EmbedLinkInfo } from "../types";
 import { guessExtensionFromContent, extractFirstSymbolName } from "../utils/language";
-import { uploadToRemote } from "../remote/remote-manager";
-import { SERVICE_LABELS } from "../utils/constants";
-import { buildRemoteConfigFields, RemoteConfigState } from "./remote-config-fields";
 
 export class FileModal extends Modal {
 	private settings: PluginSettings;
@@ -31,21 +23,11 @@ export class FileModal extends Modal {
 	private highlightSpec: string = "";
 
 	// Editable storage path
-	private modalStoragePathType: "absolute" | "relative" | "remote";
+	private modalStoragePathType: "absolute" | "relative";
 	private modalAbsolutePath: string;
 	private modalRelativePath: string;
 
-	// Remote config
-	private remoteServiceType: RemoteServiceType = "github";
-	private remoteUrl: string = "";
-	private remoteToken: string = "";
-	private remoteUsername: string = "";
-	private remoteRepo: string = "";
-	private remoteBranch: string = "main";
-	private remoteUploadPath: string = "";
-
-	// Remote config UI containers (for show/hide)
-	private remoteConfigEl?: HTMLElement;
+	// Path UI
 	private pathInputEl?: HTMLElement;
 
 	private onSubmit: (info: EmbedLinkInfo) => void;
@@ -70,12 +52,12 @@ export class FileModal extends Modal {
 		contentEl.empty();
 		contentEl.addClass("file-modal");
 
-		contentEl.createEl("h2", { text: "创建代码文件" });
+		contentEl.createEl("h2", { text: "Create code file" });
 
 		// 1. File extension dropdown
 		new Setting(contentEl)
-			.setName("文件扩展名")
-			.setDesc("选择文件的扩展名")
+			.setName("File extension")
+			.setDesc("Select file extension")
 			.addDropdown((dropdown) => {
 				const extensions = this.settings.codeFileExtensions
 					.split(",")
@@ -94,10 +76,10 @@ export class FileModal extends Modal {
 
 		// 2. File name input
 		new Setting(contentEl)
-			.setName("文件名")
-			.setDesc("留空则基于内容 MD5 自动生成")
+			.setName("File name")
+			.setDesc("Leave empty to auto-generate from content hash")
 			.addText((text) => {
-				text.setPlaceholder("留空自动生成");
+				text.setPlaceholder("Auto-generated if empty");
 				text.inputEl.addClass("file-name-input");
 				text.onChange((value) => {
 					this.customFileName = value.trim();
@@ -106,32 +88,15 @@ export class FileModal extends Modal {
 			});
 
 		// 3. Storage path type dropdown
-		const configuredServices = Object.keys(
-			this.settings.remoteServices
-		) as RemoteServiceType[];
-		const hasRemoteServices = configuredServices.length > 0;
-
 		new Setting(contentEl)
-			.setName("存储路径类型")
-			.setDesc("选择文件存储方式")
+			.setName("Storage path type")
+			.setDesc("Choose file storage method")
 			.addDropdown((dropdown) => {
-				dropdown.addOption("absolute", "根目录");
-				dropdown.addOption("relative", "相对路径");
-				if (hasRemoteServices) {
-					dropdown.addOption("remote", "远程上传");
-				}
-				if (
-					this.modalStoragePathType === "remote" &&
-					!hasRemoteServices
-				) {
-					this.modalStoragePathType = "absolute";
-				}
+				dropdown.addOption("absolute", "Absolute (vault root)");
+				dropdown.addOption("relative", "Relative (current note)");
 				dropdown.setValue(this.modalStoragePathType);
 				dropdown.onChange((value) => {
-					this.modalStoragePathType = value as
-						| "absolute"
-						| "relative"
-						| "remote";
+					this.modalStoragePathType = value as "absolute" | "relative";
 					this.toggleStorageSections();
 				});
 			});
@@ -140,8 +105,8 @@ export class FileModal extends Modal {
 		this.pathInputEl = contentEl.createDiv({ cls: "storage-path-section" });
 
 		new Setting(this.pathInputEl)
-			.setName("根目录存储路径")
-			.setDesc("相对于 Vault 根目录的路径")
+			.setName("Absolute storage path")
+			.setDesc("Path relative to vault root")
 			.addText((text) => {
 				text.setPlaceholder("assets/code");
 				text.setValue(this.modalAbsolutePath);
@@ -150,9 +115,9 @@ export class FileModal extends Modal {
 				});
 			});
 
-		const relativePathSetting = new Setting(this.pathInputEl)
-			.setName("相对存储路径")
-			.setDesc("相对于当前文档的路径（./ 或 ../shared）")
+		new Setting(this.pathInputEl)
+			.setName("Relative storage path")
+			.setDesc("Path relative to current note (./ or ../shared)")
 			.addText((text) => {
 				text.setPlaceholder("./");
 				text.setValue(this.modalRelativePath);
@@ -168,47 +133,21 @@ export class FileModal extends Modal {
 			".setting-item:nth-child(2)"
 		) as HTMLElement;
 
-		// 5. Remote config section
-		this.remoteConfigEl = contentEl.createDiv({
-			cls: "remote-config-section",
-		});
-
-		new Setting(this.remoteConfigEl)
-			.setName("远程服务类型")
-			.addDropdown((dropdown) => {
-				for (const svc of configuredServices) {
-					dropdown.addOption(svc, SERVICE_LABELS[svc]);
-				}
-				if (!configuredServices.includes(this.remoteServiceType)) {
-					this.remoteServiceType =
-						configuredServices[0] || "github";
-				}
-				dropdown.setValue(this.remoteServiceType);
-				dropdown.onChange((value) => {
-					this.remoteServiceType = value as RemoteServiceType;
-					this.rebuildRemoteConfig();
-				});
-			});
-
-		const remoteFieldsEl = this.remoteConfigEl.createDiv({
-			cls: "remote-fields-container",
-		});
-
-		// 6. @ symbol input
+		// 5. @ symbol input
 		new Setting(contentEl)
-			.setName("符号 (@)")
-			.setDesc("提取指定函数/类/方法，或行范围如 10-30")
+			.setName("Symbol (@)")
+			.setDesc("Extract specific function/class/method, or line range e.g. 10-30")
 			.addText((text) => {
-				text.setPlaceholder("函数名 或 10-30");
+				text.setPlaceholder("functionName or 10-30");
 				text.onChange((value) => {
 					this.symbolName = value.trim();
 				});
 			});
 
-		// 7. # highlight input
+		// 6. # highlight input
 		new Setting(contentEl)
-			.setName("高亮 (#)")
-			.setDesc("高亮指定行，如 L5-L10")
+			.setName("Highlight (#)")
+			.setDesc("Highlight specific lines, e.g. L5-L10")
 			.addText((text) => {
 				text.setPlaceholder("L5-L10");
 				text.onChange((value) => {
@@ -216,11 +155,11 @@ export class FileModal extends Modal {
 				});
 			});
 
-		// 8. File content textarea
+		// 7. File content textarea
 		const contentLabel = contentEl.createEl("div", { cls: "setting-item" });
 		contentLabel
 			.createEl("div", { cls: "setting-item-info" })
-			.createEl("div", { cls: "setting-item-name", text: "文件内容" });
+			.createEl("div", { cls: "setting-item-name", text: "File content" });
 
 		const textareaContainer = contentEl.createEl("div", {
 			cls: "file-content-container",
@@ -228,7 +167,7 @@ export class FileModal extends Modal {
 		const textarea = textareaContainer.createEl("textarea", {
 			cls: "file-content-input",
 			attr: {
-				placeholder: "在此输入文件内容...",
+				placeholder: "Enter file content...",
 				rows: "10",
 			},
 		});
@@ -241,18 +180,18 @@ export class FileModal extends Modal {
 			void this.updateFileName();
 		});
 
-		// 9. Buttons
+		// 8. Buttons
 		const buttonContainer = contentEl.createEl("div", {
 			cls: "modal-button-container",
 		});
 
-		const cancelBtn = buttonContainer.createEl("button", { text: "取消" });
+		const cancelBtn = buttonContainer.createEl("button", { text: "Cancel" });
 		cancelBtn.addEventListener("click", () => {
 			this.close();
 		});
 
 		const confirmBtn = buttonContainer.createEl("button", {
-			text: "创建文件",
+			text: "Create file",
 			cls: "mod-cta",
 		});
 		confirmBtn.addEventListener("click", () => {
@@ -261,29 +200,21 @@ export class FileModal extends Modal {
 
 		// Setup visibility based on initial state
 		const setVisibility = () => {
-			const isRemote = this.modalStoragePathType === "remote";
 			const isAbsolute = this.modalStoragePathType === "absolute";
 
 			if (this.pathInputEl) {
-				this.pathInputEl.style.display = isRemote ? "none" : "block";
+				this.pathInputEl.style.display = "block";
 			}
 			if (absoluteRow) {
-				absoluteRow.style.display = isAbsolute && !isRemote ? "" : "none";
+				absoluteRow.style.display = isAbsolute ? "" : "none";
 			}
 			if (relativeRow) {
-				relativeRow.style.display =
-					!isAbsolute && !isRemote ? "" : "none";
-			}
-			if (this.remoteConfigEl) {
-				this.remoteConfigEl.style.display = isRemote ? "block" : "none";
+				relativeRow.style.display = !isAbsolute ? "" : "none";
 			}
 		};
 
 		this.toggleStorageSections = () => setVisibility();
 		setVisibility();
-
-		// Build initial remote fields
-		this.rebuildRemoteConfig(remoteFieldsEl);
 
 		// Clipboard auto-fill
 		try {
@@ -295,53 +226,12 @@ export class FileModal extends Modal {
 				void this.updateFileName();
 			}
 		} catch {
-			// 剪贴板读取失败，静默跳过
+			// Clipboard read failed, silently skip
 		}
 	}
 
 	private toggleStorageSections(): void {
 		// Overridden in onOpen with closure over local DOM elements
-	}
-
-	private rebuildRemoteConfig(container?: HTMLElement): void {
-		const target =
-			container ||
-			this.remoteConfigEl?.querySelector(
-				".remote-fields-container"
-			) as HTMLElement;
-		if (!target) return;
-
-		const svc = this.remoteServiceType;
-		const savedConfig = this.settings.remoteServices[svc];
-		if (savedConfig) {
-			if (!this.remoteUrl) this.remoteUrl = savedConfig.url || "";
-			if (!this.remoteUsername) this.remoteUsername = savedConfig.username || "";
-			if (!this.remoteRepo) this.remoteRepo = savedConfig.repo || "";
-			if (!this.remoteBranch || this.remoteBranch === "main") this.remoteBranch = savedConfig.branch || "main";
-			if (!this.remoteUploadPath) this.remoteUploadPath = savedConfig.uploadPath || "";
-		}
-
-		target.empty();
-
-		const state: RemoteConfigState = {
-			url: this.remoteUrl,
-			token: this.remoteToken,
-			username: this.remoteUsername,
-			repo: this.remoteRepo,
-			branch: this.remoteBranch,
-			uploadPath: this.remoteUploadPath,
-		};
-
-		buildRemoteConfigFields(target, svc, state, (key, value) => {
-			switch (key) {
-				case "url": this.remoteUrl = value; break;
-				case "token": this.remoteToken = value; break;
-				case "username": this.remoteUsername = value; break;
-				case "repo": this.remoteRepo = value; break;
-				case "branch": this.remoteBranch = value; break;
-				case "uploadPath": this.remoteUploadPath = value; break;
-			}
-		});
 	}
 
 	private guessAndSetExtension(): void {
@@ -357,9 +247,6 @@ export class FileModal extends Modal {
 		}
 	}
 
-	/**
-	 * 计算文件内容的 SHA-256 哈希值，返回 16 位十六进制字符串。
-	 */
 	private async computeFileHash(content: string): Promise<string> {
 		const encoder = new TextEncoder();
 		const data = encoder.encode(content);
@@ -371,12 +258,6 @@ export class FileModal extends Modal {
 			.join("");
 	}
 
-	/**
-	 * 根据策略生成文件名。
-	 * - "hash": SHA-256 前 8 位
-	 * - "content"（或 "custom"）: 直接使用用户输入的名称
-	 * - "auto" / 其他回退: 提取第一个符号名并转换为 kebab-case，再回退到时间戳
-	 */
 	private async generateFileName(
 		content: string,
 		extension: string,
@@ -392,10 +273,9 @@ export class FileModal extends Modal {
 				? customName.trim()
 				: `${customName.trim()}.${extension}`;
 		}
-		// "auto" 模式（或 custom 策略但名称为空）
+		// "auto" mode (or custom strategy with empty name)
 		const symbolName = extractFirstSymbolName(content, extension);
 		if (symbolName) {
-			// 转换为 kebab-case: UserService -> user-service, getUserData -> get-user-data
 			const kebab = symbolName
 				.replace(/([a-z])([A-Z])/g, "$1-$2")
 				.replace(/([A-Z]+)([A-Z][a-z])/g, "$1-$2")
@@ -403,7 +283,7 @@ export class FileModal extends Modal {
 				.toLowerCase();
 			return `${kebab}.${extension}`;
 		}
-		// 回退：时间戳名称
+		// Fallback: timestamp name
 		const now = new Date();
 		const ts = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
 		return `code-${ts}.${extension}`;
@@ -486,20 +366,9 @@ export class FileModal extends Modal {
 		return name;
 	}
 
-	private getRemoteConfig(): RemoteServiceConfig {
-		return {
-			url: this.remoteUrl,
-			token: this.remoteToken,
-			username: this.remoteUsername || undefined,
-			repo: this.remoteRepo || undefined,
-			branch: this.remoteBranch || "main",
-			uploadPath: this.remoteUploadPath || undefined,
-		};
-	}
-
 	private async handleSubmit() {
 		if (!this.fileContent.trim()) {
-			new Notice("请输入文件内容");
+			new Notice("Please enter file content");
 			return;
 		}
 
@@ -507,72 +376,6 @@ export class FileModal extends Modal {
 			await this.updateFileName();
 		}
 
-		// Remote upload branch
-		if (this.modalStoragePathType === "remote") {
-			if (!this.remoteUrl.trim() || !this.remoteToken.trim()) {
-				new Notice("请填写远程服务的 URL 和 Token");
-				return;
-			}
-
-			const confirmBtn = this.contentEl.querySelector(
-				".mod-cta"
-			) as HTMLButtonElement;
-			if (confirmBtn) {
-				confirmBtn.disabled = true;
-				confirmBtn.textContent = "上传中...";
-			}
-
-			try {
-				const config = this.getRemoteConfig();
-				const result = await uploadToRemote(
-					this.remoteServiceType,
-					this.fileContent,
-					this.generatedFileName,
-					config,
-					this.settings.remoteSkipSslVerify
-				);
-
-				if (!result.success || !result.url) {
-					new Notice(result.error || "远程上传失败");
-					if (confirmBtn) {
-						confirmBtn.disabled = false;
-						confirmBtn.textContent = "创建文件";
-					}
-					return;
-				}
-
-				// 内联 buildRemoteLinkPath：拼接 URL + @symbolName + #highlightSpec
-				const remoteParts: string[] = [result.url];
-				if (this.symbolName) remoteParts.push(`@${this.symbolName}`);
-				if (this.highlightSpec) remoteParts.push(`#${this.highlightSpec}`);
-				const remoteLinkPath = remoteParts.join("");
-
-				const info: EmbedLinkInfo = {
-					linkPath: remoteLinkPath,
-					displayName: this.getDisplayName(),
-					content: this.fileContent,
-					isRemote: true,
-					extension: this.fileExt,
-					symbolName: this.symbolName,
-					highlightSpec: this.highlightSpec,
-					storagePathType: "remote",
-					storagePath: result.url,
-				};
-				this.onSubmit(info);
-				this.close();
-			} catch (err) {
-				const message =
-					err instanceof Error ? err.message : String(err);
-				new Notice(`远程上传失败: ${message}`);
-				if (confirmBtn) {
-					confirmBtn.disabled = false;
-					confirmBtn.textContent = "创建文件";
-				}
-			}
-			return;
-		}
-
-		// Local file branch
 		const storagePath = this.getFullStoragePath();
 		const fullPath = normalizePath(
 			`${storagePath}/${this.generatedFileName}`
@@ -588,10 +391,10 @@ export class FileModal extends Modal {
 			}
 
 			if (await this.app.vault.adapter.exists(fullPath)) {
-				new Notice(`文件已存在: ${fullPath}`);
+				new Notice(`File already exists: ${fullPath}`);
 			} else {
 				await this.app.vault.create(fullPath, this.fileContent);
-				new Notice(`文件已创建: ${fullPath}`);
+				new Notice(`File created: ${fullPath}`);
 			}
 
 			const linkPath = this.getLinkPath(fullPath);
@@ -599,7 +402,6 @@ export class FileModal extends Modal {
 				linkPath,
 				displayName: this.getDisplayName(),
 				content: this.fileContent,
-				isRemote: false,
 				extension: this.fileExt,
 				symbolName: this.symbolName,
 				highlightSpec: this.highlightSpec,
@@ -611,7 +413,7 @@ export class FileModal extends Modal {
 		} catch (error: unknown) {
 			const message =
 				error instanceof Error ? error.message : String(error);
-			new Notice(`创建文件失败: ${message}`);
+			new Notice(`Failed to create file: ${message}`);
 		}
 	}
 

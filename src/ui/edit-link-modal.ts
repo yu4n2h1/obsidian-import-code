@@ -34,22 +34,20 @@ export class EditLinkModal extends Modal {
 		contentEl.empty();
 		contentEl.addClass("edit-link-modal");
 
-		contentEl.createEl("h2", { text: "再次引用代码文件" });
+		contentEl.createEl("h2", { text: "Reference code file again" });
 
 		// Read-only info section
 		const infoSection = contentEl.createDiv({ cls: "edit-link-info" });
 
 		const pathTypeLabel =
 			this.lastRef.storagePathType === "absolute"
-				? "根目录"
-				: this.lastRef.storagePathType === "relative"
-					? "相对路径"
-					: `远程上传 (${this.lastRef.remoteServiceType || ""})`;
+				? "Absolute (vault root)"
+				: "Relative (current note)";
 
-		this.createInfoRow(infoSection, "存储方式", pathTypeLabel);
-		this.createInfoRow(infoSection, "存储路径", this.lastRef.storagePath);
-		this.createInfoRow(infoSection, "文件名", `${this.lastRef.fileName}.${this.lastRef.extension}`);
-		this.createInfoRow(infoSection, "扩展名", `.${this.lastRef.extension}`);
+		this.createInfoRow(infoSection, "Storage method", pathTypeLabel);
+		this.createInfoRow(infoSection, "Storage path", this.lastRef.storagePath);
+		this.createInfoRow(infoSection, "File name", `${this.lastRef.fileName}.${this.lastRef.extension}`);
+		this.createInfoRow(infoSection, "Extension", `.${this.lastRef.extension}`);
 
 		// Rendered code block
 		const codeLabel = contentEl.createEl("div", { cls: "setting-item" });
@@ -57,7 +55,7 @@ export class EditLinkModal extends Modal {
 			.createEl("div", { cls: "setting-item-info" })
 			.createEl("div", {
 				cls: "setting-item-name",
-				text: "文件内容预览",
+				text: "File content preview",
 			});
 
 		const codeContainer = contentEl.createDiv({
@@ -80,10 +78,10 @@ export class EditLinkModal extends Modal {
 
 		// Editable @ symbol input
 		new Setting(contentEl)
-			.setName("符号 (@)")
-			.setDesc("提取指定函数/类/方法，或行范围如 10-30")
+			.setName("Symbol (@)")
+			.setDesc("Extract specific function/class/method, or line range e.g. 10-30")
 			.addText((text) => {
-				text.setPlaceholder("函数名 或 10-30");
+				text.setPlaceholder("functionName or 10-30");
 				text.setValue(this.symbolName);
 				text.onChange((value) => {
 					this.symbolName = value.trim();
@@ -93,8 +91,8 @@ export class EditLinkModal extends Modal {
 
 		// Editable # highlight input
 		new Setting(contentEl)
-			.setName("高亮 (#)")
-			.setDesc("高亮指定行，如 L5-L10")
+			.setName("Highlight (#)")
+			.setDesc("Highlight specific lines, e.g. L5-L10")
 			.addText((text) => {
 				text.setPlaceholder("L5-L10");
 				text.setValue(this.highlightSpec);
@@ -110,7 +108,7 @@ export class EditLinkModal extends Modal {
 		});
 		previewSection.createEl("div", {
 			cls: "setting-item-name",
-			text: "链接预览",
+			text: "Link preview",
 		});
 		this.linkPreviewEl = previewSection.createDiv({
 			cls: "link-preview-content",
@@ -122,13 +120,13 @@ export class EditLinkModal extends Modal {
 			cls: "modal-button-container",
 		});
 
-		const cancelBtn = buttonContainer.createEl("button", { text: "取消" });
+		const cancelBtn = buttonContainer.createEl("button", { text: "Cancel" });
 		cancelBtn.addEventListener("click", () => {
 			this.close();
 		});
 
 		const confirmBtn = buttonContainer.createEl("button", {
-			text: "插入引用",
+			text: "Insert reference",
 			cls: "mod-cta",
 		});
 		confirmBtn.addEventListener("click", () => {

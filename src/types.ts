@@ -3,16 +3,17 @@ export interface CodeEmbedSettings {
 	remoteCodeEmbedEnabled: "enabled" | "disabled";
 	remoteSkipSslVerify: boolean;
 	codeFileExtensions: string;
+	remoteSources: Record<string, RemoteSourceEntry>;
 }
 
 export interface FileStorageSettings {
-	storagePathType: "absolute" | "relative" | "remote";
+	storagePathType: "absolute" | "relative";
 	absoluteStoragePath: string;
 	relativeStoragePath: string;
 	fileNameStrategy: "hash" | "custom" | "auto";
 }
 
-export type RemoteServiceType = "webdav" | "github" | "gitlab" | "gitea";
+export type RemoteServiceType = "webdav" | "github" | "gitlab" | "gitea" | "generic";
 
 export interface RemoteServiceConfig {
 	url: string;
@@ -23,14 +24,14 @@ export interface RemoteServiceConfig {
 	uploadPath?: string;
 }
 
-export interface RemoteUploadSettings {
-	remoteServices: Partial<Record<RemoteServiceType, RemoteServiceConfig>>;
+export interface RemoteSourceEntry {
+	serviceType: RemoteServiceType;
+	config: RemoteServiceConfig;
 }
 
 export interface PluginSettings
 	extends CodeEmbedSettings,
-		FileStorageSettings,
-		RemoteUploadSettings {}
+		FileStorageSettings {}
 
 export const DEFAULT_SETTINGS: PluginSettings = {
 	codeEmbedEnabled: "enabled",
@@ -42,18 +43,17 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	absoluteStoragePath: "assets",
 	relativeStoragePath: "./",
 	fileNameStrategy: "hash",
-	remoteServices: {},
+	remoteSources: {},
 };
 
 export interface EmbedLinkInfo {
 	linkPath: string;
 	displayName: string;
 	content: string;
-	isRemote: boolean;
 	extension: string;
 	symbolName: string;
 	highlightSpec: string;
-	storagePathType: "absolute" | "relative" | "remote";
+	storagePathType: "absolute" | "relative";
 	storagePath: string;
 }
 
@@ -64,10 +64,8 @@ export interface LastFileReference {
 	extension: string;
 	symbolName: string;
 	highlightSpec: string;
-	storagePathType: "absolute" | "relative" | "remote";
+	storagePathType: "absolute" | "relative";
 	storagePath: string;
-	isRemote: boolean;
-	remoteServiceType?: RemoteServiceType;
 	timestamp: number;
 }
 

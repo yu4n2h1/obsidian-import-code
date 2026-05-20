@@ -34,6 +34,16 @@ export function isRemoteUrl(path: string): boolean {
 	return path.startsWith("https://") || path.startsWith("http://");
 }
 
+export function isAliasPath(path: string): boolean {
+	return /^[a-zA-Z0-9_-]+:(?!\/\/)/.test(path);
+}
+
+export function parseAliasPath(path: string): { alias: string; relativePath: string } | null {
+	const match = /^([a-zA-Z0-9_-]+):(?!\/\/)(.+)$/.exec(path);
+	if (!match || !match[1] || !match[2]) return null;
+	return { alias: match[1], relativePath: match[2] };
+}
+
 export function isPartialIpv6Url(path: string): boolean {
 	return isRemoteUrl(path) && path.includes("[") && !path.includes("]");
 }

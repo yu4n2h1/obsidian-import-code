@@ -2,25 +2,22 @@ import { RemoteServiceConfig } from "../types";
 import { RemoteReadResult } from "./types";
 import { dispatchHttpRequest } from "./http-client";
 
-function buildUrl(config: RemoteServiceConfig, fileName: string): string {
+function buildUrl(config: RemoteServiceConfig, filePath: string): string {
 	const base = config.url.replace(/\/+$/, "");
 	const uploadPath = (config.uploadPath || "").replace(/^\/+/, "").replace(/\/+$/, "");
 	if (uploadPath) {
-		return `${base}/${uploadPath}/${fileName}`;
+		return `${base}/${uploadPath}/${filePath}`;
 	}
-	return `${base}/${fileName}`;
+	return `${base}/${filePath}`;
 }
 
 function buildAuthHeader(config: RemoteServiceConfig): string | null {
 	if (!config.token) return null;
-	if (config.username) {
-		return "Basic " + btoa(`${config.username}:${config.token}`);
-	}
 	return `Bearer ${config.token}`;
 }
 
-export const webdavService = {
-	serviceType: "webdav" as const,
+export const genericService = {
+	serviceType: "generic" as const,
 
 	async read(config: RemoteServiceConfig, filePath: string, skipSslVerify: boolean): Promise<RemoteReadResult> {
 		try {
@@ -33,7 +30,7 @@ export const webdavService = {
 			return { success: true, content: resp.text };
 		} catch (err) {
 			const message = err instanceof Error ? err.message : String(err);
-			return { success: false, error: `WebDAV read failed: ${message}` };
+			return { success: false, error: `Generic read failed: ${message}` };
 		}
 	},
 };

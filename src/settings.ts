@@ -1,6 +1,5 @@
 import { App, Plugin, PluginSettingTab, Setting } from "obsidian";
-import { SettingsProvider, RemoteServiceType, RemoteServiceConfig } from "./types";
-import { SERVICE_LABELS } from "./utils/constants";
+import { SettingsProvider, RemoteServiceType } from "./types";
 import { buildRemoteConfigFields } from "./ui/remote-config-fields";
 
 export class importCodeSettingsTab extends PluginSettingTab {
@@ -16,7 +15,7 @@ export class importCodeSettingsTab extends PluginSettingTab {
 		containerEl.empty();
 		this.buildEmbedSection(containerEl);
 		this.buildStorageSection(containerEl);
-		this.buildRemoteSection(containerEl);
+		this.buildRemoteSourceSection(containerEl);
 	}
 
 	private buildEmbedSection(containerEl: HTMLElement): void {
@@ -25,7 +24,7 @@ export class importCodeSettingsTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Enable code embed")
-			.setDesc("将内部链接引用的代码文件渲染为代码块")
+			.setDesc("Render code files referenced by internal links as code blocks")
 			.addToggle((toggle) =>
 				toggle
 					.setValue(
@@ -41,7 +40,7 @@ export class importCodeSettingsTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Enable remote code embed")
-			.setDesc("允许嵌入远程URL（HTTP/HTTPS）的代码文件")
+			.setDesc("Allow embedding code files from remote URLs (HTTP/HTTPS)")
 			.addToggle((toggle) =>
 				toggle
 					.setValue(
@@ -57,7 +56,7 @@ export class importCodeSettingsTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Skip SSL certificate verification")
-			.setDesc("跳过HTTPS证书验证，允许访问自签名/过期/不安全证书的网站（仅桌面端）")
+			.setDesc("Skip HTTPS certificate validation, allowing self-signed/expired/insecure certificates (desktop only)")
 			.addToggle((toggle) =>
 				toggle
 					.setValue(this.plugin.settings.remoteSkipSslVerify)
@@ -69,7 +68,7 @@ export class importCodeSettingsTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Supported file extensions")
-			.setDesc("支持的代码文件后缀名，用逗号分隔（如：js,ts,py,java）")
+			.setDesc("Comma-separated list of supported code file extensions (e.g. js,ts,py,java)")
 			.addText((text) =>
 				text
 					// eslint-disable-next-line obsidianmd/ui/sentence-case
@@ -90,16 +89,15 @@ export class importCodeSettingsTab extends PluginSettingTab {
 
 		new Setting(wrapper)
 			.setName("Storage path type")
-			.setDesc("选择文件存储路径类型")
+			.setDesc("Choose the file storage path type")
 			.addDropdown((dropdown) =>
 				dropdown
-					.addOption("absolute", "根目录指定位置")
-					.addOption("relative", "相对当前文档位置")
+					.addOption("absolute", "Absolute (vault root)")
+					.addOption("relative", "Relative (current note)")
 					.setValue(this.plugin.settings.storagePathType)
 					.onChange(async (value) => {
-						this.plugin.settings.storagePathType = value as "absolute" | "relative" | "remote";
+						this.plugin.settings.storagePathType = value as "absolute" | "relative";
 						await this.plugin.saveSettings();
-						// Targeted rebuild — remove old wrapper and recreate storage section
 						const oldWrapper = containerEl.querySelector(".code-import-storage-section");
 						if (oldWrapper) {
 							oldWrapper.remove();
@@ -113,7 +111,7 @@ export class importCodeSettingsTab extends PluginSettingTab {
 				.setName("Absolute storage path")
 				.setDesc(
 					// eslint-disable-next-line obsidianmd/ui/sentence-case
-					"相对于 Vault 根目录的存储路径（如：attachments/code）"
+					"Storage path relative to the vault root (e.g. attachments/code)"
 				)
 				.addText((text) =>
 					text
@@ -129,7 +127,7 @@ export class importCodeSettingsTab extends PluginSettingTab {
 			new Setting(wrapper)
 				.setName("Relative storage path")
 				.setDesc(
-					"相对于当前文档的存储路径（如：./assets 或 ../shared）"
+					"Storage path relative to the current note (e.g. ./assets or ../shared)"
 				)
 				.addText((text) =>
 					text
@@ -145,12 +143,12 @@ export class importCodeSettingsTab extends PluginSettingTab {
 		// File name strategy
 		new Setting(wrapper)
 			.setName("File name strategy")
-			.setDesc("选择文件名生成策略")
+			.setDesc("Choose the file name generation strategy")
 			.addDropdown((dropdown) =>
 				dropdown
-					.addOption("auto", "自动（基于代码内容）")
-					.addOption("hash", "哈希（用户输入作为链接显示文本）")
-					.addOption("custom", "自定义文件名")
+					.addOption("auto", "Auto (based on code content)")
+					.addOption("hash", "Hash (user input as display text)")
+					.addOption("custom", "Custom file name")
 					.setValue(this.plugin.settings.fileNameStrategy)
 					.onChange(async (value) => {
 						this.plugin.settings.fileNameStrategy = value as "hash" | "custom" | "auto";
@@ -159,79 +157,120 @@ export class importCodeSettingsTab extends PluginSettingTab {
 			);
 	}
 
-	private buildRemoteSection(containerEl: HTMLElement): void {
-		const wrapper = containerEl.createDiv({ cls: "code-import-remote-section" });
+	private buildRemoteSourceSection(containerEl: HTMLElement): void {
+		const wrapper = containerEl.createDiv({ cls: "code-import-remote-source-section" });
 
-		// Remote Upload Settings
-		new Setting(wrapper).setName("远程上传").setHeading();
+		new Setting(wrapper).setName("Remote source aliases").setHeading();
 
-		for (const svc of ["webdav", "github", "gitlab", "gitea"] as RemoteServiceType[]) {
-			const label = SERVICE_LABELS[svc];
-			const config = this.plugin.settings.remoteServices[svc];
+		const entries = Object.entries(this.plugin.settings.remoteSources);
 
-			new Setting(wrapper)
-				.setName(label)
-				.setDesc(`${label} 远程服务配置`)
-				.addToggle((toggle) => {
-					toggle
-						.setValue(!!config)
-						.onChange(async (value) => {
-							if (value) {
-								this.plugin.settings.remoteServices[svc] = {
-									url: "",
-									token: "",
-									branch: "main",
-								};
-							} else {
-								delete this.plugin.settings.remoteServices[svc];
-							}
-							await this.plugin.saveSettings();
-							// Targeted rebuild — remove old wrapper and recreate remote section
-							const oldWrapper = containerEl.querySelector(".code-import-remote-section");
-							if (oldWrapper) {
-								oldWrapper.remove();
-								this.buildRemoteSection(containerEl);
-							}
-						});
+		for (const [alias, entry] of entries) {
+			const aliasWrapper = wrapper.createDiv({ cls: "code-import-remote-source-entry" });
+
+			new Setting(aliasWrapper)
+				.setName("Alias")
+				.addText((text) => {
+					text.setValue(alias);
+					text.onChange(async (value) => {
+						const trimmed = value.trim();
+						if (!trimmed || trimmed === alias) return;
+						const sources = this.plugin.settings.remoteSources;
+						sources[trimmed] = entry;
+						delete sources[alias];
+						await this.plugin.saveSettings();
+						const oldWrapper = containerEl.querySelector(".code-import-remote-source-section");
+						if (oldWrapper) {
+							oldWrapper.remove();
+							this.buildRemoteSourceSection(containerEl);
+						}
+					});
+				})
+				.addButton((btn) => {
+					btn.setButtonText("Delete");
+					btn.onClick(async () => {
+						delete this.plugin.settings.remoteSources[alias];
+						await this.plugin.saveSettings();
+						const oldWrapper = containerEl.querySelector(".code-import-remote-source-section");
+						if (oldWrapper) {
+							oldWrapper.remove();
+							this.buildRemoteSourceSection(containerEl);
+						}
+					});
 				});
 
-			if (config) {
-				buildRemoteConfigFields(
-					wrapper,
-					svc,
-					{
-						url: config.url,
-						token: config.token,
-						username: config.username,
-						repo: config.repo,
-						branch: config.branch,
-						uploadPath: config.uploadPath,
-					},
-					async (key, value) => {
-						switch (key) {
-							case "url":
-								config.url = value;
-								break;
-							case "token":
-								config.token = value;
-								break;
-							case "username":
-								config.username = value || undefined;
-								break;
-							case "repo":
-								config.repo = value || undefined;
-								break;
-							case "branch":
-								config.branch = value || "main";
-								break;
-							case "uploadPath":
-								config.uploadPath = value || undefined;
-								break;
-						}
+			new Setting(aliasWrapper)
+				.setName("Service type")
+				.addDropdown((dd) => {
+					dd.addOption("generic", "Generic URL");
+					dd.addOption("github", "GitHub");
+					dd.addOption("gitlab", "GitLab");
+					dd.addOption("gitea", "Gitea");
+					dd.addOption("webdav", "WebDAV");
+					dd.setValue(entry.serviceType);
+					dd.onChange(async (value) => {
+						entry.serviceType = value as RemoteServiceType;
 						await this.plugin.saveSettings();
+						const oldWrapper = containerEl.querySelector(".code-import-remote-source-section");
+						if (oldWrapper) {
+							oldWrapper.remove();
+							this.buildRemoteSourceSection(containerEl);
+						}
+					});
+				});
+
+			buildRemoteConfigFields(
+				aliasWrapper,
+				entry.serviceType,
+				{
+					url: entry.config.url,
+					token: entry.config.token,
+					username: entry.config.username,
+					repo: entry.config.repo,
+					branch: entry.config.branch,
+					uploadPath: entry.config.uploadPath,
+				},
+				async (key, value) => {
+					switch (key) {
+						case "url":
+							entry.config.url = value;
+							break;
+						case "token":
+							entry.config.token = value;
+							break;
+						case "username":
+							entry.config.username = value || undefined;
+							break;
+						case "repo":
+							entry.config.repo = value || undefined;
+							break;
+						case "branch":
+							entry.config.branch = value || "main";
+							break;
+						case "uploadPath":
+							entry.config.uploadPath = value || undefined;
+							break;
 					}
-				);
-			}
+					await this.plugin.saveSettings();
+				}
+			);
 		}
+
+		new Setting(wrapper)
+			.addButton((btn) => {
+				btn.setButtonText("Add remote source");
+				btn.onClick(async () => {
+					const alias = `source-${Object.keys(this.plugin.settings.remoteSources).length + 1}`;
+					this.plugin.settings.remoteSources[alias] = {
+						serviceType: "generic",
+						config: { url: "", token: "" },
+					};
+					await this.plugin.saveSettings();
+					const oldWrapper = containerEl.querySelector(".code-import-remote-source-section");
+					if (oldWrapper) {
+						oldWrapper.remove();
+						this.buildRemoteSourceSection(containerEl);
+					}
+				});
+			});
 	}
 }

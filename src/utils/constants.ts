@@ -53,4 +53,5 @@ export const SERVICE_LABELS: Record<RemoteServiceType, string> = {
 	github: "GitHub",
 	gitlab: "GitLab",
 	gitea: "Gitea",
+	generic: "Generic URL",
 };

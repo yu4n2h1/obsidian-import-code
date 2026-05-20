@@ -27,7 +27,6 @@ export function createInsertCodeCallback(
 				highlightSpec: info.highlightSpec,
 				storagePathType: info.storagePathType,
 				storagePath: info.storagePath,
-				isRemote: info.isRemote,
 				timestamp: Date.now(),
 			};
 			void refStore.saveLastFileReference(lastRef);
@@ -46,7 +45,7 @@ export function createEditLastCodeCallback(
 		const lastRef = await refStore.loadLastFileReference();
 		if (!lastRef) {
 			new Notice(
-				'尚未创建过代码文件，请先使用"创建代码文件"命令'
+				'No code file created yet. Use "Insert embed code" first.'
 			);
 			return;
 		}
