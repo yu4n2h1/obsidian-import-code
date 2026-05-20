@@ -14,7 +14,12 @@ export class importCodeSettingsTab extends PluginSettingTab {
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
+		this.buildEmbedSection(containerEl);
+		this.buildStorageSection(containerEl);
+		this.buildRemoteSection(containerEl);
+	}
 
+	private buildEmbedSection(containerEl: HTMLElement): void {
 		// Code Embed Setting
 		new Setting(containerEl).setName("Code embed").setHeading();
 
@@ -75,11 +80,15 @@ export class importCodeSettingsTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			);
+	}
+
+	private buildStorageSection(containerEl: HTMLElement): void {
+		const wrapper = containerEl.createDiv({ cls: "code-import-storage-section" });
 
 		// File Storage Settings
-		new Setting(containerEl).setName("File storage").setHeading();
+		new Setting(wrapper).setName("File storage").setHeading();
 
-		new Setting(containerEl)
+		new Setting(wrapper)
 			.setName("Storage path type")
 			.setDesc("选择文件存储路径类型")
 			.addDropdown((dropdown) =>
@@ -90,12 +99,17 @@ export class importCodeSettingsTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.storagePathType = value as "absolute" | "relative" | "remote";
 						await this.plugin.saveSettings();
-						this.display();
+						// Targeted rebuild — remove old wrapper and recreate storage section
+						const oldWrapper = containerEl.querySelector(".code-import-storage-section");
+						if (oldWrapper) {
+							oldWrapper.remove();
+							this.buildStorageSection(containerEl);
+						}
 					})
 			);
 
 		if (this.plugin.settings.storagePathType === "absolute") {
-			new Setting(containerEl)
+			new Setting(wrapper)
 				.setName("Absolute storage path")
 				.setDesc(
 					// eslint-disable-next-line obsidianmd/ui/sentence-case
@@ -112,7 +126,7 @@ export class importCodeSettingsTab extends PluginSettingTab {
 						})
 				);
 		} else {
-			new Setting(containerEl)
+			new Setting(wrapper)
 				.setName("Relative storage path")
 				.setDesc(
 					"相对于当前文档的存储路径（如：./assets 或 ../shared）"
@@ -129,28 +143,33 @@ export class importCodeSettingsTab extends PluginSettingTab {
 		}
 
 		// File name strategy
-		new Setting(containerEl)
+		new Setting(wrapper)
 			.setName("File name strategy")
 			.setDesc("选择文件名生成策略")
 			.addDropdown((dropdown) =>
 				dropdown
+					.addOption("auto", "自动（基于代码内容）")
 					.addOption("hash", "哈希（用户输入作为链接显示文本）")
-					.addOption("content", "直接使用输入内容作为文件名")
+					.addOption("custom", "自定义文件名")
 					.setValue(this.plugin.settings.fileNameStrategy)
 					.onChange(async (value) => {
-						this.plugin.settings.fileNameStrategy = value as "hash" | "content";
+						this.plugin.settings.fileNameStrategy = value as "hash" | "custom" | "auto";
 						await this.plugin.saveSettings();
 					})
 			);
+	}
+
+	private buildRemoteSection(containerEl: HTMLElement): void {
+		const wrapper = containerEl.createDiv({ cls: "code-import-remote-section" });
 
 		// Remote Upload Settings
-		new Setting(containerEl).setName("远程上传").setHeading();
+		new Setting(wrapper).setName("远程上传").setHeading();
 
 		for (const svc of ["webdav", "github", "gitlab", "gitea"] as RemoteServiceType[]) {
 			const label = SERVICE_LABELS[svc];
 			const config = this.plugin.settings.remoteServices[svc];
 
-			new Setting(containerEl)
+			new Setting(wrapper)
 				.setName(label)
 				.setDesc(`${label} 远程服务配置`)
 				.addToggle((toggle) => {
@@ -167,13 +186,18 @@ export class importCodeSettingsTab extends PluginSettingTab {
 								delete this.plugin.settings.remoteServices[svc];
 							}
 							await this.plugin.saveSettings();
-							this.display();
+							// Targeted rebuild — remove old wrapper and recreate remote section
+							const oldWrapper = containerEl.querySelector(".code-import-remote-section");
+							if (oldWrapper) {
+								oldWrapper.remove();
+								this.buildRemoteSection(containerEl);
+							}
 						});
 				});
 
 			if (config) {
 				buildRemoteConfigFields(
-					containerEl,
+					wrapper,
 					svc,
 					{
 						url: config.url,

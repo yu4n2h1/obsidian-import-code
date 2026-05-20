@@ -9,7 +9,7 @@ export interface FileStorageSettings {
 	storagePathType: "absolute" | "relative" | "remote";
 	absoluteStoragePath: string;
 	relativeStoragePath: string;
-	fileNameStrategy: "hash" | "content";
+	fileNameStrategy: "hash" | "custom" | "auto";
 }
 
 export type RemoteServiceType = "webdav" | "github" | "gitlab" | "gitea";
