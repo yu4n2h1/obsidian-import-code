@@ -4,136 +4,83 @@ import {
 	MarkdownView,
 	TFile,
 	TAbstractFile,
-	Editor,
-	App
 } from "obsidian";
-import {
-	PluginSettings,
-	DEFAULT_SETTINGS,
-	importCodeSettingsTab,
-} from "./settings";
-import { CodeEmbedProcessor } from "./code-embed-processor";
-
-function processEmbedElement(
-	embed: HTMLElement,
-	src: string,
-	processor: CodeEmbedProcessor,
-	sourcePath: string
-): void {
-	embed.classList.add("code-link-processed");
-	embed.empty();
-	void processor.processFile(src, embed, sourcePath);
-}
-import { getLanguageFromPath, isExtensionSupported, debounce } from "./utils";
+import { PluginSettings, DEFAULT_SETTINGS, LastFileReference } from "./types";
+import { importCodeSettingsTab } from "./settings";
+import { CodeEmbedProcessor } from "./ui/code-embed";
+import { debounce } from "./utils/debounce";
+import { parseEmbedSource, isRemoteUrl } from "./utils/parse-embed-source";
+import { getLanguageFromPath } from "./utils/language";
+import { isExtensionSupported } from "./utils/settings-helpers";
+import { processEmbeds } from "./ui/embed-processor";
 import { EditorView, ViewPlugin } from "@codemirror/view";
-import { FileModal } from "./modal";
+import { createInsertCodeCallback, createEditLastCodeCallback, LastFileRefStore } from "./commands/insert-code";
 
-export default class importCode extends Plugin {
+export default class importCode extends Plugin implements LastFileRefStore {
 	codeProcessor!: CodeEmbedProcessor;
 	settings: PluginSettings = DEFAULT_SETTINGS;
-	
-	/* 
-	 * 根据文件路径获取处理器
-	 * @param filePath 文件路径
-	 * @returns 处理器
-	 */
-	private getProcessor(filePath: string): CodeEmbedProcessor | undefined {
-		const [extension] = getLanguageFromPath(filePath);
-		if (
-			this.settings.codeEmbedEnabled === "enabled" &&
-			isExtensionSupported(this.settings, extension)
-		) {
-			return this.codeProcessor;
-		}
-		return undefined;
-	}
+	private lastFileReference: LastFileReference | null = null;
 
-	/*
-	 * 加载设置从data.js
-	 */
 	async loadSettings() {
-		// 从data.js当中读取并加载配置
-		const loadedData = (await this.loadData()) as Partial<PluginSettings> | null;
-		this.settings = Object.assign(
-			{},
-			DEFAULT_SETTINGS,
-			loadedData ?? {}
-		);
+		const rawData = (await this.loadData()) as (Partial<PluginSettings> & { lastFileReference?: LastFileReference }) | null;
+		const { lastFileReference, ...loadedData } = rawData ?? {};
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, loadedData);
+		if (lastFileReference) {
+			this.lastFileReference = lastFileReference;
+		}
 	}
 
-	/**
-	 * 保存设置到data.js当中，并刷新视图
-	 */
 	async saveSettings() {
-		await this.saveData(this.settings);
-		// 重新初始化处理器
+		const data: Record<string, unknown> = { ...this.settings };
+		if (this.lastFileReference) {
+			data.lastFileReference = this.lastFileReference;
+		}
+		await this.saveData(data);
 		this.initProcessors();
-		// 刷新所有视图
 		this.app.workspace.iterateAllLeaves((leaf) => {
 			if (leaf.view instanceof MarkdownView) {
 				const container = leaf.view.containerEl;
-				const embeds = container.querySelectorAll(
-					".internal-embed.code-link-processed"
-				);
+				const embeds = container.querySelectorAll(".internal-embed.code-link-processed");
 				embeds.forEach((embed: Element) => {
 					embed.classList.remove("code-link-processed");
-					(embed as HTMLElement).removeAttribute(
-						"data-code-link-handled"
-					);
-				});
-
-				// 强制重新渲染
-				const state = leaf.getViewState();
-				void leaf.setViewState({ type: "empty" }).then(() => {
-					void leaf.setViewState(state);
+					(embed as HTMLElement).removeAttribute("data-code-link-handled");
 				});
 			}
 		});
+		this.resetMarkdownViews();
 	}
 
-	/*
-	 * 根据设置初始化处理器
-	 */
 	initProcessors() {
 		this.codeProcessor = new CodeEmbedProcessor(this.app, this.settings, this);
 	}
 
-	/**
-	 * 加载插件
-	 */
+	async loadLastFileReference(): Promise<LastFileReference | null> {
+		if (this.lastFileReference) return this.lastFileReference;
+		const data = (await this.loadData()) as Record<string, unknown> | null;
+		this.lastFileReference = (data?.lastFileReference as LastFileReference) ?? null;
+		return this.lastFileReference;
+	}
+
+	async saveLastFileReference(ref: LastFileReference): Promise<void> {
+		this.lastFileReference = ref;
+		const data = (await this.loadData()) as Record<string, unknown> | null;
+		await this.saveData({ ...(data ?? {}), lastFileReference: ref });
+	}
+
 	async onload() {
-		// 加载设置
 		await this.loadSettings();
-		// 初始化所有处理器
 		this.initProcessors();
-		// 添加设置选项卡
 		this.addSettingTab(new importCodeSettingsTab(this.app, this));
 
-		// 注册创建代码文件命令
-		const insertCodeCallback = (editor: Editor) => {
-			new FileModal(this.app, this.settings, (filePath: string) => {
-				// If the returned path already contains an alias ("|") we
-				// shouldn't append another one. The modal may include a
-				// display name for MD5 strategy, e.g. "foo.txt|测试".
-				let link: string;
-				if (filePath.includes("|")) {
-					link = `![[${filePath}]]`;
-				} else {
-					const fileName = filePath.split("/").pop() || filePath;
-					link = `![[${filePath}|${fileName}]]`;
-				}
-				editor.replaceSelection(link);
-			}).open();
-		};
+		const insertCodeCallback = createInsertCodeCallback(this.app, this.settings, this);
+		const editLastCodeCallback = createEditLastCodeCallback(this.app, this);
 
-		// 主命令
 		this.addCommand({
 			id: "create-code-file",
 			name: "插入嵌入代码",
 			editorCallback: insertCodeCallback,
 		});
 
-		// 命令别名
 		this.addCommand({
 			id: "insert-embed-code",
 			name: "Insert embed code",
@@ -146,101 +93,84 @@ export default class importCode extends Plugin {
 			editorCallback: insertCodeCallback,
 		});
 
-		// 注册 Markdown 后处理器（用于阅读模式）
+		this.addCommand({
+			id: "re-reference-last-code",
+			name: "再次引用代码文件",
+			editorCallback: editLastCodeCallback,
+		});
+
 		this.registerMarkdownPostProcessor(
-			async (el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
-				const embeds = el.querySelectorAll(".internal-embed");
-				for (let i = 0; i < embeds.length; i++) {
-					const embed = embeds[i] as HTMLElement;
-
-					// 跳过已处理的嵌入元素
-					if (embed.classList.contains("code-link-processed"))
-						continue;
-
-					// 获取嵌入元素的 src 属性
-					const src = embed.getAttribute("src");
-					if (!src) continue;
-
-					const processor = this.getProcessor(src);
-
-					if (processor) {
-						embed.classList.add("code-link-processed");
-						await processor.processFile(src, embed, ctx.sourcePath);
-					}
-				}
+			(el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
+				processEmbeds(el, this.codeProcessor, this.settings, ctx.sourcePath);
 			}
 		);
-		// 注册编辑器模式下的处理器
+
 		this.registerEditorExtension(
 			ViewPlugin.define((view: EditorView) => {
-				const processingSet = new Set<HTMLElement>();
+				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
+				const sourcePath = markdownView?.file?.path || "";
 
 				setTimeout(
-					() =>
-						processEmbeds(
-							view,
-							this.codeProcessor,
-							this.settings,
-							this.app
-						),
+					() => processEmbeds(view.dom, this.codeProcessor, this.settings, sourcePath),
 					50
 				);
 
 				return {
 					update: (update) => {
 						if (update.docChanged || update.viewportChanged) {
+							const currentView = this.app.workspace.getActiveViewOfType(MarkdownView);
+							const currentSourcePath = currentView?.file?.path || "";
 							setTimeout(
-								() =>
-									processEmbeds(
-										view,
-										this.codeProcessor,
-										this.settings,
-										this.app
-									),
+								() => processEmbeds(view.dom, this.codeProcessor, this.settings, currentSourcePath),
 								50
 							);
 						}
 					},
-					destroy: () => {
-						processingSet.clear();
-					},
+					destroy: () => {},
 				};
 			})
 		);
 
-		// 注册文件修改监听（300ms 防抖）
 		const handleFileModify = debounce((file: TAbstractFile) => {
-			// 只处理文件，跳过文件夹
 			if (!(file instanceof TFile)) return;
 			const filePath = file.path;
 			const fileName = file.name;
 
-			// 遍历所有已打开的 Markdown 视图
 			this.app.workspace.iterateAllLeaves((leaf) => {
 				if (leaf.view instanceof MarkdownView) {
 					const container = leaf.view.containerEl;
-					const embeds = container.querySelectorAll(
-						".internal-embed.code-link-processed"
-					);
+					const embeds = container.querySelectorAll(".internal-embed.code-link-processed");
 
 					embeds.forEach((embed: Element) => {
 						const embedEl = embed as HTMLElement;
-						const src = embedEl.getAttribute("src");
-						if (!src) return;
+						const rawSrc = embedEl.getAttribute("src");
+						if (!rawSrc) return;
 
-						// 检查 src 是否匹配修改的文件
+						const { filePath: embedFilePath, symbolName, highlightSpec } = parseEmbedSource(rawSrc);
+
 						if (
-							src === filePath ||
-							src === fileName ||
-							filePath.endsWith(src)
+							embedFilePath === filePath ||
+							embedFilePath === fileName ||
+							filePath.endsWith(embedFilePath)
 						) {
-							const processor = this.getProcessor(src);
-							if (processor) {
-								const sourcePath =
-									(leaf.view as MarkdownView).file?.path ||
-									"";
-								processEmbedElement(embedEl, src, processor, sourcePath);
+							if (this.settings.codeEmbedEnabled !== "enabled") return;
+
+							if (isRemoteUrl(embedFilePath)) {
+								if (this.settings.remoteCodeEmbedEnabled !== "enabled") return;
+							} else {
+								const [extension] = getLanguageFromPath(embedFilePath);
+								if (!isExtensionSupported(this.settings, extension)) return;
 							}
+
+							const sourcePath = (leaf.view as MarkdownView).file?.path || "";
+							embedEl.classList.add("code-link-processed");
+							embedEl.empty();
+							this.codeProcessor.processFile(
+								embedFilePath, symbolName, embedEl, sourcePath, highlightSpec
+							).catch((err) => {
+								console.error("processFile failed in modify handler:", err);
+								embedEl.setText(`Error: ${err instanceof Error ? err.message : String(err)}`);
+							});
 						}
 					});
 				}
@@ -250,69 +180,40 @@ export default class importCode extends Plugin {
 		this.registerEvent(this.app.vault.on("modify", handleFileModify));
 	}
 
+	private resetMarkdownViews(): void {
+		this.app.workspace.iterateAllLeaves((leaf) => {
+			if (leaf.view instanceof MarkdownView) {
+				const state = leaf.getViewState();
+				leaf.setViewState({ type: "empty" }).then(() => {
+					leaf.setViewState(state).catch((err) => {
+						console.error("Failed to restore view state:", err);
+					});
+				}).catch((err) => {
+					console.error("Failed to clear view state:", err);
+				});
+			}
+		});
+	}
+
 	onunload() {
 		console.debug("Unloading importCode plugin");
 
-		// 1. 清除所有已处理嵌入元素的标记和自定义内容
 		this.app.workspace.iterateAllLeaves((leaf) => {
 			if (leaf.view instanceof MarkdownView) {
 				const container = leaf.view.containerEl;
-				const embeds = container.querySelectorAll(
-					".internal-embed.code-link-processed"
-				);
+				const embeds = container.querySelectorAll(".internal-embed.code-link-processed");
 
 				embeds.forEach((embed: Element) => {
 					const embedEl = embed as HTMLElement;
-					// 移除处理标记
 					embedEl.classList.remove("code-link-processed");
-					// 移除自定义属性
 					embedEl.removeAttribute("data-code-link-handled");
 					embedEl.removeAttribute("data-source-path");
 					embedEl.removeAttribute("data-embed-file");
-					// 清空内容
 					embedEl.empty();
 				});
 			}
 		});
 
-		// 2. 重新渲染所有已打开的 Markdown 视图，恢复默认状态
-		this.app.workspace.iterateAllLeaves((leaf) => {
-			if (leaf.view instanceof MarkdownView) {
-				const state = leaf.getViewState();
-				void leaf.setViewState({ type: "empty" }).then(() => {
-					void leaf.setViewState(state);
-				});
-			}
-		});
-	}
-}
-
-function processEmbeds(
-	view: EditorView,
-	codeProcessor: CodeEmbedProcessor,
-	settings: PluginSettings,
-	app: App
-) {
-	const embeds = view.dom.querySelectorAll(".internal-embed");
-	for (let i = 0; i < embeds.length; i++) {
-		const embed = embeds[i] as HTMLElement;
-
-		// 跳过已处理的嵌入元素
-		if (embed.classList.contains("code-link-processed")) continue;
-
-		const src = embed.getAttribute("src");
-		if (!src) continue;
-
-		const [extension] = getLanguageFromPath(src);
-		if (
-			settings.codeEmbedEnabled !== "enabled" ||
-			!isExtensionSupported(settings, extension)
-		) {
-			continue;
-		}
-
-		const activeView = app.workspace.getActiveViewOfType(MarkdownView);
-		const sourcePath = activeView?.file?.path || "";
-		processEmbedElement(embed, src, codeProcessor, sourcePath);
+		this.resetMarkdownViews();
 	}
 }

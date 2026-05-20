@@ -1,41 +1,13 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
-import importCode from "./main";
-
-export interface CodeEmbedSettings {
-	codeEmbedEnabled: string;
-	codeFileExtensions: string;
-}
-
-export interface FileStorageSettings {
-	// 存储路径类型: 'absolute' 根目录指定位置, 'relative' 相对当前文档位置
-	storagePathType: "absolute" | "relative";
-	// 根目录指定位置的路径
-	absoluteStoragePath: string;
-	// 相对位置的路径
-	relativeStoragePath: string;
-	// 文件名生成策略: 'md5' 基于内容MD5哈希, 'content' 直接使用用户输入内容
-	fileNameStrategy: "md5" | "content";
-}
-
-export interface PluginSettings
-	extends CodeEmbedSettings,
-		FileStorageSettings {}
-
-export const DEFAULT_SETTINGS: PluginSettings = {
-	codeEmbedEnabled: "enabled",
-	codeFileExtensions:
-		"js,ts,py,java,c,cpp,go,rs,rb,php,sh,sql,html,css,json,yaml,xml",
-	storagePathType: "absolute",
-	absoluteStoragePath: "assets",
-	relativeStoragePath: "./",
-	fileNameStrategy: "md5",
-};
+import { App, Plugin, PluginSettingTab, Setting } from "obsidian";
+import { SettingsProvider, RemoteServiceType, RemoteServiceConfig } from "./types";
+import { SERVICE_LABELS } from "./utils/constants";
+import { buildRemoteConfigFields } from "./ui/remote-config-fields";
 
 export class importCodeSettingsTab extends PluginSettingTab {
-	plugin: importCode;
+	plugin: SettingsProvider;
 
-	constructor(app: App, plugin: importCode) {
-		super(app, plugin);
+	constructor(app: App, plugin: SettingsProvider) {
+		super(app, plugin as unknown as Plugin);
 		this.plugin = plugin;
 	}
 
@@ -58,6 +30,34 @@ export class importCodeSettingsTab extends PluginSettingTab {
 						this.plugin.settings.codeEmbedEnabled = value
 							? "enabled"
 							: "disabled";
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Enable remote code embed")
+			.setDesc("允许嵌入远程URL（HTTP/HTTPS）的代码文件")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(
+						this.plugin.settings.remoteCodeEmbedEnabled === "enabled"
+					)
+					.onChange(async (value: boolean) => {
+						this.plugin.settings.remoteCodeEmbedEnabled = value
+							? "enabled"
+							: "disabled";
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Skip SSL certificate verification")
+			.setDesc("跳过HTTPS证书验证，允许访问自签名/过期/不安全证书的网站（仅桌面端）")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.remoteSkipSslVerify)
+					.onChange(async (value: boolean) => {
+						this.plugin.settings.remoteSkipSslVerify = value;
 						await this.plugin.saveSettings();
 					})
 			);
@@ -88,7 +88,7 @@ export class importCodeSettingsTab extends PluginSettingTab {
 					.addOption("relative", "相对当前文档位置")
 					.setValue(this.plugin.settings.storagePathType)
 					.onChange(async (value) => {
-						this.plugin.settings.storagePathType = value as "absolute" | "relative";
+						this.plugin.settings.storagePathType = value as "absolute" | "relative" | "remote";
 						await this.plugin.saveSettings();
 						this.display();
 					})
@@ -134,13 +134,80 @@ export class importCodeSettingsTab extends PluginSettingTab {
 			.setDesc("选择文件名生成策略")
 			.addDropdown((dropdown) =>
 				dropdown
-					.addOption("md5", "MD5哈希（用户输入作为链接显示文本）")
+					.addOption("hash", "哈希（用户输入作为链接显示文本）")
 					.addOption("content", "直接使用输入内容作为文件名")
 					.setValue(this.plugin.settings.fileNameStrategy)
 					.onChange(async (value) => {
-						this.plugin.settings.fileNameStrategy = value as "md5" | "content";
+						this.plugin.settings.fileNameStrategy = value as "hash" | "content";
 						await this.plugin.saveSettings();
 					})
 			);
+
+		// Remote Upload Settings
+		new Setting(containerEl).setName("远程上传").setHeading();
+
+		for (const svc of ["webdav", "github", "gitlab", "gitea"] as RemoteServiceType[]) {
+			const label = SERVICE_LABELS[svc];
+			const config = this.plugin.settings.remoteServices[svc];
+
+			new Setting(containerEl)
+				.setName(label)
+				.setDesc(`${label} 远程服务配置`)
+				.addToggle((toggle) => {
+					toggle
+						.setValue(!!config)
+						.onChange(async (value) => {
+							if (value) {
+								this.plugin.settings.remoteServices[svc] = {
+									url: "",
+									token: "",
+									branch: "main",
+								};
+							} else {
+								delete this.plugin.settings.remoteServices[svc];
+							}
+							await this.plugin.saveSettings();
+							this.display();
+						});
+				});
+
+			if (config) {
+				buildRemoteConfigFields(
+					containerEl,
+					svc,
+					{
+						url: config.url,
+						token: config.token,
+						username: config.username,
+						repo: config.repo,
+						branch: config.branch,
+						uploadPath: config.uploadPath,
+					},
+					async (key, value) => {
+						switch (key) {
+							case "url":
+								config.url = value;
+								break;
+							case "token":
+								config.token = value;
+								break;
+							case "username":
+								config.username = value || undefined;
+								break;
+							case "repo":
+								config.repo = value || undefined;
+								break;
+							case "branch":
+								config.branch = value || "main";
+								break;
+							case "uploadPath":
+								config.uploadPath = value || undefined;
+								break;
+						}
+						await this.plugin.saveSettings();
+					}
+				);
+			}
+		}
 	}
 }

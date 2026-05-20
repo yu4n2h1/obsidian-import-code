@@ -9,33 +9,33 @@
 ## Environment & tooling
 
 - Node.js: use current LTS (Node 18+ recommended).
-- **Package manager: npm** (required for this sample - `package.json` defines npm scripts and dependencies).
+- **Package manager: yarn** (required for this sample - `package.json` defines scripts and dependencies).
 - **Bundler: esbuild** (required for this sample - `esbuild.config.mjs` and build scripts depend on it). Alternative bundlers like Rollup or webpack are acceptable for other projects if they bundle all external dependencies into `main.js`.
 - Types: `obsidian` type definitions.
 
-**Note**: This sample project has specific technical dependencies on npm and esbuild. If you're creating a plugin from scratch, you can choose different tools, but you'll need to replace the build configuration accordingly.
+**Note**: This sample project has specific technical dependencies on yarn and esbuild. If you're creating a plugin from scratch, you can choose different tools, but you'll need to replace the build configuration accordingly.
 
 ### Install
 
 ```bash
-npm install
+yarn install
 ```
 
 ### Dev (watch)
 
 ```bash
-npm run dev
+yarn dev
 ```
 
 ### Production build
 
 ```bash
-npm run build
+yarn build
 ```
 
 ## Linting
 
-- To use eslint install eslint from terminal: `npm install -g eslint`
+- To use eslint install eslint from terminal: `yarn global add eslint`
 - To use eslint to analyze this project use this command: `eslint main.ts`
 - eslint will then create a report with suggestions for code improvement by file and line number.
 - If your source code is in a folder, such as `src`, you can use eslint with this command to analyze all files in that folder: `eslint ./src/`
@@ -56,6 +56,10 @@ npm run build
       modal.ts
       view.ts
     utils/           # Utility functions, helpers
+	  uploads/
+		upload-manager.ts
+	  	gitea-uploader.ts
+		...
       helpers.ts
       constants.ts
     types.ts         # TypeScript interfaces and types
@@ -237,7 +241,7 @@ this.registerInterval(window.setInterval(() => { /* ... */ }, 1000));
 ## Troubleshooting
 
 - Plugin doesn't load after build: ensure `main.js` and `manifest.json` are at the top level of the plugin folder under `<Vault>/.obsidian/plugins/<plugin-id>/`. 
-- Build issues: if `main.js` is missing, run `npm run build` or `npm run dev` to compile your TypeScript source code.
+- Build issues: if `main.js` is missing, run `yarn build` or `yarn dev` to compile your TypeScript source code.
 - Commands not appearing: verify `addCommand` runs after `onload` and IDs are unique.
 - Settings not persisting: ensure `loadData`/`saveData` are awaited and you re-render the UI after changes.
 - Mobile-only issues: confirm you're not using desktop-only APIs; check `isDesktopOnly` and adjust.

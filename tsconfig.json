@@ -2,7 +2,6 @@
 	"compilerOptions": {
 		"strict": true,
 		"forceConsistentCasingInFileNames": true,
-		"jsx": "react",
 		"baseUrl": "src",
 		"inlineSourceMap": true,
 		"inlineSources": true,
@@ -20,11 +19,13 @@
 		"strictBindCallApply": true,
 		"allowSyntheticDefaultImports": true,
 		"useUnknownInCatchVariables": true,
+		"types": ["node"],
 		"lib": [
 			"DOM",
 			"ES5",
 			"ES6",
-			"ES7"
+			"ES7",
+			"ES2017"
 		]
 	},
 	"include": [

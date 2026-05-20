@@ -32,13 +32,13 @@
 /* Toolbar */
 .code-embed-container .code-embed-toolbar {
 	position: absolute;
-	top: 0;
-	right: 0;
+	top: 6px;
+	right: 6px;
 	display: flex;
 	flex-direction: row;
 	z-index: 10;
 	pointer-events: auto;
-	border-bottom-left-radius: 8px;
+	border-radius: 6px;
 	overflow: hidden;
 }
 
@@ -77,8 +77,9 @@
 	display: block;
 }
 
-/* Hide global copy button */
-button.copy-code-button {
+/* Hide Obsidian's default copy button inside our code embeds */
+.code-embed-container button.copy-code-button,
+.code-embed-wrapper button.copy-code-button {
 	display: none !important;
 }
 
@@ -108,8 +109,9 @@ button.copy-code-button {
 	cursor: text;
 }
 
-/* Hide Obsidian's built-in copy button in editor */
-.markdown-source-view.mod-cm6 button.copy-code-button {
+/* Hide Obsidian's built-in copy button inside our code embeds in editor */
+.markdown-source-view.mod-cm6 .code-embed-container button.copy-code-button,
+.markdown-source-view.mod-cm6 .code-embed-wrapper button.copy-code-button {
 	display: none !important;
 }
 
@@ -149,4 +151,120 @@ button.copy-code-button {
 
 .file-modal .setting-item .file-name-input {
 	width: 300px;
+}
+
+/* === Highlighted lines === */
+
+.code-highlight-line {
+	display: inline-block;
+	width: 100%;
+	background-color: var(--text-highlight-bg, rgba(255, 255, 0, 0.2));
+	border-left: 3px solid var(--text-accent);
+	margin: 0 -16px;
+	padding: 0 16px;
+}
+
+/* === Symbol extraction error === */
+
+.code-link-error {
+	color: var(--text-error);
+	padding: 1em;
+	border: 1px solid var(--background-modifier-error);
+	border-radius: 4px;
+	font-family: var(--font-monospace);
+	white-space: pre-wrap;
+}
+
+/* === Storage Path Section (FileModal) === */
+
+.file-modal .storage-path-section {
+	margin-bottom: 1em;
+}
+
+.file-modal .storage-path-section .setting-item {
+	border-top: none;
+	padding-top: 0.5em;
+	padding-bottom: 0.5em;
+}
+
+/* === Remote Config Section (FileModal) === */
+
+.file-modal .remote-config-section {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 0.5em 1em;
+	margin-bottom: 1em;
+}
+
+.file-modal .remote-config-section .setting-item {
+	border-top: none;
+	padding-top: 0.5em;
+	padding-bottom: 0.5em;
+}
+
+.file-modal .remote-fields-container .setting-item {
+	padding-left: 0.5em;
+}
+
+/* === Edit Link Modal === */
+
+.edit-link-modal .edit-link-info {
+	background: var(--background-secondary);
+	border-radius: 6px;
+	padding: 0.75em 1em;
+	margin-bottom: 1em;
+}
+
+.edit-link-modal .edit-link-info-row {
+	display: flex;
+	justify-content: space-between;
+	padding: 0.25em 0;
+	font-size: var(--font-smaller);
+}
+
+.edit-link-modal .edit-link-info-label {
+	color: var(--text-muted);
+}
+
+.edit-link-modal .edit-link-info-value {
+	color: var(--text-normal);
+	font-family: var(--font-monospace);
+}
+
+.edit-link-code-container {
+	max-height: 400px;
+	overflow: auto;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	margin-bottom: 1em;
+}
+
+.edit-link-code-container .code-embed-container {
+	margin: 0;
+}
+
+.edit-link-code-container .code-embed-wrapper pre {
+	max-height: 400px;
+}
+
+.edit-link-code-container .code-embed-toolbar {
+	display: none;
+}
+
+/* === Link Preview === */
+
+.link-preview-section {
+	margin: 1em 0;
+}
+
+.link-preview-content {
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 0.75em 1em;
+	font-family: var(--font-monospace);
+	font-size: var(--font-smaller);
+	word-break: break-all;
+	white-space: pre-wrap;
+	color: var(--text-accent);
 }
