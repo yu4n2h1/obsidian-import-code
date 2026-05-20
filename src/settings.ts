@@ -171,18 +171,15 @@ export class importCodeSettingsTab extends PluginSettingTab {
 				.setName("Alias")
 				.addText((text) => {
 					text.setValue(alias);
+					let currentAlias = alias;
 					text.onChange(async (value) => {
 						const trimmed = value.trim();
-						if (!trimmed || trimmed === alias) return;
+						if (!trimmed || trimmed === currentAlias) return;
 						const sources = this.plugin.settings.remoteSources;
 						sources[trimmed] = entry;
-						delete sources[alias];
+						delete sources[currentAlias];
+						currentAlias = trimmed;
 						await this.plugin.saveSettings();
-						const oldWrapper = containerEl.querySelector(".code-import-remote-source-section");
-						if (oldWrapper) {
-							oldWrapper.remove();
-							this.buildRemoteSourceSection(containerEl);
-						}
 					});
 				})
 				.addButton((btn) => {
