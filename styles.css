@@ -1,0 +1,270 @@
+/* === Base Styles (Reading + Editing Mode) === */
+
+.code-embed-container {
+	position: relative;
+	margin: 1em 0;
+	border-radius: 6px;
+	overflow: hidden;
+	text-align: left;
+	pointer-events: auto;
+}
+
+.code-embed-wrapper {
+	text-align: left;
+	width: 100%;
+}
+
+.code-embed-wrapper pre {
+	margin: 0;
+	border-radius: 0;
+	max-height: 500px;
+	overflow: auto;
+}
+
+.code-embed-wrapper pre code {
+	font-size: var(--font-smaller) !important;
+	font-family: var(--font-monospace) !important;
+	min-height: calc(3 * 1.5em);
+	display: block;
+	white-space: pre !important;
+}
+
+/* Toolbar */
+.code-embed-container .code-embed-toolbar {
+	position: absolute;
+	top: 6px;
+	right: 6px;
+	display: flex;
+	flex-direction: row;
+	z-index: 10;
+	pointer-events: auto;
+	border-radius: 6px;
+	overflow: hidden;
+}
+
+.code-embed-container .code-block-flair,
+.code-embed-container .code-embed-open-btn {
+	appearance: none;
+	height: 32px;
+	padding: 0 10px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--code-bracket-background);
+	transition: all 0.2s ease;
+	cursor: pointer;
+	border: none !important;
+	border-radius: 0 !important;
+}
+
+.code-embed-container .code-embed-open-btn + .code-block-flair {
+	border-left: 2px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.code-embed-container .code-block-flair {
+	text-transform: uppercase;
+	letter-spacing: 1px;
+}
+
+.code-embed-container .code-embed-open-btn svg {
+	width: 14px;
+	height: 14px;
+	opacity: 0.7;
+}
+
+/* Code link block display */
+.code-link-block {
+	display: block;
+}
+
+/* Hide Obsidian's default copy button inside our code embeds */
+.code-embed-container button.copy-code-button,
+.code-embed-wrapper button.copy-code-button {
+	display: none !important;
+}
+
+/* === Editor Mode Override Styles === */
+
+.markdown-source-view.mod-cm6 .internal-embed.code-link-processed {
+	display: block;
+	margin: 1em 0;
+	pointer-events: auto;
+}
+
+.markdown-source-view.mod-cm6 .internal-embed.code-link-processed[contenteditable="false"] {
+	cursor: default;
+}
+
+.markdown-source-view.mod-cm6 .code-link-loading {
+	padding: 12px 16px;
+	border-radius: 6px;
+}
+
+/* Allow text selection in embeds */
+.markdown-source-view.mod-cm6 .code-embed-wrapper,
+.markdown-source-view.mod-cm6 .code-embed-wrapper pre,
+.markdown-source-view.mod-cm6 .code-embed-wrapper code {
+	-webkit-user-select: text;
+	user-select: text;
+	cursor: text;
+}
+
+/* Hide Obsidian's built-in copy button inside our code embeds in editor */
+.markdown-source-view.mod-cm6 .code-embed-container button.copy-code-button,
+.markdown-source-view.mod-cm6 .code-embed-wrapper button.copy-code-button {
+	display: none !important;
+}
+
+/* Reset Obsidian's default .code-block-flair styles in editor */
+.markdown-source-view.mod-cm6 .code-embed-container .code-block-flair {
+	position: static;
+	text-transform: uppercase;
+	border: none !important;
+	border-radius: 0 !important;
+	border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
+	box-shadow: none !important;
+	outline: none !important;
+}
+
+.markdown-source-view.mod-cm6 .code-embed-container .code-embed-open-btn {
+	border: none !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	outline: none !important;
+}
+
+/* === File Modal Styles === */
+
+.file-modal .file-content-input {
+	width: 100%;
+	min-height: 200px;
+	font-family: var(--font-monospace);
+	resize: vertical;
+}
+
+.file-modal .modal-button-container {
+	display: flex;
+	justify-content: flex-end;
+	gap: 10px;
+	margin-top: 20px;
+}
+
+.file-modal .setting-item .file-name-input {
+	width: 300px;
+}
+
+/* === Highlighted lines === */
+
+.code-highlight-line {
+	display: inline-block;
+	width: 100%;
+	background-color: var(--text-highlight-bg, rgba(255, 255, 0, 0.2));
+	border-left: 3px solid var(--text-accent);
+	margin: 0 -16px;
+	padding: 0 16px;
+}
+
+/* === Symbol extraction error === */
+
+.code-link-error {
+	color: var(--text-error);
+	padding: 1em;
+	border: 1px solid var(--background-modifier-error);
+	border-radius: 4px;
+	font-family: var(--font-monospace);
+	white-space: pre-wrap;
+}
+
+/* === Storage Path Section (FileModal) === */
+
+.file-modal .storage-path-section {
+	margin-bottom: 1em;
+}
+
+.file-modal .storage-path-section .setting-item {
+	border-top: none;
+	padding-top: 0.5em;
+	padding-bottom: 0.5em;
+}
+
+/* === Remote Config Section (FileModal) === */
+
+.file-modal .remote-config-section {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 0.5em 1em;
+	margin-bottom: 1em;
+}
+
+.file-modal .remote-config-section .setting-item {
+	border-top: none;
+	padding-top: 0.5em;
+	padding-bottom: 0.5em;
+}
+
+.file-modal .remote-fields-container .setting-item {
+	padding-left: 0.5em;
+}
+
+/* === Edit Link Modal === */
+
+.edit-link-modal .edit-link-info {
+	background: var(--background-secondary);
+	border-radius: 6px;
+	padding: 0.75em 1em;
+	margin-bottom: 1em;
+}
+
+.edit-link-modal .edit-link-info-row {
+	display: flex;
+	justify-content: space-between;
+	padding: 0.25em 0;
+	font-size: var(--font-smaller);
+}
+
+.edit-link-modal .edit-link-info-label {
+	color: var(--text-muted);
+}
+
+.edit-link-modal .edit-link-info-value {
+	color: var(--text-normal);
+	font-family: var(--font-monospace);
+}
+
+.edit-link-code-container {
+	max-height: 400px;
+	overflow: auto;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	margin-bottom: 1em;
+}
+
+.edit-link-code-container .code-embed-container {
+	margin: 0;
+}
+
+.edit-link-code-container .code-embed-wrapper pre {
+	max-height: 400px;
+}
+
+.edit-link-code-container .code-embed-toolbar {
+	display: none;
+}
+
+/* === Link Preview === */
+
+.link-preview-section {
+	margin: 1em 0;
+}
+
+.link-preview-content {
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 0.75em 1em;
+	font-family: var(--font-monospace);
+	font-size: var(--font-smaller);
+	word-break: break-all;
+	white-space: pre-wrap;
+	color: var(--text-accent);
+}

@@ -1,0 +1,10 @@
+{
+	"id": "obsidian-import-code",
+	"name": "Obsidian Import Code",
+	"version": "1.1.0",
+	"minAppVersion": "0.15.0",
+	"description": "Embed and render external code files and CSV tables in Obsidian notes using internal link syntax ![](file.ext). Supports syntax highlighting, auto-refresh on file changes, and copy-to-clipboard.",
+	"author": "yu4n2h1",
+	"authorUrl": "https://github.com/yu4n2h1",
+	"isDesktopOnly": false
+}
