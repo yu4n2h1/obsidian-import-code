@@ -1,14 +1,12 @@
 import { RemoteServiceConfig } from "../types";
 import { RemoteReadResult } from "./types";
-import { dispatchHttpRequest } from "./http-client";
+import { dispatchHttpRequest, enrichError, encodePathSegments, buildFullPath } from "./http-client";
 
 function buildUrl(config: RemoteServiceConfig, fileName: string): string {
 	const base = config.url.replace(/\/+$/, "");
-	const uploadPath = (config.uploadPath || "").replace(/^\/+/, "").replace(/\/+$/, "");
-	if (uploadPath) {
-		return `${base}/${uploadPath}/${fileName}`;
-	}
-	return `${base}/${fileName}`;
+	const fullPath = buildFullPath(config.path, fileName);
+	const encoded = encodePathSegments(fullPath);
+	return `${base}/${encoded}`;
 }
 
 function buildAuthHeader(config: RemoteServiceConfig): string | null {
@@ -32,8 +30,7 @@ export const webdavService = {
 			const resp = await dispatchHttpRequest({ url, skipSslVerify, headers });
 			return { success: true, content: resp.text };
 		} catch (err) {
-			const message = err instanceof Error ? err.message : String(err);
-			return { success: false, error: `WebDAV read failed: ${message}` };
+			return { success: false, error: enrichError(err, "WebDAV read failed") };
 		}
 	},
 };

@@ -1,43 +1,99 @@
 import { requestUrl } from "obsidian";
 
-/**
- * 获取 Node.js https 模块（用于跳过 SSL 证书验证）。
- * 尝试多种方式以确保在 Obsidian 的不同版本中都能正常工作。
- */
-function getHttpsModule(): any {
+// ---- Helpers ----
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyObj = Record<string, any>;
+
+function win(): AnyObj {
+	return window as unknown as AnyObj;
+}
+
+function glob(): AnyObj {
+	return globalThis as unknown as AnyObj;
+}
+
+// ---- SSL error detection ----
+
+function isSslError(message: string): boolean {
+	const lower = message.toLowerCase();
+	return /ssl|tls|certificate|cert[^a-z]|self.signed|unable to verify|untrusted|expired cert|bad cert|DEPTH_ZERO_SELF_SIGNED/i.test(lower);
+}
+
+// ---- HTTPS module loading ----
+
+let _requireFn: ((id: string) => unknown) | null | undefined = undefined;
+let _httpsModule: unknown = undefined;
+
+function getRequire(): (id: string) => unknown {
+	if (_requireFn !== undefined) return _requireFn as (id: string) => unknown;
+
+	// 1. window.require (Obsidian preload)
+	const winReq = win().require;
+	if (typeof winReq === "function") {
+		_requireFn = winReq as (id: string) => unknown;
+		return _requireFn;
+	}
+
+	// 2. globalThis.require (might differ from window in some contexts)
+	const globalReq = glob().require;
+	if (typeof globalReq === "function" && globalReq !== winReq) {
+		_requireFn = globalReq as (id: string) => unknown;
+		return _requireFn;
+	}
+
+	// 3. CJS free-variable require via indirect eval
 	try {
-		const req = (window as any).require;
-		if (typeof req === "function") {
-			const mod = req("https");
-			if (mod) return mod;
+		// eslint-disable-next-line no-eval
+		const cjsReq = (0, eval)("typeof require === 'function' ? require : undefined");
+		if (typeof cjsReq === "function") {
+			_requireFn = cjsReq as (id: string) => unknown;
+			return _requireFn;
 		}
-	} catch { /* continue */ }
+	} catch { /* not available */ }
 
-	try {
-		const mod = require("https");
-		if (mod) return mod;
-	} catch { /* continue */ }
-
-	try {
-		const req = (globalThis as any).require;
-		if (typeof req === "function") {
-			const mod = req("https");
-			if (mod) return mod;
-		}
-	} catch { /* continue */ }
-
+	_requireFn = null;
 	throw new Error(
-		"Node.js HTTPS module not available. SSL skip requires desktop Obsidian."
+		"Node.js require() is not available. " +
+		"SSL skip verification requires the Obsidian desktop app. " +
+		"If you are on desktop, ensure the plugin has access to Node.js APIs."
 	);
 }
 
-let _httpsModule: any = undefined;
+function loadHttpsModule(): unknown {
+	const process = win().process as AnyObj | undefined;
+	const isElectron = !!(process?.versions?.electron);
+	if (!isElectron) {
+		throw new Error(
+			"SSL skip verification is only available in the Obsidian desktop app (Electron). " +
+			"Mobile and web versions do not support this feature."
+		);
+	}
 
-export function getHttps(): any {
+	const requireFn = getRequire();
+
+	try {
+		const mod = requireFn("https");
+		if (mod && typeof (mod as AnyObj).request === "function") {
+			return mod;
+		}
+		throw new Error("Loaded https module is missing the request() method");
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		throw new Error(
+			`Failed to load Node.js HTTPS module: ${msg}. ` +
+			"The Electron environment may restrict access to native Node.js modules."
+		);
+	}
+}
+
+export function getHttps(): unknown {
 	if (_httpsModule !== undefined) return _httpsModule;
-	_httpsModule = getHttpsModule();
+	_httpsModule = loadHttpsModule();
 	return _httpsModule;
 }
+
+// ---- Types ----
 
 export interface HttpsRequestOptions {
 	url: string;
@@ -53,28 +109,101 @@ export interface HttpsRequestResponse {
 	text: string;
 }
 
-async function requestUrlAdapter(options: HttpsRequestOptions): Promise<HttpsRequestResponse> {
-	const resp = await requestUrl({
-		url: options.url,
-		method: options.method,
-		body: options.body || "",
-		headers: options.headers,
-	});
-	return { status: resp.status, text: resp.text };
-}
+// ---- Path encoding ----
 
-export async function dispatchHttpRequest(options: HttpsRequestOptions): Promise<HttpsRequestResponse> {
-	if (options.skipSslVerify && options.url.startsWith("https://")) {
-		return httpsRequest(options);
+export function buildFullPath(basePath: string | undefined, filePath: string): string {
+	const prefix = (basePath || "").replace(/^\/+/, "").replace(/\/+$/, "");
+	if (prefix) {
+		return `${prefix}/${filePath}`;
 	}
-	return requestUrlAdapter(options);
+	return filePath;
 }
 
-export function httpsRequest(options: HttpsRequestOptions): Promise<HttpsRequestResponse> {
-	const https = getHttps();
-	const urlObj = new URL(options.url);
+export function encodePathSegments(filePath: string): string {
+	return filePath.split("/").map(encodeURIComponent).join("/");
+}
+
+// ---- Shared error enrichment ----
+
+export function enrichError(err: unknown, context: string): string {
+	const message = err instanceof Error ? err.message : String(err);
+	if (message.includes("Skip SSL") || message.includes("SSL skip")) {
+		return `${context}: ${message}`;
+	}
+	return `${context}: ${message}`;
+}
+
+// ---- Request adapters ----
+
+async function requestUrlAdapter(options: HttpsRequestOptions): Promise<HttpsRequestResponse> {
+	try {
+		const resp = await requestUrl({
+			url: options.url,
+			method: options.method,
+			body: options.body || "",
+			headers: options.headers,
+		});
+		return { status: resp.status, text: resp.text };
+	} catch (err) {
+		const message = err instanceof Error ? err.message : String(err);
+		if (isSslError(message)) {
+			throw new Error(
+				`${message}\n\nTip: The server may be using a self-signed or invalid SSL certificate. ` +
+				`You can enable "Skip SSL certificate verification" in the plugin settings to bypass this check.`
+			);
+		}
+		throw err;
+	}
+}
+
+// ---- HTTPS request with redirect support ----
+
+interface HttpsResponse {
+	statusCode: number;
+	statusMessage?: string;
+	headers: Record<string, string | string[] | undefined>;
+	on(event: "data", cb: (chunk: string) => void): void;
+	on(event: "end", cb: () => void): void;
+	resume(): void;
+}
+
+interface HttpsRequest {
+	on(event: "error", cb: (err: Error) => void): void;
+	setTimeout(ms: number, cb: () => void): void;
+	write(body: string): void;
+	end(): void;
+	destroy(): void;
+}
+
+interface HttpsModule {
+	request(opts: AnyObj, cb: (res: HttpsResponse) => void): HttpsRequest;
+}
+
+function getHttpsModule(): HttpsModule {
+	return getHttps() as unknown as HttpsModule;
+}
+
+const MAX_REDIRECTS = 5;
+
+function makeHttpsRequest(
+	url: string,
+	options: HttpsRequestOptions,
+	redirectCount: number
+): Promise<HttpsRequestResponse> {
+	if (redirectCount > MAX_REDIRECTS) {
+		return Promise.reject(new Error(`Too many redirects (max: ${MAX_REDIRECTS})`));
+	}
+
+	if (!url.startsWith("https://")) {
+		return Promise.reject(
+			new Error(`Redirect target is HTTP; SSL skip only supports HTTPS URLs: ${url}`)
+		);
+	}
+
+	const https = getHttpsModule();
+	const urlObj = new URL(url);
 	const method = options.method || "GET";
-	const headers = options.headers || {};
+	const reqHeaders = options.headers || {};
 
 	return new Promise<HttpsRequestResponse>((resolve, reject) => {
 		const req = https.request(
@@ -86,28 +215,53 @@ export function httpsRequest(options: HttpsRequestOptions): Promise<HttpsRequest
 				rejectUnauthorized: false,
 				headers: {
 					"User-Agent": "Obsidian-Code-Embed-Plugin",
-					...headers,
+					...reqHeaders,
 				},
 			},
-			(res: any) => {
+			(res: HttpsResponse) => {
+				const status = res.statusCode;
+
+				// Handle redirects
+				if ([301, 302, 307, 308].includes(status)) {
+					const rawLocation = res.headers?.location;
+					const location = Array.isArray(rawLocation) ? rawLocation[0] : rawLocation;
+					if (!location) {
+						reject(new Error(`HTTP ${status}: redirect without Location header`));
+						return;
+					}
+
+					const redirectUrl = new URL(location, url).href;
+
+					// Drain response body to free socket
+					res.resume();
+
+					// 301/302: use GET; 307/308: preserve method & body
+					const redirectOptions = { ...options };
+					if (status === 301 || status === 302) {
+						redirectOptions.method = "GET";
+						redirectOptions.body = undefined;
+					}
+
+					resolve(makeHttpsRequest(redirectUrl, redirectOptions, redirectCount + 1));
+					return;
+				}
+
+				// Normal response
 				let data = "";
 				res.on("data", (chunk: string) => {
 					data += chunk;
 				});
 				res.on("end", () => {
-					const status = res.statusCode as number;
 					if (status >= 200 && status < 300) {
 						resolve({ status, text: data });
 					} else {
-						reject(
-							new Error(
-								`HTTP ${status}: ${res.statusMessage || ""}`
-							)
-						);
+						const statusMsg = res.statusMessage || "";
+						reject(new Error(`HTTP ${status}: ${statusMsg}`));
 					}
 				});
 			}
 		);
+
 		req.on("error", reject);
 		req.setTimeout(options.timeout || 30000, () => {
 			req.destroy();
@@ -119,4 +273,43 @@ export function httpsRequest(options: HttpsRequestOptions): Promise<HttpsRequest
 		}
 		req.end();
 	});
+}
+
+export function httpsRequest(options: HttpsRequestOptions): Promise<HttpsRequestResponse> {
+	return makeHttpsRequest(options.url, options, 0);
+}
+
+// ---- Main dispatch ----
+
+export async function dispatchHttpRequest(options: HttpsRequestOptions): Promise<HttpsRequestResponse> {
+	if (options.skipSslVerify && options.url.startsWith("https://")) {
+		try {
+			return await httpsRequest(options);
+		} catch (err) {
+			const message = err instanceof Error ? err.message : String(err);
+
+			if (
+				message.includes("not available") ||
+				message.includes("require() is not available") ||
+				message.includes("Failed to load Node.js HTTPS") ||
+				message.includes("restrict access")
+			) {
+				console.warn(
+					`[Code Embed] SSL skip unavailable, falling back to Obsidian requestUrl. ` +
+					`Certificate validation errors may occur: ${message}`
+				);
+				try {
+					return await requestUrlAdapter(options);
+				} catch (fallbackErr) {
+					const fbMsg = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
+					throw new Error(
+						`SSL skip verification is enabled but unavailable, ` +
+						`and the fallback request also failed: ${fbMsg}`
+					);
+				}
+			}
+			throw err;
+		}
+	}
+	return requestUrlAdapter(options);
 }

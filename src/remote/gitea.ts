@@ -1,6 +1,6 @@
 import { RemoteServiceConfig } from "../types";
 import { RemoteReadResult } from "./types";
-import { dispatchHttpRequest } from "./http-client";
+import { dispatchHttpRequest, enrichError, encodePathSegments, buildFullPath } from "./http-client";
 
 export const giteaService = {
 	serviceType: "gitea" as const,
@@ -10,12 +10,19 @@ export const giteaService = {
 			const baseUrl = config.url.replace(/\/+$/, "");
 			const repo = (config.repo || "").replace(/\/+$/, "");
 			const branch = config.branch || "main";
-			const url = `${baseUrl}/${repo}/raw/branch/${branch}/${filePath}`;
-			const resp = await dispatchHttpRequest({ url, skipSslVerify });
+			const fullPath = buildFullPath(config.path, filePath);
+			const encoded = encodePathSegments(fullPath);
+			const url = `${baseUrl}/${repo}/raw/branch/${branch}/${encoded}`;
+
+			const headers: Record<string, string> = {};
+			if (config.token) {
+				headers["Authorization"] = `token ${config.token}`;
+			}
+
+			const resp = await dispatchHttpRequest({ url, skipSslVerify, headers });
 			return { success: true, content: resp.text };
 		} catch (err) {
-			const message = err instanceof Error ? err.message : String(err);
-			return { success: false, error: `Gitea read failed: ${message}` };
+			return { success: false, error: enrichError(err, "Gitea read failed") };
 		}
 	},
 };

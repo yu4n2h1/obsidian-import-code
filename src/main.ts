@@ -4,6 +4,7 @@ import {
 	MarkdownView,
 	TFile,
 	TAbstractFile,
+	Notice,
 } from "obsidian";
 import { PluginSettings, DEFAULT_SETTINGS, LastFileReference } from "./types";
 import { importCodeSettingsTab } from "./settings";
@@ -11,6 +12,7 @@ import { CodeEmbedProcessor } from "./ui/code-embed";
 import { debounce, parseEmbedSource } from "./utils/helpers";
 import { EditorView, ViewPlugin } from "@codemirror/view";
 import { createInsertCodeCallback, createEditLastCodeCallback } from "./commands/insert-code";
+import { getHttps } from "./remote/http-client";
 
 export default class importCode extends Plugin {
 	codeProcessor!: CodeEmbedProcessor;
@@ -144,6 +146,41 @@ export default class importCode extends Plugin {
 		}, 300);
 
 		this.registerEvent(this.app.vault.on("modify", handleFileModify));
+
+		this.runStartupDiagnostics();
+	}
+
+	private runStartupDiagnostics(): void {
+		if (
+			this.settings.remoteCodeEmbedEnabled !== "enabled" ||
+			!this.settings.remoteSkipSslVerify
+		) {
+			return;
+		}
+
+		try {
+			const https = getHttps();
+			if (https && typeof (https as Record<string, unknown>).request === "function") {
+				console.log(
+					"[Code Embed] SSL skip verification is available. Node.js HTTPS module loaded successfully."
+				);
+			} else {
+				console.warn(
+					"[Code Embed] SSL skip verification is enabled but the Node.js HTTPS module " +
+					"is not fully functional. Requests to HTTPS servers with self-signed certificates " +
+					"may fail. Ensure you are using Obsidian desktop."
+				);
+			}
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : String(err);
+			console.warn(
+				`[Code Embed] SSL skip verification is enabled but unavailable: ${msg}`
+			);
+			new Notice(
+				"Code Embed: SSL skip verification is enabled but not available. " +
+				"Self-signed certificates will cause errors. See console for details."
+			);
+		}
 	}
 
 	private resetMarkdownViews(): void {

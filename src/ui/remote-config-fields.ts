@@ -8,7 +8,7 @@ export interface RemoteConfigState {
 	username?: string;
 	repo?: string;
 	branch?: string;
-	uploadPath?: string;
+	path?: string;
 }
 
 function placeholderUrl(svc: RemoteServiceType): string {
@@ -75,10 +75,10 @@ export function buildRemoteConfigFields(
 	}
 
 	new Setting(container)
-		.setName(`${label} Upload path`)
+		.setName(`${label} Path`)
 		.addText((text) => {
 			text.setPlaceholder("code-snippets");
-			text.setValue(state.uploadPath || "");
-			text.onChange((value) => onChange("uploadPath", value.trim()));
+			text.setValue(state.path || "");
+			text.onChange((value) => onChange("path", value.trim()));
 		});
 }

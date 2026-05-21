@@ -87,6 +87,7 @@ export class CodeEmbedProcessor {
 			if (!sourceEntry) {
 				throw new Error(`Remote source alias "${aliasParsed.alias}" is not configured.`);
 			}
+			
 			const result = await readFromService(
 				sourceEntry.serviceType,
 				sourceEntry.config,

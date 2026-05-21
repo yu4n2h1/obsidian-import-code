@@ -1,6 +1,6 @@
 import { RemoteServiceConfig } from "../types";
 import { RemoteReadResult } from "./types";
-import { dispatchHttpRequest } from "./http-client";
+import { dispatchHttpRequest, enrichError, buildFullPath } from "./http-client";
 
 export const gitlabService = {
 	serviceType: "gitlab" as const,
@@ -15,7 +15,8 @@ export const gitlabService = {
 			const repo = config.repo.replace(/\/+$/, "");
 			const branch = config.branch || "main";
 			const encodedRepo = encodeURIComponent(repo);
-			const encodedPath = encodeURIComponent(filePath);
+			const fullPath = buildFullPath(config.path, filePath);
+			const encodedPath = encodeURIComponent(fullPath);
 			const url = `${baseUrl}/api/v4/projects/${encodedRepo}/repository/files/${encodedPath}/raw?ref=${branch}`;
 
 			const headers: Record<string, string> = {
@@ -25,8 +26,7 @@ export const gitlabService = {
 			const resp = await dispatchHttpRequest({ url, skipSslVerify, headers });
 			return { success: true, content: resp.text };
 		} catch (err) {
-			const message = err instanceof Error ? err.message : String(err);
-			return { success: false, error: `GitLab read failed: ${message}` };
+			return { success: false, error: enrichError(err, "GitLab read failed") };
 		}
 	},
 };

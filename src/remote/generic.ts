@@ -1,14 +1,12 @@
 import { RemoteServiceConfig } from "../types";
 import { RemoteReadResult } from "./types";
-import { dispatchHttpRequest } from "./http-client";
+import { dispatchHttpRequest, enrichError, encodePathSegments, buildFullPath } from "./http-client";
 
 function buildUrl(config: RemoteServiceConfig, filePath: string): string {
 	const base = config.url.replace(/\/+$/, "");
-	const uploadPath = (config.uploadPath || "").replace(/^\/+/, "").replace(/\/+$/, "");
-	if (uploadPath) {
-		return `${base}/${uploadPath}/${filePath}`;
-	}
-	return `${base}/${filePath}`;
+	const fullPath = buildFullPath(config.path, filePath);
+	const encoded = encodePathSegments(fullPath);
+	return `${base}/${encoded}`;
 }
 
 function buildAuthHeader(config: RemoteServiceConfig): string | null {
@@ -29,8 +27,7 @@ export const genericService = {
 			const resp = await dispatchHttpRequest({ url, skipSslVerify, headers });
 			return { success: true, content: resp.text };
 		} catch (err) {
-			const message = err instanceof Error ? err.message : String(err);
-			return { success: false, error: `Generic read failed: ${message}` };
+			return { success: false, error: enrichError(err, "Generic read failed") };
 		}
 	},
 };

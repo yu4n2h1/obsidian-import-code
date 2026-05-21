@@ -21,7 +21,7 @@ export interface RemoteServiceConfig {
 	username?: string;
 	repo?: string;
 	branch?: string;
-	uploadPath?: string;
+	path?: string;
 }
 
 export interface RemoteSourceEntry {

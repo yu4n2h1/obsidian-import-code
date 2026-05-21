@@ -1,30 +1,29 @@
 # Obsidian Import Code
 
-将外部代码文件和远程 URL 嵌入到 Obsidian 笔记中，支持语法高亮、符号提取、自动刷新。
+将本地代码文件或远程代码仓库中的文件嵌入到 Obsidian 笔记中，支持语法高亮、符号/行范围提取、行高亮，以及多平台远程源（GitHub、GitLab、Gitea、WebDAV、Generic URL）的免配置引用。
 
 ## 功能
 
-- **代码嵌入** — 使用 `![[file.ext]]` 语法嵌入本地代码文件
-- **符号提取** — 使用 `![[file.ext@函数名]]` 提取指定的函数/类/方法
-- **行范围提取** — 使用 `![[file.ext@10-30]]` 提取指定行范围
-- **行高亮** — 使用 `![[file.ext#L5-L10]]` 在渲染的代码块中高亮指定行
-- **远程 URL 支持** — 支持嵌入 HTTP/HTTPS 远程代码文件
-- **语法高亮** — 基于 Obsidian 内置的 `MarkdownRenderer`
-- **双模式支持** — 同时支持 Live Preview（CodeMirror）和阅读模式
-- **自动刷新** — 源文件修改后自动重新渲染（300ms 防抖）
-- **新建代码文件** — 从剪贴板内容创建代码文件并插入嵌入链接
-- **工具栏** — 打开源文件按钮 + 一键复制代码
-- **自动语言检测** — 根据 shebang、关键字和内容特征自动检测编程语言
+- **代码嵌入** — `![[file.ext]]` 嵌入本地代码文件，`![[alias:path/file.ext]]` 嵌入远程代码文件
+- **远程源别名** — 在设置中预配置远程服务（GitHub / GitLab / Gitea / WebDAV / Generic URL），通过别名引用，无需每次输入完整 URL
+- **符号提取** — `![[file.ext@函数名]]` 提取指定函数/类/方法（支持 JS/TS/Java/C/Go/Rust 等大括号语言，以及 Python/Ruby/YAML 缩进语言）
+- **行范围提取** — `![[file.ext@10-30]]` 提取指定行范围，`@5` 提取单行
+- **行高亮** — `![[file.ext#5-10]]` 高亮渲染结果中的指定行，可与 `@` 组合使用
+- **语法高亮** — 基于文件扩展名自动识别语言，通过 Obsidian 内置 MarkdownRenderer 渲染
+- **SSL 跳过验证** — 支持自签名/过期证书的 HTTPS 服务器（桌面端），带启动诊断和优雅降级
+- **工具栏** — 每个嵌入块右上角提供 "打开源文件"按钮和"一键复制代码"按钮（含编程语言标记）
+- **双模式支持** — 同时支持阅读模式（MarkdownPostProcessor）和实时预览（CodeMirror ViewPlugin）
+- **自动刷新** — 本地文件修改后自动重新渲染（300ms 防抖）
+- **插入代码文件** — 从剪贴板创建代码文件并插入嵌入链接，自动检测编程语言
+- **再次引用** — 快速引用上一次插入的代码文件，可修改截取范围和高亮范围
 
 ## 安装
 
 ### 手动安装
 
 1. 从最新 Release 下载 `main.js`、`manifest.json`、`styles.css`
-2. 在 `<vault>/.obsidian/plugins/` 下创建 `obsidian-import-code` 文件夹
-3. 将下载的文件复制到该文件夹中
-4. 重新加载 Obsidian
-5. 在 **设置 → 第三方插件** 中启用插件
+2. 放入 `<vault>/.obsidian/plugins/obsidian-import-code/`
+3. 重新加载 Obsidian，在 **设置 → 第三方插件** 中启用
 
 ### 从源码构建
 
@@ -37,9 +36,7 @@ yarn build
 
 ## 使用方法
 
-### 嵌入代码文件
-
-使用 Obsidian 标准的 wiki 链接嵌入语法：
+### 基本嵌入
 
 ```markdown
 ![[src/utils.ts]]
@@ -47,9 +44,7 @@ yarn build
 ![[scripts/deploy.sh]]
 ```
 
-### 提取符号
-
-使用 `@` 提取指定的函数、类或方法：
+### 符号提取（`@`）
 
 ```markdown
 ![[src/utils.ts@parseConfig]]
@@ -57,73 +52,87 @@ yarn build
 ![[lib/helper.rs@process_data]]
 ```
 
-对于花括号语言（JS、TS、Java、C、Go、Rust 等）使用大括号匹配策略，对于 Python、Ruby、YAML 使用缩进跟踪策略。
-
-### 提取行范围
-
-使用数字语法提取指定行范围：
+### 行范围（`@` 数字）
 
 ```markdown
 ![[src/utils.ts@10-30]]
-![[data/schema.sql@5]]         # 单行
+![[data/schema.sql@5]]
 ```
 
-### 高亮指定行
-
-使用 `#L` 语法高亮代码块中的行：
+### 行高亮（`#`）
 
 ```markdown
-![[src/app.ts#L15-L25]]
-![[src/main.ts@init#L5-L12]]   # 可与符号提取组合使用
+![[src/app.ts#5-10]]
+![[src/main.ts@init#5-12]]
 ```
 
-### 嵌入远程 URL
+### 远程 URL（直接链接）
 
 ```markdown
 ![[https://raw.githubusercontent.com/user/repo/main/src/example.py]]
 ```
 
-需要在设置中启用远程代码嵌入，可选择性跳过 SSL 证书验证。
+### 远程源别名
 
-### 新建代码文件
+先在 **设置 → Remote source aliases** 中配置远程源，例如：
 
-使用 **插入嵌入代码** / **新建代码片段** 命令打开创建窗口，粘贴代码内容后，插件会：
+| 配置项 | 示例值 |
+|--------|--------|
+| Alias | `Code` |
+| Service type | `Gitea` (或 `GitHub` / `GitLab` / `WebDAV` / `Generic URL`) |
+| URL | `https://gitea.example.com` |
+| Token | `your-access-token` (可选，访问私有仓库) |
+| Repository | `owner/repo` (Gitea/GitHub/GitLab 必填) |
+| Branch | `main` |
+| Path | `PYTHON` (可选，基础路径前缀) |
 
-1. 根据内容自动检测文件扩展名（shebang、关键词、内容模式）
-2. 生成文件名（基于 MD5 哈希或内容）
-3. 将文件保存到配置的位置（相对于 Vault 根目录或当前笔记）
-4. 在光标位置插入 `![[...]]` 嵌入链接
+然后通过别名引用：
 
-## 支持的文件扩展名
+```markdown
+![[Code:PYTHON/cursor测试/federated/federated_learning.py]]
+![[Code:src/lib/helper.py@MyClass#10-20]]
+```
 
-在 **设置 → Obsidian Import Code** 中配置，默认：
+> 配置 `Path` 后，嵌入路径会自动拼接在基础路径之后。如上例文件被解析为 `PYTHON/cursor测试/federated/federated_learning.py`。
+
+### 命令
+
+| 命令 | 说明 |
+|------|------|
+| **Insert embed code** | 从剪贴板读取代码，识别语言，创建文件并插入 `![[...]]` |
+| **再次引用代码文件** | 加载上次插入的代码，可修改截取/高亮范围后重新引用 |
+
+## 支持的文件类型
+
+在设置中通过逗号分隔的扩展名列表配置，默认：
 
 `js, ts, py, java, c, cpp, go, rs, rb, php, sh, sql, html, css, json, yaml, xml`
 
-完整语言映射：JavaScript、TypeScript、Python、Ruby、Java、C、C++、C#、Go、Rust、Swift、Kotlin、Scala、PHP、Bash、PowerShell、SQL、HTML、CSS、SCSS、Less、JSON、XML、YAML、TOML、Markdown、Lua、R、Perl、Elixir、Erlang、Clojure、Haskell、OCaml、F#、Vue、Svelte、JSX、TSX
+覆盖 40+ 种编程语言的语法高亮。
 
 ## 设置
 
 | 设置项 | 说明 | 默认值 |
 |--------|------|--------|
-| **启用代码嵌入** | 开关代码嵌入功能 | 启用 |
-| **启用远程代码嵌入** | 允许嵌入 HTTP/HTTPS URL | 启用 |
-| **跳过 SSL 证书验证** | 跳过 HTTPS 证书验证（仅桌面端） | 关闭 |
-| **支持的文件扩展名** | 逗号分隔的扩展名列表 | `js,ts,py,...` |
-| **存储路径类型** | 根目录绝对路径 或 相对当前文档路径 | 根目录 |
-| **根目录存储路径** | 相对 Vault 根目录的路径（如 `assets/code`） | `assets` |
-| **相对存储路径** | 相对当前文档的路径（如 `./` 或 `../shared`） | `./` |
-| **文件名生成策略** | 基于 MD5 哈希 或 基于输入内容 | MD5 哈希 |
+| Enable code embed | 开关代码嵌入功能 | 启用 |
+| Enable remote code embed | 允许嵌入远程代码 | 启用 |
+| Skip SSL certificate verification | 跳过 HTTPS 证书验证（仅桌面端） | 关闭 |
+| Supported file extensions | 逗号分隔的扩展名列表 | `js,ts,py,...` |
+| Storage path type | 绝对路径（vault 根目录）或相对路径（当前笔记） | 根目录 |
+| Absolute / Relative storage path | 存储路径 | `assets` / `./` |
+| File name strategy | `hash`（SHA256 内容哈希）/ `custom`（自定义）/ `auto`（基于内容） | `hash` |
+| Remote source aliases | 预配置远程服务别名（URL、Token、Repo、Branch、Path） | 无 |
 
 ## 环境要求
 
-- Obsidian v0.15.0 或更高版本
+- Obsidian v0.15.0+
+- 远程 SSL 跳过功能仅支持桌面端（Electron）
 
 ## 开发
 
 ```bash
 yarn install   # 安装依赖
-yarn dev       # 监听模式 — 源码变化时自动重新构建
-yarn build     # 生产构建 — 类型检查 + 压缩打包
+yarn dev       # 监听模式
+yarn build     # 生产构建（类型检查 + 压缩）
 yarn lint      # 运行 eslint
 ```

@@ -224,7 +224,7 @@ export class importCodeSettingsTab extends PluginSettingTab {
 					username: entry.config.username,
 					repo: entry.config.repo,
 					branch: entry.config.branch,
-					uploadPath: entry.config.uploadPath,
+					path: entry.config.path,
 				},
 				async (key, value) => {
 					switch (key) {
@@ -243,8 +243,8 @@ export class importCodeSettingsTab extends PluginSettingTab {
 						case "branch":
 							entry.config.branch = value || "main";
 							break;
-						case "uploadPath":
-							entry.config.uploadPath = value || undefined;
+						case "path":
+							entry.config.path = value || undefined;
 							break;
 					}
 					await this.plugin.saveSettings();
