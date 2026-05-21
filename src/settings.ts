@@ -165,9 +165,12 @@ export class importCodeSettingsTab extends PluginSettingTab {
 		const entries = Object.entries(this.plugin.settings.remoteSources);
 
 		for (const [alias, entry] of entries) {
-			const aliasWrapper = wrapper.createDiv({ cls: "code-import-remote-source-entry" });
+			const card = wrapper.createDiv({ cls: "remote-source-card" });
 
-			new Setting(aliasWrapper)
+			// Card header: alias input + delete button
+			const header = card.createDiv({ cls: "remote-source-card-header" });
+			const inputContainer = header.createDiv({ cls: "remote-source-card-alias-input" });
+			new Setting(inputContainer)
 				.setName("Alias")
 				.addText((text) => {
 					text.setValue(alias);
@@ -181,9 +184,12 @@ export class importCodeSettingsTab extends PluginSettingTab {
 						currentAlias = trimmed;
 						await this.plugin.saveSettings();
 					});
-				})
+				});
+			const btnContainer = header.createDiv({ cls: "remote-source-card-delete" });
+			new Setting(btnContainer)
 				.addButton((btn) => {
 					btn.setButtonText("Delete");
+					btn.setWarning();
 					btn.onClick(async () => {
 						delete this.plugin.settings.remoteSources[alias];
 						await this.plugin.saveSettings();
@@ -195,7 +201,9 @@ export class importCodeSettingsTab extends PluginSettingTab {
 					});
 				});
 
-			new Setting(aliasWrapper)
+			// Card body: service type + config fields
+			const body = card.createDiv({ cls: "remote-source-card-body" });
+			new Setting(body)
 				.setName("Service type")
 				.addDropdown((dd) => {
 					dd.addOption("generic", "Generic URL");
@@ -203,6 +211,7 @@ export class importCodeSettingsTab extends PluginSettingTab {
 					dd.addOption("gitlab", "GitLab");
 					dd.addOption("gitea", "Gitea");
 					dd.addOption("webdav", "WebDAV");
+					dd.addOption("local", "Local Directory");
 					dd.setValue(entry.serviceType);
 					dd.onChange(async (value) => {
 						entry.serviceType = value as RemoteServiceType;
@@ -216,7 +225,7 @@ export class importCodeSettingsTab extends PluginSettingTab {
 				});
 
 			buildRemoteConfigFields(
-				aliasWrapper,
+				body,
 				entry.serviceType,
 				{
 					url: entry.config.url,
@@ -252,7 +261,8 @@ export class importCodeSettingsTab extends PluginSettingTab {
 			);
 		}
 
-		new Setting(wrapper)
+		const addRow = wrapper.createDiv({ cls: "remote-source-add" });
+		new Setting(addRow)
 			.addButton((btn) => {
 				btn.setButtonText("Add remote source");
 				btn.onClick(async () => {
@@ -269,5 +279,9 @@ export class importCodeSettingsTab extends PluginSettingTab {
 					}
 				});
 			});
+		addRow.createDiv({
+			cls: "setting-item-description",
+			text: "Add a new remote source alias to embed code from external services or local directories.",
+		});
 	}
 }

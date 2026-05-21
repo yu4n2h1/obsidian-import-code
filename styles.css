@@ -251,6 +251,57 @@
 	display: none;
 }
 
+/* === Remote Source Cards (Settings) === */
+
+.remote-source-card {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 0.75em 1em;
+	margin-bottom: 1em;
+}
+
+.remote-source-card-header {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.5em;
+	padding-bottom: 0.5em;
+	margin-bottom: 0.5em;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.remote-source-card-alias-input {
+	flex: 1;
+}
+
+.remote-source-card-alias-input .setting-item {
+	border-top: none;
+	padding: 0;
+}
+
+.remote-source-card-delete {
+	flex-shrink: 0;
+	align-self: center;
+}
+
+.remote-source-card-delete .setting-item {
+	border-top: none;
+	padding: 0;
+}
+
+.remote-source-card-body .setting-item {
+	border-top: none;
+}
+
+.remote-source-add {
+	margin-top: 0.5em;
+}
+
+.remote-source-add .setting-item-description {
+	margin-top: 0.25em;
+	color: var(--text-muted);
+	font-size: var(--font-smaller);
+}
+
 /* === Link Preview === */
 
 .link-preview-section {

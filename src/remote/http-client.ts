@@ -87,6 +87,8 @@ function loadHttpsModule(): unknown {
 	}
 }
 
+export { getRequire };
+
 export function getHttps(): unknown {
 	if (_httpsModule !== undefined) return _httpsModule;
 	_httpsModule = loadHttpsModule();
