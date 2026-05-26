@@ -38,7 +38,12 @@ export class CodeEmbedProcessor {
 	isProcessingAllowed(filePath: string): boolean {
 		if (this.settings.codeEmbedEnabled !== "enabled") return false;
 		if (isRemoteUrl(filePath) || isAliasPath(filePath)) {
-			return this.settings.remoteCodeEmbedEnabled === "enabled";
+			if (this.settings.remoteCodeEmbedEnabled !== "enabled") return false;
+			// Also check extension filter for alias/remote paths
+			const aliasParsed = isAliasPath(filePath) ? parseAliasPath(filePath) : null;
+			const pathForExtension = aliasParsed ? aliasParsed.relativePath : filePath;
+			const [extension] = getLanguageFromPath(pathForExtension);
+			return isExtensionSupported(this.settings, extension);
 		}
 		const [extension] = getLanguageFromPath(filePath);
 		return isExtensionSupported(this.settings, extension);
@@ -283,7 +288,10 @@ export class CodeEmbedProcessor {
 					lines[lineIdx] = `<span class="code-highlight-line">${content}</span>`;
 					}
 				}
-				codeEl.innerHTML = lines.join("\n");
+				codeEl.innerHTML = lines.join("\n").replace(
+						/(<\/span>)\n(<span class="code-highlight-line">)/g,
+						"$1$2"
+					);
 			}
 		}
 

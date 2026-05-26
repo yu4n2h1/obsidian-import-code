@@ -164,28 +164,37 @@ export class importCodeSettingsTab extends PluginSettingTab {
 
 		const entries = Object.entries(this.plugin.settings.remoteSources);
 
-		for (const [alias, entry] of entries) {
-			const aliasWrapper = wrapper.createDiv({ cls: "code-import-remote-source-entry" });
+		for (const [initialAlias, entry] of entries) {
+			const card = wrapper.createDiv({ cls: "remote-source-card" });
 
-			new Setting(aliasWrapper)
+			// Track current alias in a mutable ref so both rename and delete see the latest value
+			const aliasRef = { current: initialAlias };
+
+			// Card header: alias input + delete button
+			const header = card.createDiv({ cls: "remote-source-card-header" });
+			const inputContainer = header.createDiv({ cls: "remote-source-card-alias-input" });
+			new Setting(inputContainer)
 				.setName("Alias")
 				.addText((text) => {
-					text.setValue(alias);
-					let currentAlias = alias;
+					text.setValue(initialAlias);
 					text.onChange(async (value) => {
 						const trimmed = value.trim();
-						if (!trimmed || trimmed === currentAlias) return;
+						if (!trimmed || trimmed === aliasRef.current) return;
 						const sources = this.plugin.settings.remoteSources;
+						if (trimmed in sources) return; // Don't silently overwrite an existing alias
 						sources[trimmed] = entry;
-						delete sources[currentAlias];
-						currentAlias = trimmed;
+						delete sources[aliasRef.current];
+						aliasRef.current = trimmed;
 						await this.plugin.saveSettings();
 					});
-				})
+				});
+			const btnContainer = header.createDiv({ cls: "remote-source-card-delete" });
+			new Setting(btnContainer)
 				.addButton((btn) => {
 					btn.setButtonText("Delete");
+					btn.setWarning();
 					btn.onClick(async () => {
-						delete this.plugin.settings.remoteSources[alias];
+						delete this.plugin.settings.remoteSources[aliasRef.current];
 						await this.plugin.saveSettings();
 						const oldWrapper = containerEl.querySelector(".code-import-remote-source-section");
 						if (oldWrapper) {
@@ -195,7 +204,9 @@ export class importCodeSettingsTab extends PluginSettingTab {
 					});
 				});
 
-			new Setting(aliasWrapper)
+			// Card body: service type + config fields
+			const body = card.createDiv({ cls: "remote-source-card-body" });
+			new Setting(body)
 				.setName("Service type")
 				.addDropdown((dd) => {
 					dd.addOption("generic", "Generic URL");
@@ -203,6 +214,7 @@ export class importCodeSettingsTab extends PluginSettingTab {
 					dd.addOption("gitlab", "GitLab");
 					dd.addOption("gitea", "Gitea");
 					dd.addOption("webdav", "WebDAV");
+					dd.addOption("local", "Local Directory");
 					dd.setValue(entry.serviceType);
 					dd.onChange(async (value) => {
 						entry.serviceType = value as RemoteServiceType;
@@ -216,7 +228,7 @@ export class importCodeSettingsTab extends PluginSettingTab {
 				});
 
 			buildRemoteConfigFields(
-				aliasWrapper,
+				body,
 				entry.serviceType,
 				{
 					url: entry.config.url,
@@ -252,11 +264,17 @@ export class importCodeSettingsTab extends PluginSettingTab {
 			);
 		}
 
-		new Setting(wrapper)
+		const addRow = wrapper.createDiv({ cls: "remote-source-add" });
+		new Setting(addRow)
 			.addButton((btn) => {
 				btn.setButtonText("Add remote source");
 				btn.onClick(async () => {
-					const alias = `source-${Object.keys(this.plugin.settings.remoteSources).length + 1}`;
+					let index = 1;
+					let alias = `source-${index}`;
+					while (alias in this.plugin.settings.remoteSources) {
+						index++;
+						alias = `source-${index}`;
+					}
 					this.plugin.settings.remoteSources[alias] = {
 						serviceType: "generic",
 						config: { url: "", token: "" },
@@ -269,5 +287,9 @@ export class importCodeSettingsTab extends PluginSettingTab {
 					}
 				});
 			});
+		addRow.createDiv({
+			cls: "setting-item-description",
+			text: "Add a new remote source alias to embed code from external services or local directories.",
+		});
 	}
 }

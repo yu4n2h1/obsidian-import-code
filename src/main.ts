@@ -6,7 +6,7 @@ import {
 	TAbstractFile,
 	Notice,
 } from "obsidian";
-import { PluginSettings, DEFAULT_SETTINGS, LastFileReference } from "./types";
+import { PluginSettings, DEFAULT_SETTINGS, LastFileReference, RemoteServiceType } from "./types";
 import { importCodeSettingsTab } from "./settings";
 import { CodeEmbedProcessor } from "./ui/code-embed";
 import { debounce, parseEmbedSource } from "./utils/helpers";
@@ -20,8 +20,32 @@ export default class importCode extends Plugin {
 	private lastFileReference: LastFileReference | null = null;
 
 	async loadSettings() {
-		const rawData = (await this.loadData()) as (Partial<PluginSettings> & { lastFileReference?: LastFileReference }) | null;
-		const { lastFileReference, ...loadedData } = rawData ?? {};
+		const rawData = (await this.loadData()) as (Partial<PluginSettings> & { lastFileReference?: LastFileReference; remoteServices?: Record<string, { url?: string; token?: string; username?: string; repo?: string; branch?: string; path?: string; uploadPath?: string }> }) | null;
+		const { lastFileReference, remoteServices, ...loadedData } = rawData ?? {};
+
+		// Migrate old remoteServices (keyed by service type) to new remoteSources (keyed by alias)
+		if (remoteServices && !loadedData.remoteSources) {
+			const validTypes = new Set<string>(["webdav", "github", "gitlab", "gitea", "generic", "local"]);
+			const migratedSources: PluginSettings["remoteSources"] = {};
+			for (const [serviceType, config] of Object.entries(remoteServices)) {
+				if (!config || !validTypes.has(serviceType)) continue;
+				migratedSources[serviceType] = {
+					serviceType: serviceType as RemoteServiceType,
+					config: {
+						url: config.url || "",
+						token: config.token || "",
+						username: config.username,
+						repo: config.repo,
+						branch: config.branch,
+						path: config.path || config.uploadPath,
+					},
+				};
+			}
+			if (Object.keys(migratedSources).length > 0) {
+				(loadedData as Record<string, unknown>).remoteSources = migratedSources;
+			}
+		}
+
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, loadedData);
 		if (lastFileReference) {
 			this.lastFileReference = lastFileReference;
@@ -35,6 +59,19 @@ export default class importCode extends Plugin {
 		}
 		await this.saveData(data);
 		this.initProcessors();
+
+		// Refresh open Markdown views so embed toggles take effect immediately
+		this.app.workspace.iterateAllLeaves((leaf) => {
+			if (leaf.view instanceof MarkdownView) {
+				const container = leaf.view.containerEl;
+				const embeds = container.querySelectorAll(".internal-embed.code-link-processed");
+				embeds.forEach((embed: Element) => {
+					embed.classList.remove("code-link-processed");
+					embed.removeAttribute("data-code-link-handled");
+				});
+			}
+		});
+		this.resetMarkdownViews();
 	}
 
 	initProcessors() {

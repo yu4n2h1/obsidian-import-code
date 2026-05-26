@@ -6,6 +6,7 @@ import { gitlabService } from "./gitlab";
 import { giteaService } from "./gitea";
 import { webdavService } from "./webdav";
 import { genericService } from "./generic";
+import { localService } from "./local-fs";
 
 const services: Record<RemoteServiceType, RemoteService> = {
 	github: githubService,
@@ -13,6 +14,7 @@ const services: Record<RemoteServiceType, RemoteService> = {
 	gitea: giteaService,
 	webdav: webdavService,
 	generic: genericService,
+	local: localService,
 };
 
 /**

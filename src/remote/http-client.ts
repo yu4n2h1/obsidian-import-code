@@ -52,7 +52,6 @@ function getRequire(): (id: string) => unknown {
 		}
 	} catch { /* not available */ }
 
-	_requireFn = null;
 	throw new Error(
 		"Node.js require() is not available. " +
 		"SSL skip verification requires the Obsidian desktop app. " +
@@ -86,6 +85,8 @@ function loadHttpsModule(): unknown {
 		);
 	}
 }
+
+export { getRequire };
 
 export function getHttps(): unknown {
 	if (_httpsModule !== undefined) return _httpsModule;
@@ -126,11 +127,12 @@ export function encodePathSegments(filePath: string): string {
 // ---- Shared error enrichment ----
 
 export function enrichError(err: unknown, context: string): string {
-	const message = err instanceof Error ? err.message : String(err);
-	if (message.includes("Skip SSL") || message.includes("SSL skip")) {
-		return `${context}: ${message}`;
+	if (err instanceof Error) {
+		const code = (err as NodeJS.ErrnoException).code;
+		const prefix = code ? `${context} [${code}]` : context;
+		return `${prefix}: ${err.message}`;
 	}
-	return `${context}: ${message}`;
+	return `${context}: ${String(err)}`;
 }
 
 // ---- Request adapters ----

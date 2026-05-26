@@ -13,7 +13,7 @@ export interface FileStorageSettings {
 	fileNameStrategy: "hash" | "custom" | "auto";
 }
 
-export type RemoteServiceType = "webdav" | "github" | "gitlab" | "gitea" | "generic";
+export type RemoteServiceType = "webdav" | "github" | "gitlab" | "gitea" | "generic" | "local";
 
 export interface RemoteServiceConfig {
 	url: string;

@@ -18,6 +18,7 @@ function placeholderUrl(svc: RemoteServiceType): string {
 		case "gitea": return "https://gitea.com";
 		case "github": return "https://api.github.com";
 		case "generic": return "https://example.com";
+		case "local": return "/Users/me/projects";
 	}
 }
 
@@ -28,23 +29,26 @@ export function buildRemoteConfigFields(
 	onChange: (key: keyof RemoteConfigState, value: string) => void
 ): void {
 	const label = SERVICE_LABELS[serviceType];
+	const isLocal = serviceType === "local";
 
 	new Setting(container)
-		.setName(`${label} URL`)
+		.setName(isLocal ? `${label} Base Directory` : `${label} URL`)
 		.addText((text) => {
 			text.setPlaceholder(placeholderUrl(serviceType));
 			text.setValue(state.url);
 			text.onChange((value) => onChange("url", value.trim()));
 		});
 
-	new Setting(container)
-		.setName(`${label} Token`)
-		.addText((text) => {
-			text.setPlaceholder("Access token");
-			text.inputEl.type = "password";
-			text.setValue(state.token);
-			text.onChange((value) => onChange("token", value.trim()));
-		});
+	if (!isLocal) {
+		new Setting(container)
+			.setName(`${label} Token`)
+			.addText((text) => {
+				text.setPlaceholder("Access token");
+				text.inputEl.type = "password";
+				text.setValue(state.token);
+				text.onChange((value) => onChange("token", value.trim()));
+			});
+	}
 
 	if (serviceType === "webdav") {
 		new Setting(container)
