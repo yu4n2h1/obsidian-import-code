@@ -115,10 +115,11 @@ export interface HttpsRequestResponse {
 
 export function buildFullPath(basePath: string | undefined, filePath: string): string {
 	const prefix = (basePath || "").replace(/^\/+/, "").replace(/\/+$/, "");
+	const normalizedPath = filePath.replace(/^\/+/, "");
 	if (prefix) {
-		return `${prefix}/${filePath}`;
+		return `${prefix}/${normalizedPath}`;
 	}
-	return filePath;
+	return normalizedPath;
 }
 
 export function encodePathSegments(filePath: string): string {
