@@ -151,9 +151,12 @@ export default class importCode extends Plugin {
 	}
 
 	private runStartupDiagnostics(): void {
+		const anyServiceSkipSsl = Object.values(this.settings.remoteSources).some(
+			(entry) => entry.config.skipSslVerify === true
+		);
 		if (
 			this.settings.remoteCodeEmbedEnabled !== "enabled" ||
-			!this.settings.remoteSkipSslVerify
+			(!this.settings.remoteSkipSslVerify && !anyServiceSkipSsl)
 		) {
 			return;
 		}

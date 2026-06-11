@@ -48,7 +48,7 @@ export class FileReader {
 			sourceEntry.serviceType,
 			sourceEntry.config,
 			aliasParsed.relativePath,
-			this.settings.remoteSkipSslVerify,
+			sourceEntry.config.skipSslVerify ?? false,
 		);
 		if (!result.success || result.content === undefined) {
 			throw new Error(result.error || `Failed to read "${aliasParsed.relativePath}" from "${aliasParsed.alias}".`);

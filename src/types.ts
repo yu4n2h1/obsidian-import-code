@@ -22,6 +22,7 @@ export interface RemoteServiceConfig {
 	repo?: string;
 	branch?: string;
 	path?: string;
+	skipSslVerify?: boolean;
 }
 
 export interface RemoteSourceEntry {

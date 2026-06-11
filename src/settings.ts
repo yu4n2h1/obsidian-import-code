@@ -56,7 +56,7 @@ export class importCodeSettingsTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Skip SSL certificate verification")
-			.setDesc("Skip HTTPS certificate validation, allowing self-signed/expired/insecure certificates (desktop only)")
+			.setDesc("For direct HTTPS wiki-link URLs only. Skip certificate validation for self-signed/expired/insecure certificates (desktop only). Configure per-service SSL skip in Remote Source Aliases below.")
 			.addToggle((toggle) =>
 				toggle
 					.setValue(this.plugin.settings.remoteSkipSslVerify)
@@ -234,26 +234,30 @@ export class importCodeSettingsTab extends PluginSettingTab {
 					repo: entry.config.repo,
 					branch: entry.config.branch,
 					path: entry.config.path,
+					skipSslVerify: entry.config.skipSslVerify,
 				},
 				async (key, value) => {
 					switch (key) {
 						case "url":
-							entry.config.url = value;
+							entry.config.url = value as string;
 							break;
 						case "token":
-							entry.config.token = value;
+							entry.config.token = value as string;
 							break;
 						case "username":
-							entry.config.username = value || undefined;
+							entry.config.username = (value as string) || undefined;
 							break;
 						case "repo":
-							entry.config.repo = value || undefined;
+							entry.config.repo = (value as string) || undefined;
 							break;
 						case "branch":
-							entry.config.branch = value || "main";
+							entry.config.branch = (value as string) || "main";
 							break;
 						case "path":
-							entry.config.path = value || undefined;
+							entry.config.path = (value as string) || undefined;
+							break;
+						case "skipSslVerify":
+							entry.config.skipSslVerify = value as boolean;
 							break;
 					}
 					await this.plugin.saveSettings();
@@ -269,7 +273,7 @@ export class importCodeSettingsTab extends PluginSettingTab {
 					const alias = `source-${Object.keys(this.plugin.settings.remoteSources).length + 1}`;
 					this.plugin.settings.remoteSources[alias] = {
 						serviceType: "generic",
-						config: { url: "", token: "" },
+						config: { url: "", token: "", skipSslVerify: false },
 					};
 					await this.plugin.saveSettings();
 					const oldWrapper = containerEl.querySelector(".code-import-remote-source-section");

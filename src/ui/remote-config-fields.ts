@@ -9,6 +9,7 @@ export interface RemoteConfigState {
 	repo?: string;
 	branch?: string;
 	path?: string;
+	skipSslVerify?: boolean;
 }
 
 function placeholderUrl(svc: RemoteServiceType): string {
@@ -26,7 +27,7 @@ export function buildRemoteConfigFields(
 	container: HTMLElement,
 	serviceType: RemoteServiceType,
 	state: RemoteConfigState,
-	onChange: (key: keyof RemoteConfigState, value: string) => void
+	onChange: (key: keyof RemoteConfigState, value: string | boolean) => void
 ): void {
 	const label = SERVICE_LABELS[serviceType];
 	const isLocal = serviceType === "local";
@@ -48,6 +49,15 @@ export function buildRemoteConfigFields(
 				text.setValue(state.token);
 				text.onChange((value) => onChange("token", value.trim()));
 			});
+
+			new Setting(container)
+				.setName(`${label} Skip SSL certificate verification`)
+				.setDesc("Skip HTTPS certificate validation for this service (desktop only)")
+				.addToggle((toggle) =>
+					toggle
+						.setValue(state.skipSslVerify ?? false)
+						.onChange((value) => onChange("skipSslVerify", value))
+				);
 	}
 
 	if (serviceType === "webdav") {
