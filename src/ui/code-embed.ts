@@ -1,40 +1,36 @@
-import {
-	App,
-	MarkdownRenderer,
-	Component,
-	setIcon,
-	TFile,
-} from "obsidian";
-import { getLanguageFromPath } from "../utils/language";
+import { App, Component } from "obsidian";
+import { CodeEmbedSettings } from "../types";
 import {
 	isRemoteUrl,
 	isAliasPath,
-	parseAliasPath,
 	isPartialIpv6Url,
 	tryRestoreIpv6Url,
 	parseEmbedSource,
-	parseLineRange,
 	isExtensionSupported,
 } from "../utils/helpers";
-import { CodeEmbedSettings } from "../types";
-import { extractSymbol, findSymbolLineRange } from "../utils/code-extractor";
-import { readRemoteFile, readFromService } from "../remote/remote-manager";
+import { getLanguageFromPath } from "../utils/language";
+import { FileReader } from "../pipeline/file-reader";
+import { ViewRenderer } from "../pipeline/view-renderer";
+import { resolveLink } from "../pipeline/link-router";
+import { classifyTargets } from "../pipeline/target-resolver";
+import { sliceContent } from "../pipeline/symbol-converter";
+import { RenderContext } from "../pipeline/types";
 
 export class CodeEmbedProcessor {
 	app: App;
 	settings: CodeEmbedSettings;
 	plugin: Component;
+	private fileReader: FileReader;
+	private viewRenderer: ViewRenderer;
 
 	constructor(app: App, settings: CodeEmbedSettings, plugin: Component) {
 		this.app = app;
 		this.settings = settings;
 		this.plugin = plugin;
+		this.fileReader = new FileReader(app, settings);
+		this.viewRenderer = new ViewRenderer(app, plugin);
 	}
 
-	/**
-	 * 检查是否允许处理指定的文件路径。
-	 * 统一入口，同时检查插件总开关、远程嵌入开关和支持的扩展名。
-	 */
 	isProcessingAllowed(filePath: string): boolean {
 		if (this.settings.codeEmbedEnabled !== "enabled") return false;
 		if (isRemoteUrl(filePath) || isAliasPath(filePath)) {
@@ -44,10 +40,6 @@ export class CodeEmbedProcessor {
 		return isExtensionSupported(this.settings, extension);
 	}
 
-	/**
-	 * 遍历容器中的 .internal-embed 元素，对每个匹配的嵌入调用 processFile。
-	 * 处理 IPv6 URL 还原、设置检查和符号解析。
-	 */
 	processEmbeds(container: HTMLElement, sourcePath: string): void {
 		const embeds = container.querySelectorAll(".internal-embed");
 		for (let i = 0; i < embeds.length; i++) {
@@ -73,220 +65,77 @@ export class CodeEmbedProcessor {
 
 			embed.classList.add("code-link-processed");
 			embed.empty();
-			this.processFile(filePath, symbolName, embed, sourcePath, highlightSpec).catch((err) => {
-				console.error("processEmbeds failed:", err);
-				embed.setText(`Error: ${err instanceof Error ? err.message : String(err)}`);
-			});
+			// 错误在 processFile 内部已处理和渲染
+			void this.processFile(filePath, symbolName, embed, sourcePath, highlightSpec);
 		}
 	}
 
-	async readFile(filePath: string, sourcePath: string): Promise<string | null> {
-		const aliasParsed = parseAliasPath(filePath);
-		if (aliasParsed) {
-			const sourceEntry = this.settings.remoteSources[aliasParsed.alias];
-			if (!sourceEntry) {
-				throw new Error(`Remote source alias "${aliasParsed.alias}" is not configured.`);
-			}
-			
-			const result = await readFromService(
-				sourceEntry.serviceType,
-				sourceEntry.config,
-				aliasParsed.relativePath,
-				this.settings.remoteSkipSslVerify,
-			);
-			if (!result.success || result.content === undefined) {
-				throw new Error(result.error || `Failed to read "${aliasParsed.relativePath}" from "${aliasParsed.alias}".`);
-			}
-			return result.content;
-		}
-
-		if (isRemoteUrl(filePath)) {
-			const content = await readRemoteFile(filePath, this.settings.remoteSkipSslVerify);
-			if (content === null) {
-				throw new Error("Failed to read remote file");
-			}
-			return content;
-		}
-
-		const file = this.app.metadataCache.getFirstLinkpathDest(filePath, sourcePath);
-		if (file instanceof TFile) {
-			return await this.app.vault.read(file);
-		}
-
-		return null;
-	}
-
+	/**
+	 * 管线编排器：依次执行 5 个管线阶段，将 Wiki Link 渲染为代码视图。
+	 *
+	 *   [阶段1] link-router.resolveLink()      → ResolvedLink
+	 *   [阶段2] fileReader.read()              → FileContext
+	 *   [阶段3] targetResolver.classifyTargets() → TargetResult
+	 *   [阶段4] symbolConverter.sliceContent()  → SlicedContent
+	 *   [阶段5] viewRenderer.render()          → HTMLElement
+	 */
 	async processFile(
 		filePath: string,
 		symbolName: string,
 		targetElement: HTMLElement,
 		sourcePath: string,
-		highlightSpec: string = ""
+		highlightSpec: string = "",
 	): Promise<boolean> {
 		try {
 			targetElement.setAttribute("data-code-link-handled", "true");
 			targetElement.addClass("code-link-block");
-
 			targetElement.empty();
-			targetElement.createDiv({
-				cls: "code-link-loading",
-				text: "Loading...",
+			targetElement.createDiv({ cls: "code-link-loading", text: "Loading..." });
+
+			// [阶段1] 链接路由
+			const resolvedLink = resolveLink(filePath);
+
+			// [阶段2] 文件读取
+			const fileContext = await this.fileReader.read(resolvedLink, sourcePath);
+
+			// [阶段3] 目标解析
+			const targetResult = classifyTargets(symbolName, highlightSpec);
+
+			// [阶段4] 符号转换 + 内容切片
+			const sliced = sliceContent(
+				fileContext.content,
+				fileContext.language,
+				targetResult.display,
+				targetResult.highlight,
+			);
+
+			// [阶段5] 视图渲染
+			const renderCtx: RenderContext = {
+				file: fileContext,
+				slice: sliced,
+				sourcePath,
+			};
+
+			const result = await this.viewRenderer.render(renderCtx);
+
+			result.addEventListener("click", (e: MouseEvent) => {
+				const target = e.target as HTMLElement;
+				if (target.closest("button")) {
+					e.stopPropagation();
+					return;
+				}
+				e.preventDefault();
+				e.stopPropagation();
 			});
 
-			const content = await this.readFile(filePath, sourcePath);
-
-			if (content !== null) {
-				targetElement.empty();
-
-				let renderContent = content;
-				if (symbolName) {
-					const lineRange = parseLineRange(symbolName);
-					if (lineRange) {
-						const lines = content.split("\n");
-						const startIdx = Math.max(0, lineRange.start - 1);
-						const endIdx = lineRange.end
-							? Math.min(lines.length, lineRange.end)
-							: startIdx + 1;
-						if (startIdx >= lines.length) {
-							const errorDiv = targetElement.createDiv({ cls: "code-link-error" });
-							errorDiv.textContent = `Line ${lineRange.start} out of range (file has ${lines.length} lines)`;
-							return true;
-						}
-						renderContent = lines.slice(startIdx, endIdx).join("\n");
-					} else {
-						const [, language] = getLanguageFromPath(filePath);
-						const extracted = extractSymbol(content, symbolName, language);
-						if (extracted === null) {
-							const errorDiv = targetElement.createDiv({ cls: "code-link-error" });
-							errorDiv.textContent = `Symbol "${symbolName}" not found in ${filePath}`;
-							return true;
-						}
-						renderContent = extracted;
-					}
-				}
-
-				let highlightLines: number[] | undefined;
-				if (highlightSpec) {
-					const lineRange = parseLineRange(highlightSpec);
-					const renderLines = renderContent.split("\n");
-					if (lineRange) {
-						const start = Math.max(0, lineRange.start - 1);
-						const end = lineRange.end
-							? Math.min(renderLines.length, lineRange.end)
-							: start + 1;
-						if (start < renderLines.length) {
-							highlightLines = [];
-							for (let i = start; i < end; i++) highlightLines.push(i);
-						}
-					} else {
-						const [, language] = getLanguageFromPath(filePath);
-						const range = findSymbolLineRange(renderContent, highlightSpec, language);
-						if (range) {
-							highlightLines = [];
-							for (let i = range.start - 1; i < range.end; i++) highlightLines.push(i);
-						}
-					}
-				}
-
-				const result = await this.render(renderContent, targetElement, filePath, sourcePath, highlightLines);
-				if (result) {
-					result.addEventListener("click", (e: MouseEvent) => {
-						const target = e.target as HTMLElement;
-						if (target.closest("button")) {
-							e.stopPropagation();
-							return;
-						}
-						e.preventDefault();
-						e.stopPropagation();
-					});
-
-					targetElement.appendChild(result);
-					return true;
-				}
-			}
-			return false;
+			targetElement.empty();
+			targetElement.appendChild(result);
+			return true;
 		} catch (err) {
 			targetElement.empty();
 			const errorDiv = targetElement.createDiv({ cls: "code-link-error" });
 			errorDiv.textContent = `Error: ${err instanceof Error ? err.message : String(err)}`;
 			return false;
 		}
-	}
-
-	async render(
-		content: string,
-		targetElement: HTMLElement,
-		filePath: string,
-		sourcePath: string,
-		highlightLines?: number[]
-	): Promise<HTMLElement> {
-		const [, language] = getLanguageFromPath(filePath);
-
-		const container = document.createElement("div");
-		container.className = "code-embed-container";
-
-		const toolbar = container.createDiv({ cls: "code-embed-toolbar" });
-
-		const openButton = toolbar.createEl("button", {
-			cls: "code-embed-open-btn",
-		});
-		openButton.addEventListener("click", (e) => {
-			e.preventDefault();
-			e.stopPropagation();
-			void this.app.workspace.openLinkText(filePath, sourcePath);
-		});
-		setIcon(openButton, "external-link");
-		openButton.setAttribute("aria-label", "Open file");
-
-		const langLabel = toolbar.createEl("button", {
-			cls: "code-block-flair",
-			text: language,
-			attr: {
-				"aria-label": "复制",
-			},
-		});
-		langLabel.addEventListener("click", (e) => {
-			e.preventDefault();
-			e.stopPropagation();
-			void (async () => {
-				try {
-					await navigator.clipboard.writeText(content);
-					const originalText = langLabel.textContent;
-					langLabel.textContent = "已复制";
-					setTimeout(() => {
-						langLabel.textContent = originalText;
-					}, 1500);
-				} catch (err) {
-					console.error("复制失败:", err);
-				}
-			})();
-		});
-
-		const wrapper = container.createDiv({ cls: "code-embed-wrapper" });
-
-		const markdownCodeBlock = "```" + language + "\n" + content + "\n```";
-		await MarkdownRenderer.render(
-			this.app,
-			markdownCodeBlock,
-			wrapper,
-			sourcePath,
-			this.plugin
-		);
-
-		if (highlightLines && highlightLines.length > 0) {
-			const codeEl = wrapper.querySelector("code");
-			if (codeEl) {
-				const lines = codeEl.innerHTML.split("\n");
-				for (const lineIdx of highlightLines) {
-					if (lineIdx < lines.length) {
-						const content = lines[lineIdx] || "&nbsp;";
-					lines[lineIdx] = `<span class="code-highlight-line">${content}</span>`;
-					}
-				}
-				codeEl.innerHTML = lines.join("\n");
-			}
-		}
-
-		return container;
 	}
 }
