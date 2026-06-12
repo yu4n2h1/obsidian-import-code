@@ -9,6 +9,10 @@
 - **符号提取** — `![[file.ext@函数名]]` 提取指定函数/类/方法（支持 JS/TS/Java/C/Go/Rust 等大括号语言，以及 Python/Ruby/YAML 缩进语言）
 - **行范围提取** — `![[file.ext@10-30]]` 提取指定行范围，`@5` 提取单行
 - **行高亮** — `![[file.ext#5-10]]` 高亮渲染结果中的指定行，可与 `@` 组合使用
+<<<<<<< HEAD
+=======
+- **HTML 元素提取** — `![[file.html@.container]]` 通过 CSS 选择器提取 HTML 元素（支持 `@` CSS 选择器语法）
+>>>>>>> develop
 - **语法高亮** — 基于文件扩展名自动识别语言，通过 Obsidian 内置 MarkdownRenderer 渲染
 - **SSL 跳过验证** — 支持自签名/过期证书的 HTTPS 服务器（桌面端），带启动诊断和优雅降级
 - **工具栏** — 每个嵌入块右上角提供 "打开源文件"按钮和"一键复制代码"按钮（含编程语言标记）
@@ -17,6 +21,7 @@
 - **插入代码文件** — 从剪贴板创建代码文件并插入嵌入链接，自动检测编程语言
 - **再次引用** — 快速引用上一次插入的代码文件，可修改截取范围和高亮范围
 
+<<<<<<< HEAD
 ## 效果展示
 
 ### 代码嵌入与语法高亮
@@ -31,6 +36,8 @@
 
 ![行高亮示例](images/screenshot-code-3.png)
 
+=======
+>>>>>>> develop
 ## 安装
 
 ### 手动安装
@@ -80,6 +87,35 @@ yarn build
 ![[src/main.ts@init#5-12]]
 ```
 
+<<<<<<< HEAD
+=======
+### HTML 元素提取（`@` CSS 选择器）
+
+对于 `.html` 文件，`@` 后支持 CSS 选择器来提取特定元素：
+
+```markdown
+![[template.html@.container]]
+![[page.html@[id="main"]]]
+![[layout.html@div.content]]
+![[index.html@section > p]]
+```
+
+| 选择器示例 | 提取内容 |
+|-----------|----------|
+| `.container` | 提取 `class="container"` 的元素 |
+| `[id="main"]` | 提取 `id="main"` 的元素 |
+| `div.content` | 提取 `<div class="content">` |
+| `nav > a` | 提取 `<nav>` 下的 `<a>` |
+
+> **注意**：由于 `#` 在 embed 语法中已用作高亮分隔符（如 `#5-10`），请使用属性选择器 `[id="xxx"]` 代替 ID 选择器 `#xxx`。例如用 `[id="main"]` 代替 `#main`。
+
+与行高亮组合使用：
+
+```markdown
+![[page.html@[id="main"]#5-10]]
+```
+
+>>>>>>> develop
 ### 远程 URL（直接链接）
 
 ```markdown
@@ -126,8 +162,11 @@ yarn build
 
 ## 设置
 
+<<<<<<< HEAD
 ![设置界面](images/screenshot-settings.png)
 
+=======
+>>>>>>> develop
 | 设置项 | 说明 | 默认值 |
 |--------|------|--------|
 | Enable code embed | 开关代码嵌入功能 | 启用 |

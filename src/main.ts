@@ -1,10 +1,14 @@
 import {
 	Plugin,
+<<<<<<< HEAD
 	MarkdownPostProcessorContext,
+=======
+>>>>>>> develop
 	MarkdownView,
 	TFile,
 	TAbstractFile,
 	Notice,
+<<<<<<< HEAD
 } from "obsidian";
 import { PluginSettings, DEFAULT_SETTINGS, LastFileReference, RemoteServiceType } from "./types";
 import { importCodeSettingsTab } from "./settings";
@@ -13,6 +17,18 @@ import { debounce, parseEmbedSource } from "./utils/helpers";
 import { EditorView, ViewPlugin } from "@codemirror/view";
 import { createInsertCodeCallback, createEditLastCodeCallback } from "./commands/insert-code";
 import { getHttps } from "./remote/http-client";
+=======
+	type MarkdownPostProcessorContext,
+} from "obsidian";
+import { DEFAULT_SETTINGS, type PluginSettings, type LastFileReference, type ExtensionEntry } from "./types";
+import { EXTENSION_TO_LANGUAGE } from "./utils/constants";
+import { importCodeSettingsTab } from "./settings";
+import { CodeEmbedProcessor } from "./ui/renderer/code-embed";
+import { debounce, parseEmbedSource } from "./utils/helpers";
+import { EditorView, ViewPlugin } from "@codemirror/view";
+import { createInsertCodeCallback, createEditLastCodeCallback } from "./commands/insert-code";
+import { getHttps } from "./utils/http-client";
+>>>>>>> develop
 
 export default class importCode extends Plugin {
 	codeProcessor!: CodeEmbedProcessor;
@@ -20,6 +36,7 @@ export default class importCode extends Plugin {
 	private lastFileReference: LastFileReference | null = null;
 
 	async loadSettings() {
+<<<<<<< HEAD
 		const rawData = (await this.loadData()) as (Partial<PluginSettings> & { lastFileReference?: LastFileReference; remoteServices?: Record<string, { url?: string; token?: string; username?: string; repo?: string; branch?: string; path?: string; uploadPath?: string }> }) | null;
 		const { lastFileReference, remoteServices, ...loadedData } = rawData ?? {};
 
@@ -44,6 +61,27 @@ export default class importCode extends Plugin {
 			if (Object.keys(migratedSources).length > 0) {
 				(loadedData as Record<string, unknown>).remoteSources = migratedSources;
 			}
+=======
+		const rawData = (await this.loadData()) as (Partial<PluginSettings> & { lastFileReference?: LastFileReference; codeFileExtensions?: string | ExtensionEntry[] }) | null;
+		const { lastFileReference, ...loadedData } = rawData ?? {};
+
+		// Migrate old comma-separated string format to ExtensionEntry[]
+		if (typeof loadedData.codeFileExtensions === "string") {
+			const oldStr = loadedData.codeFileExtensions as string;
+			const suffixes = oldStr.split(",").map((s) => s.trim()).filter(Boolean);
+			const migratedEntries: ExtensionEntry[] = [];
+			const seenSuffixes = new Set<string>();
+			for (const suffix of suffixes) {
+				if (seenSuffixes.has(suffix)) continue;
+				seenSuffixes.add(suffix);
+				migratedEntries.push({
+					suffix,
+					dialect: EXTENSION_TO_LANGUAGE[suffix] ?? suffix,
+					active: true,
+				});
+			}
+			loadedData.codeFileExtensions = migratedEntries;
+>>>>>>> develop
 		}
 
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, loadedData);
@@ -59,6 +97,7 @@ export default class importCode extends Plugin {
 		}
 		await this.saveData(data);
 		this.initProcessors();
+<<<<<<< HEAD
 
 		// Refresh open Markdown views so embed toggles take effect immediately
 		this.app.workspace.iterateAllLeaves((leaf) => {
@@ -72,6 +111,8 @@ export default class importCode extends Plugin {
 			}
 		});
 		this.resetMarkdownViews();
+=======
+>>>>>>> develop
 	}
 
 	initProcessors() {
@@ -188,9 +229,18 @@ export default class importCode extends Plugin {
 	}
 
 	private runStartupDiagnostics(): void {
+<<<<<<< HEAD
 		if (
 			this.settings.remoteCodeEmbedEnabled !== "enabled" ||
 			!this.settings.remoteSkipSslVerify
+=======
+		const anyServiceSkipSsl = Object.values(this.settings.remoteSources).some(
+			(entry) => entry.config.skipSslVerify === true
+		);
+		if (
+			this.settings.remoteCodeEmbedEnabled !== "enabled" ||
+			(!this.settings.remoteSkipSslVerify && !anyServiceSkipSsl)
+>>>>>>> develop
 		) {
 			return;
 		}
@@ -220,7 +270,11 @@ export default class importCode extends Plugin {
 		}
 	}
 
+<<<<<<< HEAD
 	private resetMarkdownViews(): void {
+=======
+	public resetMarkdownViews(): void {
+>>>>>>> develop
 		this.app.workspace.iterateAllLeaves((leaf) => {
 			if (leaf.view instanceof MarkdownView) {
 				const state = leaf.view.getState();

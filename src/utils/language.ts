@@ -9,7 +9,11 @@ export function getLanguageFromPath(path: string): [string, string] {
 }
 
 // 从 code-extractor 重新导出，方便 UI 层统一从 language 模块引入
+<<<<<<< HEAD
 export { extractFirstSymbolName } from "./code-extractor";
+=======
+export { extractFirstSymbolName } from "../extractors";
+>>>>>>> develop
 
 export function guessExtensionFromContent(content: string): string | null {
 	const firstLine = content.trimStart().split("\n")[0]?.trim() ?? "";

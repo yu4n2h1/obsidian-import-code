@@ -135,21 +135,34 @@
 
 /* === File Modal Styles === */
 
+<<<<<<< HEAD
 .file-modal .file-content-input {
+=======
+.code-import-file-modal .file-content-input {
+>>>>>>> develop
 	width: 100%;
 	min-height: 200px;
 	font-family: var(--font-monospace);
 	resize: vertical;
 }
 
+<<<<<<< HEAD
 .file-modal .modal-button-container {
+=======
+.code-import-file-modal .modal-button-container,
+.code-import-edit-link-modal .modal-button-container {
+>>>>>>> develop
 	display: flex;
 	justify-content: flex-end;
 	gap: 10px;
 	margin-top: 20px;
 }
 
+<<<<<<< HEAD
 .file-modal .setting-item .file-name-input {
+=======
+.code-import-file-modal .setting-item .file-name-input {
+>>>>>>> develop
 	width: 300px;
 }
 
@@ -177,16 +190,25 @@
 
 /* === Storage Path Section (FileModal) === */
 
+<<<<<<< HEAD
 .file-modal .storage-path-section {
 	margin-bottom: 1em;
 }
 
 .file-modal .storage-path-section .setting-item {
+=======
+.code-import-file-modal .storage-path-section {
+	margin-bottom: 1em;
+}
+
+.code-import-file-modal .storage-path-section .setting-item {
+>>>>>>> develop
 	border-top: none;
 	padding-top: 0.5em;
 	padding-bottom: 0.5em;
 }
 
+<<<<<<< HEAD
 /* === Remote Config Section (FileModal) === */
 
 .file-modal .remote-config-section {
@@ -209,29 +231,50 @@
 /* === Edit Link Modal === */
 
 .edit-link-modal .edit-link-info {
+=======
+/* === Edit Link Modal === */
+
+.code-import-edit-link-modal .edit-link-info {
+>>>>>>> develop
 	background: var(--background-secondary);
 	border-radius: 6px;
 	padding: 0.75em 1em;
 	margin-bottom: 1em;
 }
 
+<<<<<<< HEAD
 .edit-link-modal .edit-link-info-row {
+=======
+.code-import-edit-link-modal .edit-link-info-row {
+>>>>>>> develop
 	display: flex;
 	justify-content: space-between;
 	padding: 0.25em 0;
 	font-size: var(--font-smaller);
 }
 
+<<<<<<< HEAD
 .edit-link-modal .edit-link-info-label {
 	color: var(--text-muted);
 }
 
 .edit-link-modal .edit-link-info-value {
+=======
+.code-import-edit-link-modal .edit-link-info-label {
+	color: var(--text-muted);
+}
+
+.code-import-edit-link-modal .edit-link-info-value {
+>>>>>>> develop
 	color: var(--text-normal);
 	font-family: var(--font-monospace);
 }
 
+<<<<<<< HEAD
 .edit-link-code-container {
+=======
+.code-import-edit-link-modal .edit-link-code-container {
+>>>>>>> develop
 	max-height: 400px;
 	overflow: auto;
 	border: 1px solid var(--background-modifier-border);
@@ -239,6 +282,7 @@
 	margin-bottom: 1em;
 }
 
+<<<<<<< HEAD
 .edit-link-code-container .code-embed-container {
 	margin: 0;
 }
@@ -258,6 +302,78 @@
 }
 
 .link-preview-content {
+=======
+.code-import-edit-link-modal .edit-link-code-container .code-embed-container {
+	margin: 0;
+}
+
+.code-import-edit-link-modal .edit-link-code-container .code-embed-wrapper pre {
+	max-height: 400px;
+}
+
+.code-import-edit-link-modal .edit-link-code-container .code-embed-toolbar {
+	display: none;
+}
+
+/* === Remote Source Cards (Settings) === */
+
+.code-import-remote-source-section .remote-source-card {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 0.75em 1em;
+	margin-bottom: 1em;
+}
+
+.code-import-remote-source-section .remote-source-card-header {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.5em;
+	padding-bottom: 0.5em;
+	margin-bottom: 0.5em;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.code-import-remote-source-section .remote-source-card-alias-input {
+	flex: 1;
+}
+
+.code-import-remote-source-section .remote-source-card-alias-input .setting-item {
+	border-top: none;
+	padding: 0;
+}
+
+.code-import-remote-source-section .remote-source-card-delete {
+	flex-shrink: 0;
+	align-self: center;
+}
+
+.code-import-remote-source-section .remote-source-card-delete .setting-item {
+	border-top: none;
+	padding: 0;
+}
+
+.code-import-remote-source-section .remote-source-card-body .setting-item {
+	border-top: none;
+}
+
+.code-import-remote-source-section .remote-source-add {
+	margin-top: 0.5em;
+}
+
+.code-import-remote-source-section .remote-source-add .setting-item-description {
+	margin-top: 0.25em;
+	color: var(--text-muted);
+	font-size: var(--font-smaller);
+}
+
+/* === Link Preview === */
+
+.code-import-edit-link-modal .link-preview-section {
+	margin: 1em 0;
+}
+
+.code-import-edit-link-modal .link-preview-content {
+>>>>>>> develop
 	background: var(--background-secondary);
 	border: 1px solid var(--background-modifier-border);
 	border-radius: 6px;
@@ -268,3 +384,157 @@
 	white-space: pre-wrap;
 	color: var(--text-accent);
 }
+<<<<<<< HEAD
+=======
+
+/* === Settings Tab Bar === */
+
+.code-import-tab-bar {
+	display: flex;
+	border-bottom: 2px solid var(--background-modifier-border);
+	margin-bottom: 1.5em;
+}
+
+.code-import-tab {
+	appearance: none;
+	background: none;
+	border: none;
+	border-bottom: 2px solid transparent;
+	margin-bottom: -2px;
+	padding: 0.5em 1em;
+	font-size: var(--font-ui-small);
+	font-weight: 500;
+	color: var(--text-muted);
+	cursor: pointer;
+	transition: color 0.15s, border-color 0.15s;
+}
+
+.code-import-tab:hover {
+	color: var(--text-normal);
+	background: var(--background-modifier-hover);
+}
+
+.code-import-tab.active {
+	color: var(--text-accent);
+	border-bottom-color: var(--text-accent);
+}
+
+.code-import-tab-panel {
+	display: none;
+}
+
+.code-import-tab-panel.active {
+	display: block;
+}
+
+/* === Extension Table (Settings) === */
+
+.extension-table-section {
+	margin-top: 1em;
+}
+
+.extension-table-header {
+	display: grid;
+	grid-template-columns: 1.2fr 0.8fr 60px 40px;
+	gap: 0.5em;
+	padding: 0.25em 0.75em;
+	font-weight: 600;
+	font-size: var(--font-smaller);
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.extension-table-row {
+	display: grid;
+	grid-template-columns: 1.2fr 0.8fr 60px 40px;
+	gap: 0.5em;
+	padding: 0 0.75em;
+	align-items: center;
+	border: none;
+}
+
+.extension-table-row.stripe-even {
+	background-color: var(--background-primary);
+}
+
+.extension-table-row.stripe-odd {
+	background-color: var(--background-secondary);
+}
+
+.extension-table-row:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+/* Plain text inputs — borderless, blend into the row */
+input.extension-table-input {
+	width: 100%;
+	height: var(--input-height, 32px);
+	padding: 0 0.25em;
+	margin: 0;
+	border: none !important;
+	border-radius: 0 !important;
+	outline: none !important;
+	box-shadow: none !important;
+	background: transparent !important;
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+	font-family: var(--font-interface);
+	-webkit-appearance: none;
+	appearance: none;
+	transition: background 0.15s;
+}
+
+input.extension-table-input:hover {
+	background: var(--background-modifier-hover) !important;
+}
+
+input.extension-table-input:focus {
+	background: var(--background-modifier-hover) !important;
+	border: none !important;
+	outline: none !important;
+	box-shadow: none !important;
+}
+
+input.extension-table-input::placeholder {
+	color: var(--text-faint);
+}
+
+/* Strip Obsidian's Setting-item chrome inside grid cells (toggle & delete columns) */
+.extension-table-col .setting-item {
+	border: none !important;
+	padding: 0 !important;
+	margin: 0 !important;
+	background: transparent !important;
+	box-shadow: none !important;
+}
+
+.extension-table-col .setting-item-info {
+	display: none;
+}
+
+.extension-table-col .setting-item-control {
+	width: 100%;
+	justify-content: center;
+}
+
+.extension-table-col .setting-item-control {
+	display: flex;
+	align-items: center;
+}
+
+.extension-table-col.toggle-col,
+.extension-table-col.delete-col {
+	justify-content: center;
+}
+
+.extension-table-add {
+	margin-top: 0.75em;
+}
+
+.extension-table-add .setting-item-description {
+	margin-top: 0.25em;
+	color: var(--text-muted);
+	font-size: var(--font-smaller);
+}
+>>>>>>> develop
