@@ -8,6 +8,7 @@ import {
 } from "obsidian";
 import type { PluginSettings, EmbedLinkInfo } from "../../types";
 import { guessExtensionFromContent, extractFirstSymbolName } from "../../utils/language";
+import { getSupportedExtensions } from "../../utils/helpers";
 
 export class FileModal extends Modal {
 	private settings: PluginSettings;
@@ -59,9 +60,7 @@ export class FileModal extends Modal {
 			.setName("File extension")
 			.setDesc("Select file extension")
 			.addDropdown((dropdown) => {
-				const extensions = this.settings.codeFileExtensions
-					.split(",")
-					.map((ext) => ext.trim());
+				const extensions = getSupportedExtensions(this.settings);
 				extensions.forEach((ext) => {
 					dropdown.addOption(ext, `.${ext}`);
 				});

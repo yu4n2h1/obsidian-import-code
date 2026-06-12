@@ -6,7 +6,8 @@ import {
 	Notice,
 	type MarkdownPostProcessorContext,
 } from "obsidian";
-import { DEFAULT_SETTINGS, type PluginSettings, type LastFileReference } from "./types";
+import { DEFAULT_SETTINGS, type PluginSettings, type LastFileReference, type ExtensionEntry } from "./types";
+import { EXTENSION_TO_LANGUAGE } from "./utils/constants";
 import { importCodeSettingsTab } from "./settings";
 import { CodeEmbedProcessor } from "./ui/renderer/code-embed";
 import { debounce, parseEmbedSource } from "./utils/helpers";
@@ -20,8 +21,27 @@ export default class importCode extends Plugin {
 	private lastFileReference: LastFileReference | null = null;
 
 	async loadSettings() {
-		const rawData = (await this.loadData()) as (Partial<PluginSettings> & { lastFileReference?: LastFileReference }) | null;
+		const rawData = (await this.loadData()) as (Partial<PluginSettings> & { lastFileReference?: LastFileReference; codeFileExtensions?: string | ExtensionEntry[] }) | null;
 		const { lastFileReference, ...loadedData } = rawData ?? {};
+
+		// Migrate old comma-separated string format to ExtensionEntry[]
+		if (typeof loadedData.codeFileExtensions === "string") {
+			const oldStr = loadedData.codeFileExtensions as string;
+			const suffixes = oldStr.split(",").map((s) => s.trim()).filter(Boolean);
+			const migratedEntries: ExtensionEntry[] = [];
+			const seenSuffixes = new Set<string>();
+			for (const suffix of suffixes) {
+				if (seenSuffixes.has(suffix)) continue;
+				seenSuffixes.add(suffix);
+				migratedEntries.push({
+					suffix,
+					dialect: EXTENSION_TO_LANGUAGE[suffix] ?? suffix,
+					active: true,
+				});
+			}
+			loadedData.codeFileExtensions = migratedEntries;
+		}
+
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, loadedData);
 		if (lastFileReference) {
 			this.lastFileReference = lastFileReference;

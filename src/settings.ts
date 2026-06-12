@@ -1,5 +1,5 @@
 import { App, Plugin, PluginSettingTab, Setting } from "obsidian";
-import type { SettingsProvider, RemoteServiceType } from "./types";
+import type { SettingsProvider, RemoteServiceType, ExtensionEntry } from "./types";
 import { buildRemoteConfigFields } from "./ui/settings/remote-config-fields";
 
 export class importCodeSettingsTab extends PluginSettingTab {
@@ -66,19 +66,7 @@ export class importCodeSettingsTab extends PluginSettingTab {
 					})
 			);
 
-		new Setting(containerEl)
-			.setName("Supported file extensions")
-			.setDesc("Comma-separated list of supported code file extensions (e.g. js,ts,py,java)")
-			.addText((text) =>
-				text
-					// eslint-disable-next-line obsidianmd/ui/sentence-case
-					.setPlaceholder("js,ts,py,java,c,cpp")
-					.setValue(this.plugin.settings.codeFileExtensions)
-					.onChange(async (value: string) => {
-						this.plugin.settings.codeFileExtensions = value;
-						await this.plugin.saveSettings();
-					})
-			);
+		this.buildExtensionTable(containerEl);
 	}
 
 	private buildStorageSection(containerEl: HTMLElement): void {
@@ -287,5 +275,117 @@ export class importCodeSettingsTab extends PluginSettingTab {
 			cls: "setting-item-description",
 			text: "Add a new remote source alias to embed code from external services or local directories.",
 		});
+	}
+
+	private buildExtensionTable(containerEl: HTMLElement): void {
+		const wrapper = containerEl.createDiv({ cls: "extension-table-section" });
+
+		new Setting(wrapper).setName("Supported file extensions").setHeading();
+
+		// Header row
+		const header = wrapper.createDiv({ cls: "extension-table-header" });
+		header.createDiv({ cls: "extension-table-col dialect-col", text: "Dialect" });
+		header.createDiv({ cls: "extension-table-col suffix-col", text: "Suffix" });
+		header.createDiv({ cls: "extension-table-col toggle-col" });
+		header.createDiv({ cls: "extension-table-col delete-col" });
+
+		// Data rows
+		const entries = this.plugin.settings.codeFileExtensions;
+		for (let i = 0; i < entries.length; i++) {
+			const entry = entries[i];
+			if (entry) {
+				this.buildExtensionRow(wrapper, entry, i);
+			}
+		}
+
+		// Add button
+		const addRowEl = wrapper.createDiv({ cls: "extension-table-add" });
+		new Setting(addRowEl).addButton((btn) => {
+			btn.setButtonText("Add extension");
+			btn.onClick(async () => {
+				this.plugin.settings.codeFileExtensions.push({
+					suffix: "",
+					dialect: "",
+					active: false,
+				});
+				await this.plugin.saveSettings();
+				this.rebuildExtensionTable(containerEl);
+			});
+		});
+		addRowEl.createDiv({
+			cls: "setting-item-description",
+			text: "Add a custom file extension not listed above.",
+		});
+	}
+
+	private buildExtensionRow(
+		wrapper: HTMLElement,
+		entry: ExtensionEntry,
+		index: number
+	): void {
+		const stripeCls = index % 2 === 0 ? "stripe-even" : "stripe-odd";
+		const row = wrapper.createDiv({ cls: `extension-table-row ${stripeCls}` });
+
+		// Dialect input — inline-styled to defeat any theme overrides
+		const dialectCol = row.createDiv({ cls: "extension-table-col dialect-col" });
+		const dialectInput = dialectCol.createEl("input", {
+			type: "text",
+			cls: "extension-table-input",
+			attr: {
+				placeholder: "e.g. javascript",
+				style: "border:none;outline:none;box-shadow:none;background:transparent;width:100%;",
+			},
+		});
+		dialectInput.value = entry.dialect;
+		dialectInput.addEventListener("input", () => {
+			entry.dialect = dialectInput.value.trim();
+			void this.plugin.saveSettings();
+		});
+
+		// Suffix input — inline-styled to defeat any theme overrides
+		const suffixCol = row.createDiv({ cls: "extension-table-col suffix-col" });
+		const suffixInput = suffixCol.createEl("input", {
+			type: "text",
+			cls: "extension-table-input",
+			attr: {
+				placeholder: "e.g. js",
+				style: "border:none;outline:none;box-shadow:none;background:transparent;width:100%;",
+			},
+		});
+		suffixInput.value = entry.suffix;
+		suffixInput.addEventListener("input", () => {
+			entry.suffix = suffixInput.value.trim();
+			void this.plugin.saveSettings();
+		});
+
+		// Toggle — keep Obsidian's toggle component
+		const toggleContainer = row.createDiv({ cls: "extension-table-col toggle-col" });
+		new Setting(toggleContainer)
+			.addToggle((toggle) => {
+				toggle.setValue(entry.active);
+				toggle.onChange(async (value) => {
+					entry.active = value;
+					await this.plugin.saveSettings();
+				});
+			});
+
+		// Delete button — keep Obsidian's extra-button component
+		const deleteContainer = row.createDiv({ cls: "extension-table-col delete-col" });
+		new Setting(deleteContainer)
+			.addExtraButton((btn) => {
+				btn.setIcon("x");
+				btn.setTooltip("Remove extension");
+				btn.onClick(async () => {
+					this.plugin.settings.codeFileExtensions.splice(index, 1);
+					await this.plugin.saveSettings();
+					this.rebuildExtensionTable(this.containerEl);
+				});
+			});
+	}
+
+	private rebuildExtensionTable(containerEl: HTMLElement): void {
+		const oldWrapper = containerEl.querySelector(".extension-table-section");
+		if (oldWrapper) oldWrapper.remove();
+		this.buildExtensionTable(containerEl);
 	}
 }
