@@ -301,3 +301,154 @@
 	white-space: pre-wrap;
 	color: var(--text-accent);
 }
+
+/* === Settings Tab Bar === */
+
+.code-import-tab-bar {
+	display: flex;
+	border-bottom: 2px solid var(--background-modifier-border);
+	margin-bottom: 1.5em;
+}
+
+.code-import-tab {
+	appearance: none;
+	background: none;
+	border: none;
+	border-bottom: 2px solid transparent;
+	margin-bottom: -2px;
+	padding: 0.5em 1em;
+	font-size: var(--font-ui-small);
+	font-weight: 500;
+	color: var(--text-muted);
+	cursor: pointer;
+	transition: color 0.15s, border-color 0.15s;
+}
+
+.code-import-tab:hover {
+	color: var(--text-normal);
+	background: var(--background-modifier-hover);
+}
+
+.code-import-tab.active {
+	color: var(--text-accent);
+	border-bottom-color: var(--text-accent);
+}
+
+.code-import-tab-panel {
+	display: none;
+}
+
+.code-import-tab-panel.active {
+	display: block;
+}
+
+/* === Extension Table (Settings) === */
+
+.extension-table-section {
+	margin-top: 1em;
+}
+
+.extension-table-header {
+	display: grid;
+	grid-template-columns: 1.2fr 0.8fr 60px 40px;
+	gap: 0.5em;
+	padding: 0.25em 0.75em;
+	font-weight: 600;
+	font-size: var(--font-smaller);
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.extension-table-row {
+	display: grid;
+	grid-template-columns: 1.2fr 0.8fr 60px 40px;
+	gap: 0.5em;
+	padding: 0 0.75em;
+	align-items: center;
+	border: none;
+}
+
+.extension-table-row.stripe-even {
+	background-color: var(--background-primary);
+}
+
+.extension-table-row.stripe-odd {
+	background-color: var(--background-secondary);
+}
+
+.extension-table-row:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+/* Plain text inputs — borderless, blend into the row */
+input.extension-table-input {
+	width: 100%;
+	height: var(--input-height, 32px);
+	padding: 0 0.25em;
+	margin: 0;
+	border: none !important;
+	border-radius: 0 !important;
+	outline: none !important;
+	box-shadow: none !important;
+	background: transparent !important;
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+	font-family: var(--font-interface);
+	-webkit-appearance: none;
+	appearance: none;
+	transition: background 0.15s;
+}
+
+input.extension-table-input:hover {
+	background: var(--background-modifier-hover) !important;
+}
+
+input.extension-table-input:focus {
+	background: var(--background-modifier-hover) !important;
+	border: none !important;
+	outline: none !important;
+	box-shadow: none !important;
+}
+
+input.extension-table-input::placeholder {
+	color: var(--text-faint);
+}
+
+/* Strip Obsidian's Setting-item chrome inside grid cells (toggle & delete columns) */
+.extension-table-col .setting-item {
+	border: none !important;
+	padding: 0 !important;
+	margin: 0 !important;
+	background: transparent !important;
+	box-shadow: none !important;
+}
+
+.extension-table-col .setting-item-info {
+	display: none;
+}
+
+.extension-table-col .setting-item-control {
+	width: 100%;
+	justify-content: center;
+}
+
+.extension-table-col .setting-item-control {
+	display: flex;
+	align-items: center;
+}
+
+.extension-table-col.toggle-col,
+.extension-table-col.delete-col {
+	justify-content: center;
+}
+
+.extension-table-add {
+	margin-top: 0.75em;
+}
+
+.extension-table-add .setting-item-description {
+	margin-top: 0.25em;
+	color: var(--text-muted);
+	font-size: var(--font-smaller);
+}
