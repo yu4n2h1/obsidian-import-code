@@ -1,13 +1,6 @@
-import { RemoteServiceConfig } from "../types";
-import { RemoteReadResult } from "./types";
-import { dispatchHttpRequest, enrichError, encodePathSegments, buildFullPath } from "./http-client";
-
-function buildUrl(config: RemoteServiceConfig, fileName: string): string {
-	const base = config.url.replace(/\/+$/, "");
-	const fullPath = buildFullPath(config.path, fileName);
-	const encoded = encodePathSegments(fullPath);
-	return `${base}/${encoded}`;
-}
+import type { RemoteServiceConfig } from "../types";
+import type { RemoteReadResult, RemoteService } from "./types";
+import { dispatchHttpRequest, enrichError, buildServiceUrl } from "../utils/http-client";
 
 function buildAuthHeader(config: RemoteServiceConfig): string | null {
 	if (!config.token) return null;
@@ -17,12 +10,12 @@ function buildAuthHeader(config: RemoteServiceConfig): string | null {
 	return `Bearer ${config.token}`;
 }
 
-export const webdavService = {
+export const webdavService: RemoteService = {
 	serviceType: "webdav" as const,
 
 	async read(config: RemoteServiceConfig, filePath: string, skipSslVerify: boolean): Promise<RemoteReadResult> {
 		try {
-			const url = buildUrl(config, filePath);
+			const url = buildServiceUrl(config, filePath);
 			const headers: Record<string, string> = {};
 			const auth = buildAuthHeader(config);
 			if (auth) headers["Authorization"] = auth;

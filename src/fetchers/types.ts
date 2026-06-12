@@ -1,4 +1,4 @@
-import { RemoteServiceConfig, RemoteServiceType } from "../types";
+import type { RemoteServiceConfig, RemoteServiceType } from "../types";
 
 export interface RemoteReadResult {
 	success: boolean;

@@ -1,8 +1,8 @@
-import { RemoteServiceConfig } from "../types";
-import { RemoteReadResult } from "./types";
-import { dispatchHttpRequest, buildFullPath } from "./http-client";
+import type { RemoteServiceConfig } from "../types";
+import type { RemoteReadResult, RemoteService } from "./types";
+import { dispatchHttpRequest, buildFullPath } from "../utils/http-client";
 
-export const gitlabService = {
+export const gitlabService: RemoteService = {
 	serviceType: "gitlab" as const,
 
 	async read(config: RemoteServiceConfig, filePath: string, skipSslVerify: boolean): Promise<RemoteReadResult> {

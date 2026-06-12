@@ -1,5 +1,5 @@
 import { parseLineRange } from "../utils/helpers";
-import { Target, TargetResult } from "./types";
+import type { Target, TargetResult } from "./types";
 
 /**
  * 解析单个目标字符串（@ 或 # 后的内容）：

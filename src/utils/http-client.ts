@@ -126,6 +126,17 @@ export function encodePathSegments(filePath: string): string {
 	return filePath.split("/").map(encodeURIComponent).join("/");
 }
 
+/**
+ * Build a full service URL from config and file path.
+ * Used by generic and webdav fetchers to avoid duplication.
+ */
+export function buildServiceUrl(config: { url: string; path?: string }, filePath: string): string {
+	const base = config.url.replace(/\/+$/, "");
+	const fullPath = buildFullPath(config.path, filePath);
+	const encoded = encodePathSegments(fullPath);
+	return `${base}/${encoded}`;
+}
+
 // ---- Shared error enrichment ----
 
 export function enrichError(err: unknown, context: string): string {

@@ -1,5 +1,5 @@
 import { isRemoteUrl, isAliasPath } from "../utils/helpers";
-import { LinkMode, ResolvedLink } from "./types";
+import type { LinkMode, ResolvedLink } from "./types";
 
 function resolveMode(filePath: string): LinkMode {
 	if (isRemoteUrl(filePath)) return "http";

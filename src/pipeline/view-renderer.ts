@@ -4,7 +4,7 @@ import {
 	Component,
 	setIcon,
 } from "obsidian";
-import { RenderContext } from "./types";
+import type { RenderContext } from "./types";
 
 /**
  * 阶段 5：视图渲染器。

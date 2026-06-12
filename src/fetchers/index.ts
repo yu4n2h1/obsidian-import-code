@@ -1,6 +1,6 @@
-import { RemoteServiceType, RemoteServiceConfig } from "../types";
-import { RemoteReadResult, RemoteService } from "./types";
-import { dispatchHttpRequest } from "./http-client";
+import type { RemoteServiceType, RemoteServiceConfig } from "../types";
+import type { RemoteReadResult, RemoteService } from "./types";
+import { dispatchHttpRequest } from "../utils/http-client";
 import { githubService } from "./github";
 import { gitlabService } from "./gitlab";
 import { giteaService } from "./gitea";

@@ -1,4 +1,4 @@
-import { CodeEmbedSettings } from "../types";
+import type { CodeEmbedSettings } from "../types";
 
 // ---- embed source parsing ----
 

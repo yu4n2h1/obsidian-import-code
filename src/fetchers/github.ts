@@ -1,8 +1,8 @@
-import { RemoteServiceConfig } from "../types";
-import { RemoteReadResult } from "./types";
-import { dispatchHttpRequest, enrichError, encodePathSegments, buildFullPath } from "./http-client";
+import type { RemoteServiceConfig } from "../types";
+import type { RemoteReadResult, RemoteService } from "./types";
+import { dispatchHttpRequest, enrichError, encodePathSegments, buildFullPath } from "../utils/http-client";
 
-export const githubService = {
+export const githubService: RemoteService = {
 	serviceType: "github" as const,
 
 	async read(config: RemoteServiceConfig, filePath: string, skipSslVerify: boolean): Promise<RemoteReadResult> {

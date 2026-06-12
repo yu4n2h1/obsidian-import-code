@@ -1,5 +1,5 @@
 import { App, Component } from "obsidian";
-import { CodeEmbedSettings } from "../types";
+import type { CodeEmbedSettings } from "../types";
 import {
 	isRemoteUrl,
 	isAliasPath,
@@ -14,7 +14,7 @@ import { ViewRenderer } from "../pipeline/view-renderer";
 import { resolveLink } from "../pipeline/link-router";
 import { classifyTargets } from "../pipeline/target-resolver";
 import { sliceContent } from "../pipeline/symbol-converter";
-import { RenderContext } from "../pipeline/types";
+import type { RenderContext } from "../pipeline/types";
 
 export class CodeEmbedProcessor {
 	app: App;

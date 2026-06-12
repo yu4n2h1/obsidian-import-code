@@ -1,5 +1,5 @@
 import { App, Editor, Notice } from "obsidian";
-import { PluginSettings, EmbedLinkInfo, LastFileReference } from "../types";
+import type { PluginSettings, EmbedLinkInfo, LastFileReference } from "../types";
 import { FileModal } from "../ui/modal";
 import { EditLinkModal } from "../ui/edit-link-modal";
 

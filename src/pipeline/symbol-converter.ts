@@ -1,6 +1,6 @@
 import { findSymbolLineRange } from "../extractors";
-import { LineRange } from "../utils/helpers";
-import { Target, SlicedContent } from "./types";
+import type { LineRange } from "../utils/helpers";
+import type { Target, SlicedContent } from "./types";
 
 function countLines(s: string): number {
 	if (s.length === 0) return 0;

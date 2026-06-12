@@ -1,18 +1,18 @@
 import {
 	Plugin,
-	MarkdownPostProcessorContext,
 	MarkdownView,
 	TFile,
 	TAbstractFile,
 	Notice,
+	type MarkdownPostProcessorContext,
 } from "obsidian";
-import { PluginSettings, DEFAULT_SETTINGS, LastFileReference } from "./types";
+import { DEFAULT_SETTINGS, type PluginSettings, type LastFileReference } from "./types";
 import { importCodeSettingsTab } from "./settings";
 import { CodeEmbedProcessor } from "./ui/code-embed";
 import { debounce, parseEmbedSource } from "./utils/helpers";
 import { EditorView, ViewPlugin } from "@codemirror/view";
 import { createInsertCodeCallback, createEditLastCodeCallback } from "./commands/insert-code";
-import { getHttps } from "./remote/http-client";
+import { getHttps } from "./utils/http-client";
 
 export default class importCode extends Plugin {
 	codeProcessor!: CodeEmbedProcessor;

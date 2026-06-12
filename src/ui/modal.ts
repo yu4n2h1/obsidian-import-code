@@ -6,7 +6,7 @@ import {
 	MarkdownView,
 	normalizePath,
 } from "obsidian";
-import { PluginSettings, EmbedLinkInfo } from "../types";
+import type { PluginSettings, EmbedLinkInfo } from "../types";
 import { guessExtensionFromContent, extractFirstSymbolName } from "../utils/language";
 
 export class FileModal extends Modal {

@@ -1,9 +1,9 @@
 import { App, TFile } from "obsidian";
-import { CodeEmbedSettings } from "../types";
+import type { CodeEmbedSettings } from "../types";
 import { parseAliasPath } from "../utils/helpers";
 import { getLanguageFromPath } from "../utils/language";
-import { readRemoteFile, readFromService } from "../remote/remote-manager";
-import { ResolvedLink, FileContext } from "./types";
+import { readRemoteFile, readFromService } from "../fetchers";
+import type { ResolvedLink, FileContext } from "./types";
 
 /**
  * 阶段 2：文件读取器。

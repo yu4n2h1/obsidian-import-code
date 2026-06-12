@@ -1,4 +1,4 @@
-import { LineRange } from "../utils/helpers";
+import type { LineRange } from "../utils/helpers";
 
 // ---- Link mode ----
 
