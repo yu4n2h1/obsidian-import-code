@@ -14,6 +14,7 @@ import { SwiftExtractor } from "./swift";
 import { PhpExtractor } from "./php";
 import { ScalaExtractor } from "./scala";
 import { LuaExtractor } from "./lua";
+import { HtmlExtractor } from "./html";
 import { DefaultExtractor } from "./default";
 import { EXTENSION_TO_LANGUAGE } from "../utils/constants";
 
@@ -42,6 +43,7 @@ register(new SwiftExtractor());
 register(new PhpExtractor());
 register(new ScalaExtractor());
 register(new LuaExtractor());
+register(new HtmlExtractor());
 
 const defaultExtractor = new DefaultExtractor();
 
