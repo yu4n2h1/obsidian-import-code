@@ -135,21 +135,22 @@
 
 /* === File Modal Styles === */
 
-.file-modal .file-content-input {
+.code-import-file-modal .file-content-input {
 	width: 100%;
 	min-height: 200px;
 	font-family: var(--font-monospace);
 	resize: vertical;
 }
 
-.file-modal .modal-button-container {
+.code-import-file-modal .modal-button-container,
+.code-import-edit-link-modal .modal-button-container {
 	display: flex;
 	justify-content: flex-end;
 	gap: 10px;
 	margin-top: 20px;
 }
 
-.file-modal .setting-item .file-name-input {
+.code-import-file-modal .setting-item .file-name-input {
 	width: 300px;
 }
 
@@ -177,61 +178,42 @@
 
 /* === Storage Path Section (FileModal) === */
 
-.file-modal .storage-path-section {
+.code-import-file-modal .storage-path-section {
 	margin-bottom: 1em;
 }
 
-.file-modal .storage-path-section .setting-item {
+.code-import-file-modal .storage-path-section .setting-item {
 	border-top: none;
 	padding-top: 0.5em;
 	padding-bottom: 0.5em;
-}
-
-/* === Remote Config Section (FileModal) === */
-
-.file-modal .remote-config-section {
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 6px;
-	padding: 0.5em 1em;
-	margin-bottom: 1em;
-}
-
-.file-modal .remote-config-section .setting-item {
-	border-top: none;
-	padding-top: 0.5em;
-	padding-bottom: 0.5em;
-}
-
-.file-modal .remote-fields-container .setting-item {
-	padding-left: 0.5em;
 }
 
 /* === Edit Link Modal === */
 
-.edit-link-modal .edit-link-info {
+.code-import-edit-link-modal .edit-link-info {
 	background: var(--background-secondary);
 	border-radius: 6px;
 	padding: 0.75em 1em;
 	margin-bottom: 1em;
 }
 
-.edit-link-modal .edit-link-info-row {
+.code-import-edit-link-modal .edit-link-info-row {
 	display: flex;
 	justify-content: space-between;
 	padding: 0.25em 0;
 	font-size: var(--font-smaller);
 }
 
-.edit-link-modal .edit-link-info-label {
+.code-import-edit-link-modal .edit-link-info-label {
 	color: var(--text-muted);
 }
 
-.edit-link-modal .edit-link-info-value {
+.code-import-edit-link-modal .edit-link-info-value {
 	color: var(--text-normal);
 	font-family: var(--font-monospace);
 }
 
-.edit-link-code-container {
+.code-import-edit-link-modal .edit-link-code-container {
 	max-height: 400px;
 	overflow: auto;
 	border: 1px solid var(--background-modifier-border);
@@ -239,28 +221,28 @@
 	margin-bottom: 1em;
 }
 
-.edit-link-code-container .code-embed-container {
+.code-import-edit-link-modal .edit-link-code-container .code-embed-container {
 	margin: 0;
 }
 
-.edit-link-code-container .code-embed-wrapper pre {
+.code-import-edit-link-modal .edit-link-code-container .code-embed-wrapper pre {
 	max-height: 400px;
 }
 
-.edit-link-code-container .code-embed-toolbar {
+.code-import-edit-link-modal .edit-link-code-container .code-embed-toolbar {
 	display: none;
 }
 
 /* === Remote Source Cards (Settings) === */
 
-.remote-source-card {
+.code-import-remote-source-section .remote-source-card {
 	border: 1px solid var(--background-modifier-border);
 	border-radius: 6px;
 	padding: 0.75em 1em;
 	margin-bottom: 1em;
 }
 
-.remote-source-card-header {
+.code-import-remote-source-section .remote-source-card-header {
 	display: flex;
 	align-items: flex-start;
 	gap: 0.5em;
@@ -269,34 +251,34 @@
 	border-bottom: 1px solid var(--background-modifier-border);
 }
 
-.remote-source-card-alias-input {
+.code-import-remote-source-section .remote-source-card-alias-input {
 	flex: 1;
 }
 
-.remote-source-card-alias-input .setting-item {
+.code-import-remote-source-section .remote-source-card-alias-input .setting-item {
 	border-top: none;
 	padding: 0;
 }
 
-.remote-source-card-delete {
+.code-import-remote-source-section .remote-source-card-delete {
 	flex-shrink: 0;
 	align-self: center;
 }
 
-.remote-source-card-delete .setting-item {
+.code-import-remote-source-section .remote-source-card-delete .setting-item {
 	border-top: none;
 	padding: 0;
 }
 
-.remote-source-card-body .setting-item {
+.code-import-remote-source-section .remote-source-card-body .setting-item {
 	border-top: none;
 }
 
-.remote-source-add {
+.code-import-remote-source-section .remote-source-add {
 	margin-top: 0.5em;
 }
 
-.remote-source-add .setting-item-description {
+.code-import-remote-source-section .remote-source-add .setting-item-description {
 	margin-top: 0.25em;
 	color: var(--text-muted);
 	font-size: var(--font-smaller);
@@ -304,11 +286,11 @@
 
 /* === Link Preview === */
 
-.link-preview-section {
+.code-import-edit-link-modal .link-preview-section {
 	margin: 1em 0;
 }
 
-.link-preview-content {
+.code-import-edit-link-modal .link-preview-content {
 	background: var(--background-secondary);
 	border: 1px solid var(--background-modifier-border);
 	border-radius: 6px;

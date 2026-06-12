@@ -50,7 +50,7 @@ export class FileModal extends Modal {
 	async onOpen() {
 		const { contentEl } = this;
 		contentEl.empty();
-		contentEl.addClass("file-modal");
+		contentEl.addClass("code-import-file-modal");
 
 		contentEl.createEl("h2", { text: "Create code file" });
 
