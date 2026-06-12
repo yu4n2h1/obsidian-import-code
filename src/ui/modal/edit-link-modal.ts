@@ -5,8 +5,8 @@ import {
 	Component,
 	MarkdownRenderer,
 } from "obsidian";
-import type { LastFileReference } from "../types";
-import { getLanguageFromPath } from "../utils/language";
+import type { LastFileReference } from "../../types";
+import { getLanguageFromPath } from "../../utils/language";
 
 export class EditLinkModal extends Modal {
 	private lastRef: LastFileReference;

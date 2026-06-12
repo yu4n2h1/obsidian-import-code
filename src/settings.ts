@@ -1,6 +1,6 @@
 import { App, Plugin, PluginSettingTab, Setting } from "obsidian";
 import type { SettingsProvider, RemoteServiceType } from "./types";
-import { buildRemoteConfigFields } from "./ui/remote-config-fields";
+import { buildRemoteConfigFields } from "./ui/settings/remote-config-fields";
 
 export class importCodeSettingsTab extends PluginSettingTab {
 	plugin: SettingsProvider;

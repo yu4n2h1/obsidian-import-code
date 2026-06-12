@@ -8,7 +8,7 @@ import {
 } from "obsidian";
 import { DEFAULT_SETTINGS, type PluginSettings, type LastFileReference } from "./types";
 import { importCodeSettingsTab } from "./settings";
-import { CodeEmbedProcessor } from "./ui/code-embed";
+import { CodeEmbedProcessor } from "./ui/renderer/code-embed";
 import { debounce, parseEmbedSource } from "./utils/helpers";
 import { EditorView, ViewPlugin } from "@codemirror/view";
 import { createInsertCodeCallback, createEditLastCodeCallback } from "./commands/insert-code";

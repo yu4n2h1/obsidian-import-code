@@ -1,6 +1,6 @@
 import { Setting } from "obsidian";
-import type { RemoteServiceType } from "../types";
-import { SERVICE_LABELS } from "../utils/constants";
+import type { RemoteServiceType } from "../../types";
+import { SERVICE_LABELS } from "../../utils/constants";
 
 export interface RemoteConfigState {
 	url: string;

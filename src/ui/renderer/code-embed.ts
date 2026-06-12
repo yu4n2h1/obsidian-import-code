@@ -1,5 +1,5 @@
 import { App, Component } from "obsidian";
-import type { CodeEmbedSettings } from "../types";
+import type { CodeEmbedSettings } from "../../types";
 import {
 	isRemoteUrl,
 	isAliasPath,
@@ -7,14 +7,14 @@ import {
 	tryRestoreIpv6Url,
 	parseEmbedSource,
 	isExtensionSupported,
-} from "../utils/helpers";
-import { getLanguageFromPath } from "../utils/language";
-import { FileReader } from "../pipeline/file-reader";
-import { ViewRenderer } from "../pipeline/view-renderer";
-import { resolveLink } from "../pipeline/link-router";
-import { classifyTargets } from "../pipeline/target-resolver";
-import { sliceContent } from "../pipeline/symbol-converter";
-import type { RenderContext } from "../pipeline/types";
+} from "../../utils/helpers";
+import { getLanguageFromPath } from "../../utils/language";
+import { FileReader } from "../../pipeline/file-reader";
+import { ViewRenderer } from "../../pipeline/view-renderer";
+import { resolveLink } from "../../pipeline/link-router";
+import { classifyTargets } from "../../pipeline/target-resolver";
+import { sliceContent } from "../../pipeline/symbol-converter";
+import type { RenderContext } from "../../pipeline/types";
 
 export class CodeEmbedProcessor {
 	app: App;

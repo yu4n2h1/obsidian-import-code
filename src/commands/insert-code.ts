@@ -1,7 +1,7 @@
 import { App, Editor, Notice } from "obsidian";
 import type { PluginSettings, EmbedLinkInfo, LastFileReference } from "../types";
-import { FileModal } from "../ui/modal";
-import { EditLinkModal } from "../ui/edit-link-modal";
+import { FileModal } from "../ui/modal/modal";
+import { EditLinkModal } from "../ui/modal/edit-link-modal";
 
 export function createInsertCodeCallback(
 	app: App,
