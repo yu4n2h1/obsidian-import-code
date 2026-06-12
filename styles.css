@@ -135,34 +135,22 @@
 
 /* === File Modal Styles === */
 
-<<<<<<< HEAD
-.file-modal .file-content-input {
-=======
 .code-import-file-modal .file-content-input {
->>>>>>> develop
 	width: 100%;
 	min-height: 200px;
 	font-family: var(--font-monospace);
 	resize: vertical;
 }
 
-<<<<<<< HEAD
-.file-modal .modal-button-container {
-=======
 .code-import-file-modal .modal-button-container,
 .code-import-edit-link-modal .modal-button-container {
->>>>>>> develop
 	display: flex;
 	justify-content: flex-end;
 	gap: 10px;
 	margin-top: 20px;
 }
 
-<<<<<<< HEAD
-.file-modal .setting-item .file-name-input {
-=======
 .code-import-file-modal .setting-item .file-name-input {
->>>>>>> develop
 	width: 300px;
 }
 
@@ -190,91 +178,42 @@
 
 /* === Storage Path Section (FileModal) === */
 
-<<<<<<< HEAD
-.file-modal .storage-path-section {
-	margin-bottom: 1em;
-}
-
-.file-modal .storage-path-section .setting-item {
-=======
 .code-import-file-modal .storage-path-section {
 	margin-bottom: 1em;
 }
 
 .code-import-file-modal .storage-path-section .setting-item {
->>>>>>> develop
 	border-top: none;
 	padding-top: 0.5em;
 	padding-bottom: 0.5em;
 }
 
-<<<<<<< HEAD
-/* === Remote Config Section (FileModal) === */
-
-.file-modal .remote-config-section {
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 6px;
-	padding: 0.5em 1em;
-	margin-bottom: 1em;
-}
-
-.file-modal .remote-config-section .setting-item {
-	border-top: none;
-	padding-top: 0.5em;
-	padding-bottom: 0.5em;
-}
-
-.file-modal .remote-fields-container .setting-item {
-	padding-left: 0.5em;
-}
-
-/* === Edit Link Modal === */
-
-.edit-link-modal .edit-link-info {
-=======
 /* === Edit Link Modal === */
 
 .code-import-edit-link-modal .edit-link-info {
->>>>>>> develop
 	background: var(--background-secondary);
 	border-radius: 6px;
 	padding: 0.75em 1em;
 	margin-bottom: 1em;
 }
 
-<<<<<<< HEAD
-.edit-link-modal .edit-link-info-row {
-=======
 .code-import-edit-link-modal .edit-link-info-row {
->>>>>>> develop
 	display: flex;
 	justify-content: space-between;
 	padding: 0.25em 0;
 	font-size: var(--font-smaller);
 }
 
-<<<<<<< HEAD
-.edit-link-modal .edit-link-info-label {
-	color: var(--text-muted);
-}
-
-.edit-link-modal .edit-link-info-value {
-=======
 .code-import-edit-link-modal .edit-link-info-label {
 	color: var(--text-muted);
 }
 
 .code-import-edit-link-modal .edit-link-info-value {
->>>>>>> develop
 	color: var(--text-normal);
 	font-family: var(--font-monospace);
 }
 
-<<<<<<< HEAD
-.edit-link-code-container {
-=======
 .code-import-edit-link-modal .edit-link-code-container {
->>>>>>> develop
 	max-height: 400px;
 	overflow: auto;
 	border: 1px solid var(--background-modifier-border);
@@ -282,27 +221,6 @@
 	margin-bottom: 1em;
 }
 
-<<<<<<< HEAD
-.edit-link-code-container .code-embed-container {
-	margin: 0;
-}
-
-.edit-link-code-container .code-embed-wrapper pre {
-	max-height: 400px;
-}
-
-.edit-link-code-container .code-embed-toolbar {
-	display: none;
-}
-
-/* === Link Preview === */
-
-.link-preview-section {
-	margin: 1em 0;
-}
-
-.link-preview-content {
-=======
 .code-import-edit-link-modal .edit-link-code-container .code-embed-container {
 	margin: 0;
 }
@@ -373,7 +291,6 @@
 }
 
 .code-import-edit-link-modal .link-preview-content {
->>>>>>> develop
 	background: var(--background-secondary);
 	border: 1px solid var(--background-modifier-border);
 	border-radius: 6px;
@@ -384,8 +301,6 @@
 	white-space: pre-wrap;
 	color: var(--text-accent);
 }
-<<<<<<< HEAD
-=======
 
 /* === Settings Tab Bar === */
 
@@ -537,4 +452,3 @@ input.extension-table-input::placeholder {
 	color: var(--text-muted);
 	font-size: var(--font-smaller);
 }
->>>>>>> develop

@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import { CodeEmbedSettings } from "../types";
-=======
 import type { CodeEmbedSettings } from "../types";
->>>>>>> develop
 
 // ---- embed source parsing ----
 
@@ -104,13 +100,9 @@ export function debounce<T extends (...args: any[]) => void>(
 // ---- extension support ----
 
 export function getSupportedExtensions(settings: CodeEmbedSettings): string[] {
-<<<<<<< HEAD
-	return settings.codeFileExtensions.split(",").map((ext) => ext.trim());
-=======
 	return settings.codeFileExtensions
 		.filter((entry) => entry.active && entry.suffix.length > 0)
 		.map((entry) => entry.suffix);
->>>>>>> develop
 }
 
 export function isExtensionSupported(

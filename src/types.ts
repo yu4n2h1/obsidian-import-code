@@ -1,22 +1,13 @@
-<<<<<<< HEAD
-=======
 export interface ExtensionEntry {
 	suffix: string;   // file extension without dot, e.g. "js"
 	dialect: string;  // display name, e.g. "javascript"
 	active: boolean;  // enable/disable toggle
 }
 
->>>>>>> develop
 export interface CodeEmbedSettings {
 	codeEmbedEnabled: "enabled" | "disabled";
 	remoteCodeEmbedEnabled: "enabled" | "disabled";
 	remoteSkipSslVerify: boolean;
-<<<<<<< HEAD
-	codeFileExtensions: string;
-	remoteSources: Record<string, RemoteSourceEntry>;
-}
-
-=======
 	codeFileExtensions: ExtensionEntry[];
 	remoteSources: Record<string, RemoteSourceEntry>;
 }
@@ -46,7 +37,6 @@ function buildDefaultExtensions(): ExtensionEntry[] {
 	return entries;
 }
 
->>>>>>> develop
 export interface FileStorageSettings {
 	storagePathType: "absolute" | "relative";
 	absoluteStoragePath: string;
@@ -63,10 +53,7 @@ export interface RemoteServiceConfig {
 	repo?: string;
 	branch?: string;
 	path?: string;
-<<<<<<< HEAD
-=======
 	skipSslVerify?: boolean;
->>>>>>> develop
 }
 
 export interface RemoteSourceEntry {
@@ -82,12 +69,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	codeEmbedEnabled: "enabled",
 	remoteCodeEmbedEnabled: "enabled",
 	remoteSkipSslVerify: false,
-<<<<<<< HEAD
-	codeFileExtensions:
-		"js,ts,py,java,c,cpp,go,rs,rb,php,sh,sql,html,css,json,yaml,xml",
-=======
 	codeFileExtensions: buildDefaultExtensions(),
->>>>>>> develop
 	storagePathType: "absolute",
 	absoluteStoragePath: "assets",
 	relativeStoragePath: "./",
@@ -121,8 +103,5 @@ export interface LastFileReference {
 export interface SettingsProvider {
 	settings: PluginSettings;
 	saveSettings(): Promise<void>;
-<<<<<<< HEAD
-=======
 	resetMarkdownViews(): void;
->>>>>>> develop
 }
