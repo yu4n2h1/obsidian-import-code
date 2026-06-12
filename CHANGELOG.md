@@ -1,5 +1,31 @@
 # 更新日志
 
+## v1.2.0 (2026-06-13)
+
+### 新增
+
+- **HTML 元素提取器** — 对 `.html` 文件支持用 CSS 选择器提取特定元素，语法 `![[page.html@.container]]` 或 `![[page.html@[id="main"]]]`，可与行高亮组合使用
+- **编程语言提取器系统** — 全新的独立语言提取器架构 (`src/extractors/`)，每种语言拥有专用提取器，支持 **18 种语言**：JavaScript、TypeScript、Python、Ruby、Go、Rust、C/C++、Java、C#、Kotlin、Swift、Scala、PHP、Lua、YAML、HTML
+- **导入管线 (Import Pipeline)** — 重构代码导入流程为清晰管道：链接路由 → 目标解析 → 文件读取 → 符号转换 → 视图渲染 (`src/pipeline/`)，大幅提升代码可维护性
+- **SSL 验证按别名设置** — SSL 证书验证从全局设置细化为每个远程源别名独立控制，同时保留原生 HTTPS 方式的全局 SSL 跳过选项
+
+### 优化
+
+- **设置界面重构** — 改为选项卡布局（General / Remote Sources / Language），设置项按功能分组，新增扩展名表格和编程语言管理面板
+- **远程服务目录重构** — `src/remote/` 重命名为 `src/fetchers/`，每种远程服务类型拥有独立 fetcher 模块
+- **UI 目录重构** — `src/ui/` 按职责拆分为 `settings/`、`renderer/`、`modal/` 三个子目录
+- **类型导入优化** — 统一 `import type` 语法，提升编译输出质量
+- **CSS 类命名规范化** — 重命名文件和编辑链接模态的 CSS 类，提高可读性和一致性
+- **TypeScript 编译升级** — 更新 tsconfig 支持 ES2020，移除不必要的编译选项
+
+### 修复
+
+- 修复 **File Extensions** 开关关闭后不影响嵌入代码渲染的问题
+- 修复 GitHub 读取文件失败的问题
+- 修复 GitLab 访问失败的问题
+
+---
+
 ## v1.1.0 (2026-05-26)
 
 ### 新增
