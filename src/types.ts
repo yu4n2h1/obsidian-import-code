@@ -103,4 +103,5 @@ export interface LastFileReference {
 export interface SettingsProvider {
 	settings: PluginSettings;
 	saveSettings(): Promise<void>;
+	resetMarkdownViews(): void;
 }

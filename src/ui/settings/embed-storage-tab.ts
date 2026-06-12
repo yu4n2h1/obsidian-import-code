@@ -23,6 +23,7 @@ export function buildEmbedStorageTab(
 						? "enabled"
 						: "disabled";
 					await plugin.saveSettings();
+					plugin.resetMarkdownViews();
 				})
 		);
 
@@ -39,6 +40,7 @@ export function buildEmbedStorageTab(
 						? "enabled"
 						: "disabled";
 					await plugin.saveSettings();
+					plugin.resetMarkdownViews();
 				})
 		);
 

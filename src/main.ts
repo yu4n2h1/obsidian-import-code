@@ -206,7 +206,7 @@ export default class importCode extends Plugin {
 		}
 	}
 
-	private resetMarkdownViews(): void {
+	public resetMarkdownViews(): void {
 		this.app.workspace.iterateAllLeaves((leaf) => {
 			if (leaf.view instanceof MarkdownView) {
 				const state = leaf.view.getState();

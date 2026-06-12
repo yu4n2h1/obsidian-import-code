@@ -102,6 +102,7 @@ function buildExtensionRow(
 			toggle.onChange(async (value) => {
 				entry.active = value;
 				await plugin.saveSettings();
+				plugin.resetMarkdownViews();
 			});
 		});
 
@@ -114,6 +115,7 @@ function buildExtensionRow(
 			btn.onClick(async () => {
 				plugin.settings.codeFileExtensions.splice(index, 1);
 				await plugin.saveSettings();
+				plugin.resetMarkdownViews();
 				rebuildExtensionTable(containerEl, plugin);
 			});
 		});

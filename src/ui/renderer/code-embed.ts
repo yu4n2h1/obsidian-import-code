@@ -33,11 +33,14 @@ export class CodeEmbedProcessor {
 
 	isProcessingAllowed(filePath: string): boolean {
 		if (this.settings.codeEmbedEnabled !== "enabled") return false;
+
+		const [extension] = getLanguageFromPath(filePath);
+		if (!isExtensionSupported(this.settings, extension)) return false;
+
 		if (isRemoteUrl(filePath) || isAliasPath(filePath)) {
 			return this.settings.remoteCodeEmbedEnabled === "enabled";
 		}
-		const [extension] = getLanguageFromPath(filePath);
-		return isExtensionSupported(this.settings, extension);
+		return true;
 	}
 
 	processEmbeds(container: HTMLElement, sourcePath: string): void {
