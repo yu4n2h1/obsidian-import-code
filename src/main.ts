@@ -42,6 +42,36 @@ export default class importCode extends Plugin {
 			loadedData.codeFileExtensions = migratedEntries;
 		}
 
+		// Migrate old global storage-path fields into a default Local upload source.
+		// 旧版本把 storagePathType/absoluteStoragePath/relativeStoragePath 存在顶层，
+		// 唯一化后这些字段已移除，需把它们搬进 uploadSources.Local 以保留用户配置。
+		const legacy = loadedData as Record<string, unknown>;
+		if ("absoluteStoragePath" in legacy || "relativeStoragePath" in legacy) {
+			if (
+				!loadedData.uploadSources ||
+				Object.keys(loadedData.uploadSources).length === 0
+			) {
+				loadedData.uploadSources = {
+					Local: {
+						uploadType: "local",
+						useAlias: true,
+						config: {
+							storagePathType:
+								(legacy.storagePathType as "absolute" | "relative") ??
+								"absolute",
+							absolutePath:
+								(legacy.absoluteStoragePath as string) ?? "assets",
+							relativePath:
+								(legacy.relativeStoragePath as string) ?? "./",
+						},
+					},
+				};
+			}
+			delete legacy.storagePathType;
+			delete legacy.absoluteStoragePath;
+			delete legacy.relativeStoragePath;
+		}
+
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, loadedData);
 		if (lastFileReference) {
 			this.lastFileReference = lastFileReference;

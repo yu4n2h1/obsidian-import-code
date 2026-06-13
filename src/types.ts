@@ -38,9 +38,6 @@ function buildDefaultExtensions(): ExtensionEntry[] {
 }
 
 export interface FileStorageSettings {
-	storagePathType: "absolute" | "relative";
-	absoluteStoragePath: string;
-	relativeStoragePath: string;
 	fileNameStrategy: "hash" | "custom" | "auto";
 }
 
@@ -61,25 +58,63 @@ export interface RemoteSourceEntry {
 	config: RemoteServiceConfig;
 }
 
+// ---- Upload Sources ----
+
+export interface UploadSourceConfig {
+	/** WebDAV 服务 URL */
+	url?: string;
+	/** 认证令牌 (WebDAV / GitHub Gist) */
+	token?: string;
+	/** WebDAV 用户名（Basic 认证） */
+	username?: string;
+	/** 远程路径前缀 */
+	pathPrefix?: string;
+	/** GitHub Gist API URL（默认 https://api.github.com） */
+	apiUrl?: string;
+	/** 跳过 SSL 证书验证 */
+	skipSslVerify?: boolean;
+	/** 本地存储路径类型 */
+	storagePathType?: "absolute" | "relative";
+	/** 本地绝对路径（relative to vault root） */
+	absolutePath?: string;
+	/** 本地相对路径（relative to current note） */
+	relativePath?: string;
+}
+
+export interface UploadSourceEntry {
+	uploadType: "local" | "webdav" | "github-gist";
+	/** 生成 wiki 链接时是否带别名（![[path|alias]] vs ![[path]]），默认 true */
+	useAlias?: boolean;
+	config: UploadSourceConfig;
+}
+
 export interface PluginSettings
 	extends CodeEmbedSettings,
-		FileStorageSettings {}
+		FileStorageSettings {
+	uploadSources: Record<string, UploadSourceEntry>;
+}
 
 export const DEFAULT_SETTINGS: PluginSettings = {
 	codeEmbedEnabled: "enabled",
 	remoteCodeEmbedEnabled: "enabled",
 	remoteSkipSslVerify: false,
 	codeFileExtensions: buildDefaultExtensions(),
-	storagePathType: "absolute",
-	absoluteStoragePath: "assets",
-	relativeStoragePath: "./",
 	fileNameStrategy: "hash",
 	remoteSources: {},
+	uploadSources: {
+		Local: {
+			uploadType: "local",
+			useAlias: true,
+			config: { storagePathType: "absolute", absolutePath: "assets" },
+		},
+	},
 };
 
 export interface EmbedLinkInfo {
 	linkPath: string;
 	displayName: string;
+	/** 生成 wiki 链接时是否带别名 */
+	useAlias: boolean;
 	content: string;
 	extension: string;
 	symbolName: string;
@@ -92,6 +127,8 @@ export interface LastFileReference {
 	linkPath: string;
 	content: string;
 	fileName: string;
+	/** 生成 wiki 链接时是否带别名 */
+	useAlias: boolean;
 	extension: string;
 	symbolName: string;
 	highlightSpec: string;

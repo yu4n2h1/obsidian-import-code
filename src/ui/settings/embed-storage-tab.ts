@@ -56,7 +56,7 @@ export function buildEmbedStorageTab(
 				})
 		);
 
-	// ---- File Storage ----
+	// ---- File Naming ----
 	buildStorageSection(containerEl, plugin);
 }
 
@@ -66,60 +66,9 @@ function buildStorageSection(
 ): void {
 	const wrapper = containerEl.createDiv({ cls: "setting-items code-import-storage-section" });
 
-	new Setting(wrapper).setName("File storage").setHeading();
+	new Setting(wrapper).setName("File naming").setHeading();
 
-	new Setting(wrapper)
-		.setName("Storage path type")
-		.setDesc("Choose the file storage path type")
-		.addDropdown((dropdown) =>
-			dropdown
-				.addOption("absolute", "Absolute (vault root)")
-				.addOption("relative", "Relative (current note)")
-				.setValue(plugin.settings.storagePathType)
-				.onChange(async (value) => {
-					plugin.settings.storagePathType = value as "absolute" | "relative";
-					await plugin.saveSettings();
-					const oldWrapper = containerEl.querySelector(".code-import-storage-section");
-					if (oldWrapper) {
-						oldWrapper.remove();
-						buildStorageSection(containerEl, plugin);
-					}
-				})
-		);
-
-	if (plugin.settings.storagePathType === "absolute") {
-		new Setting(wrapper)
-			.setName("Absolute storage path")
-			.setDesc(
-				// eslint-disable-next-line obsidianmd/ui/sentence-case
-				"Storage path relative to the vault root (e.g. attachments/code)"
-			)
-			.addText((text) =>
-				text
-					// eslint-disable-next-line obsidianmd/ui/sentence-case
-					.setPlaceholder("E.g. attachments")
-					.setValue(plugin.settings.absoluteStoragePath)
-					.onChange(async (value: string) => {
-						plugin.settings.absoluteStoragePath = value;
-						await plugin.saveSettings();
-					})
-			);
-	} else {
-		new Setting(wrapper)
-			.setName("Relative storage path")
-			.setDesc(
-				"Storage path relative to the current note (e.g. ./assets or ../shared)"
-			)
-			.addText((text) =>
-				text
-					.setPlaceholder("./")
-					.setValue(plugin.settings.relativeStoragePath)
-					.onChange(async (value: string) => {
-						plugin.settings.relativeStoragePath = value;
-						await plugin.saveSettings();
-					})
-			);
-	}
+	// Storage destination is configured per upload source in the "Upload Sources" tab.
 
 	// File name strategy
 	new Setting(wrapper)

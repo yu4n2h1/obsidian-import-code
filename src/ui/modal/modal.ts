@@ -6,9 +6,11 @@ import {
 	MarkdownView,
 	normalizePath,
 } from "obsidian";
-import type { PluginSettings, EmbedLinkInfo } from "../../types";
+import type { PluginSettings, EmbedLinkInfo, RemoteServiceConfig } from "../../types";
 import { guessExtensionFromContent, extractFirstSymbolName } from "../../utils/language";
 import { getSupportedExtensions } from "../../utils/helpers";
+import { createUploadServices, uploadToService } from "../../upload";
+import type { UploadServiceType } from "../../upload";
 
 export class FileModal extends Modal {
 	private settings: PluginSettings;
@@ -30,22 +32,57 @@ export class FileModal extends Modal {
 
 	// Path UI
 	private pathInputEl?: HTMLElement;
+	private storagePathSectionEl?: HTMLElement;
+	private uploadTargetEl?: HTMLElement;
+	private gistTokenEl?: HTMLElement;
+
+	// Upload target
+	private selectedServiceType: UploadServiceType = "local";
+	private selectedServiceConfig: Partial<RemoteServiceConfig> = {};
+	private gistToken: string = "";
+	// 是否在生成的 wiki 链接中带别名（![[path|alias]] vs ![[path]]）
+	private useAlias: boolean = true;
+
+	// Upload source alias selection (from settings)
+	private selectedUploadSourceAlias: string = "";
+	private summaryEl?: HTMLElement;
 
 	private onSubmit: (info: EmbedLinkInfo) => void;
 
 	constructor(
 		app: App,
 		settings: PluginSettings,
-		onSubmit: (info: EmbedLinkInfo) => void
+		onSubmit: (info: EmbedLinkInfo) => void,
+		uploadServiceType?: UploadServiceType,
+		uploadServiceConfig?: Partial<RemoteServiceConfig>
 	) {
 		super(app);
 		this.settings = settings;
 		this.onSubmit = onSubmit;
 
-		// Initialize from settings
-		this.modalStoragePathType = settings.storagePathType;
-		this.modalAbsolutePath = settings.absoluteStoragePath;
-		this.modalRelativePath = settings.relativeStoragePath;
+		// Initialize upload target
+		if (uploadServiceType) {
+			this.selectedServiceType = uploadServiceType;
+		}
+		if (uploadServiceConfig) {
+			this.selectedServiceConfig = uploadServiceConfig;
+			if (uploadServiceConfig.token) {
+				this.gistToken = uploadServiceConfig.token;
+			}
+		}
+
+		// Initialize editable storage path with built-in defaults (used only by the
+		// backward-compat path UI when no upload source is configured).
+		this.modalStoragePathType = "absolute";
+		this.modalAbsolutePath = "assets";
+		this.modalRelativePath = "./";
+
+		// Pre-select first upload source alias if configured
+		const firstAlias = Object.keys(settings.uploadSources)[0];
+		if (firstAlias) {
+			this.selectedUploadSourceAlias = firstAlias;
+			this.applyUploadSourceConfig(firstAlias);
+		}
 	}
 
 	async onOpen() {
@@ -54,6 +91,148 @@ export class FileModal extends Modal {
 		contentEl.addClass("code-import-file-modal");
 
 		contentEl.createEl("h2", { text: "Create code file" });
+
+		// 0. Upload source selection
+		const hasUploadSources =
+			Object.keys(this.settings.uploadSources).length > 0;
+
+		if (hasUploadSources) {
+			// === 新模式：从设置中的上传源别名选择 ===
+			new Setting(contentEl)
+				.setName("Upload source")
+				.setDesc("Select a configured upload destination")
+				.addDropdown((dropdown) => {
+					for (const [alias, entry] of Object.entries(
+						this.settings.uploadSources
+					)) {
+						const typeLabel =
+							entry.uploadType === "local"
+								? "Local"
+								: entry.uploadType === "webdav"
+									? "WebDAV"
+									: "GitHub Gist";
+						dropdown.addOption(
+							alias,
+							`${alias} (${typeLabel})`
+						);
+					}
+					dropdown.setValue(this.selectedUploadSourceAlias);
+					dropdown.onChange((value) => {
+						this.selectedUploadSourceAlias = value;
+						this.applyUploadSourceConfig(value);
+						this.toggleUploadSections();
+						this.refreshSourceSummary();
+					});
+				});
+
+			// 摘要信息行
+			this.summaryEl = contentEl.createDiv({
+				cls: "upload-source-summary",
+			});
+
+			// Override refreshSourceSummary with closure over summaryEl
+			this.refreshSourceSummary = () => {
+				if (!this.summaryEl) return;
+				const entry =
+					this.settings.uploadSources[
+						this.selectedUploadSourceAlias
+					];
+				if (!entry) {
+					this.summaryEl.setText("");
+					return;
+				}
+				const cfg = entry.config;
+				if (entry.uploadType === "local") {
+					const pathType = cfg.storagePathType ?? "absolute";
+					const path =
+						pathType === "relative"
+							? cfg.relativePath ?? "./"
+							: cfg.absolutePath ?? "assets";
+					this.summaryEl.setText(
+						`Path: ${path} (${pathType})`
+					);
+				} else if (entry.uploadType === "webdav") {
+					this.summaryEl.setText(
+						`URL: ${cfg.url || "(not set)"}`
+					);
+				} else {
+					this.summaryEl.setText(
+						`API: ${cfg.apiUrl || "https://api.github.com"}`
+					);
+				}
+			};
+			this.refreshSourceSummary();
+
+			// Override toggleUploadSections — no path toggling needed
+			this.toggleUploadSections = () => {
+				this.refreshSourceSummary();
+			};
+		} else {
+			// === 回退模式：手动配置上传目标 ===
+			this.uploadTargetEl = contentEl.createDiv({
+				cls: "upload-target-section",
+			});
+
+			new Setting(this.uploadTargetEl)
+				.setName("Upload destination")
+				.setDesc("Choose where to save the file")
+				.addDropdown((dropdown) => {
+					dropdown.addOption("local", "Local (Obsidian vault)");
+					dropdown.addOption("github-gist", "GitHub Gist");
+
+					if (this.settings.remoteSources) {
+						for (const [alias, entry] of Object.entries(
+							this.settings.remoteSources
+						)) {
+							if (entry.serviceType === "webdav") {
+								dropdown.addOption(
+									`webdav:${alias}`,
+									`WebDAV (${alias})`
+								);
+							}
+						}
+					}
+
+					dropdown.setValue(this.selectedServiceType);
+					dropdown.onChange((value) => {
+						if (value.startsWith("webdav:")) {
+							const alias = value.slice(7);
+							this.selectedServiceType = "webdav";
+							const entry =
+								this.settings.remoteSources[alias];
+							this.selectedServiceConfig =
+								entry?.config ?? {};
+						} else if (value === "github-gist") {
+							this.selectedServiceType = "github-gist";
+							this.selectedServiceConfig = {};
+						} else {
+							this.selectedServiceType = "local";
+							this.selectedServiceConfig = {};
+						}
+						this.toggleUploadSections();
+					});
+				});
+
+			// Gist token input (only shown for github-gist)
+			this.gistTokenEl = contentEl.createDiv({
+				cls: "gist-token-section",
+			});
+			new Setting(this.gistTokenEl)
+				.setName("GitHub token")
+				.setDesc("Personal access token for GitHub Gist API")
+				.addText((text) => {
+					text.setPlaceholder("ghp_xxxxxxxxxxxx");
+					text.inputEl.type = "password";
+					text.setValue(this.gistToken);
+					text.onChange((value) => {
+						this.gistToken = value.trim();
+						this.selectedServiceConfig = {
+							...this.selectedServiceConfig,
+							token: this.gistToken,
+						};
+					});
+				});
+		}
 
 		// 1. File extension dropdown
 		new Setting(contentEl)
@@ -86,51 +265,63 @@ export class FileModal extends Modal {
 				});
 			});
 
-		// 3. Storage path type dropdown
-		new Setting(contentEl)
-			.setName("Storage path type")
-			.setDesc("Choose file storage method")
-			.addDropdown((dropdown) => {
-				dropdown.addOption("absolute", "Absolute (vault root)");
-				dropdown.addOption("relative", "Relative (current note)");
-				dropdown.setValue(this.modalStoragePathType);
-				dropdown.onChange((value) => {
-					this.modalStoragePathType = value as "absolute" | "relative";
-					this.toggleStorageSections();
+		// 3. Storage path controls (only in backward-compat / non-alias mode)
+		let absoluteRow: HTMLElement | null = null;
+		let relativeRow: HTMLElement | null = null;
+
+		if (!hasUploadSources) {
+			new Setting(contentEl)
+				.setName("Storage path type")
+				.setDesc("Choose file storage method")
+				.addDropdown((dropdown) => {
+					dropdown.addOption("absolute", "Absolute (vault root)");
+					dropdown.addOption("relative", "Relative (current note)");
+					dropdown.setValue(this.modalStoragePathType);
+					dropdown.onChange((value) => {
+						this.modalStoragePathType = value as
+							| "absolute"
+							| "relative";
+						this.toggleStorageSections();
+					});
 				});
+
+			// 4. Local path input (absolute or relative)
+			this.storagePathSectionEl = contentEl.createDiv({
+				cls: "storage-path-wrapper",
+			});
+			this.pathInputEl = this.storagePathSectionEl.createDiv({
+				cls: "storage-path-section",
 			});
 
-		// 4. Local path input (absolute or relative)
-		this.pathInputEl = contentEl.createDiv({ cls: "storage-path-section" });
-
-		new Setting(this.pathInputEl)
-			.setName("Absolute storage path")
-			.setDesc("Path relative to vault root")
-			.addText((text) => {
-				text.setPlaceholder("assets/code");
-				text.setValue(this.modalAbsolutePath);
-				text.onChange((value) => {
-					this.modalAbsolutePath = value.trim();
+			new Setting(this.pathInputEl)
+				.setName("Absolute storage path")
+				.setDesc("Path relative to vault root")
+				.addText((text) => {
+					text.setPlaceholder("assets/code");
+					text.setValue(this.modalAbsolutePath);
+					text.onChange((value) => {
+						this.modalAbsolutePath = value.trim();
+					});
 				});
-			});
 
-		new Setting(this.pathInputEl)
-			.setName("Relative storage path")
-			.setDesc("Path relative to current note (./ or ../shared)")
-			.addText((text) => {
-				text.setPlaceholder("./");
-				text.setValue(this.modalRelativePath);
-				text.onChange((value) => {
-					this.modalRelativePath = value.trim();
+			new Setting(this.pathInputEl)
+				.setName("Relative storage path")
+				.setDesc("Path relative to current note (./ or ../shared)")
+				.addText((text) => {
+					text.setPlaceholder("./");
+					text.setValue(this.modalRelativePath);
+					text.onChange((value) => {
+						this.modalRelativePath = value.trim();
+					});
 				});
-			});
 
-		const absoluteRow = this.pathInputEl.querySelector(
-			".setting-item:nth-child(1)"
-		) as HTMLElement;
-		const relativeRow = this.pathInputEl.querySelector(
-			".setting-item:nth-child(2)"
-		) as HTMLElement;
+			absoluteRow = this.pathInputEl.querySelector(
+				".setting-item:nth-child(1)"
+			) as HTMLElement;
+			relativeRow = this.pathInputEl.querySelector(
+				".setting-item:nth-child(2)"
+			) as HTMLElement;
+		}
 
 		// 5. @ symbol input
 		new Setting(contentEl)
@@ -199,20 +390,41 @@ export class FileModal extends Modal {
 
 		// Setup visibility based on initial state
 		const setVisibility = () => {
+			const isLocal = this.selectedServiceType === "local";
 			const isAbsolute = this.modalStoragePathType === "absolute";
 
-			if (this.pathInputEl) {
+			// 上传目标相关的 UI（仅回退模式存在）
+			if (this.storagePathSectionEl) {
+				this.storagePathSectionEl.style.display = isLocal
+					? ""
+					: "none";
+			}
+			if (this.gistTokenEl) {
+				this.gistTokenEl.style.display =
+					this.selectedServiceType === "github-gist" ? "" : "none";
+			}
+
+			// 存储路径类型相关的 UI（仅回退模式存在）
+			if (isLocal && this.pathInputEl) {
 				this.pathInputEl.style.display = "block";
 			}
 			if (absoluteRow) {
-				absoluteRow.style.display = isAbsolute ? "" : "none";
+				absoluteRow.style.display =
+					isLocal && isAbsolute ? "" : "none";
 			}
 			if (relativeRow) {
-				relativeRow.style.display = !isAbsolute ? "" : "none";
+				relativeRow.style.display =
+					isLocal && !isAbsolute ? "" : "none";
 			}
 		};
 
-		this.toggleStorageSections = () => setVisibility();
+		// Only override toggle methods in backward-compat mode
+		if (!hasUploadSources) {
+			this.toggleStorageSections = () => setVisibility();
+			this.toggleUploadSections = () => setVisibility();
+		} else {
+			this.toggleStorageSections = () => {};
+		}
 		setVisibility();
 
 		// Clipboard auto-fill
@@ -231,6 +443,57 @@ export class FileModal extends Modal {
 
 	private toggleStorageSections(): void {
 		// Overridden in onOpen with closure over local DOM elements
+	}
+
+	private toggleUploadSections(): void {
+		// Overridden in onOpen with closure over local DOM elements
+	}
+
+	/** 从 settings 中的上传源别名配置中提取上传参数 */
+	private applyUploadSourceConfig(alias: string): void {
+		const entry = this.settings.uploadSources[alias];
+		if (!entry) return;
+
+		const cfg = entry.config;
+
+		// 设置上传类型
+		this.selectedServiceType = entry.uploadType;
+
+		// 读取别名展示开关
+		this.useAlias = entry.useAlias ?? true;
+
+		// 构建 RemoteServiceConfig
+		if (entry.uploadType === "local") {
+			this.selectedServiceConfig = {};
+			this.modalStoragePathType = cfg.storagePathType ?? "absolute";
+			if (cfg.storagePathType === "relative") {
+				this.modalRelativePath = cfg.relativePath ?? "./";
+			} else {
+				this.modalAbsolutePath = cfg.absolutePath ?? "assets";
+			}
+			this.gistToken = "";
+		} else if (entry.uploadType === "webdav") {
+			this.selectedServiceConfig = {
+				url: cfg.url ?? "",
+				token: cfg.token ?? "",
+				username: cfg.username,
+				path: cfg.pathPrefix,
+				skipSslVerify: cfg.skipSslVerify,
+			};
+			this.gistToken = "";
+		} else if (entry.uploadType === "github-gist") {
+			this.selectedServiceConfig = {
+				url: cfg.apiUrl ?? "https://api.github.com",
+				token: cfg.token ?? "",
+				skipSslVerify: cfg.skipSslVerify,
+			};
+			this.gistToken = cfg.token ?? "";
+		}
+	}
+
+	/** 刷新上传源摘要信息 */
+	private refreshSourceSummary(): void {
+		// Overridden in onOpen with closure over summaryEl
 	}
 
 	private guessAndSetExtension(): void {
@@ -376,44 +639,67 @@ export class FileModal extends Modal {
 		}
 
 		const storagePath = this.getFullStoragePath();
-		const fullPath = normalizePath(
-			`${storagePath}/${this.generatedFileName}`
+
+		// 构建上传配置（补全必填字段默认值）
+		const config: RemoteServiceConfig = {
+			url: "",
+			token: "",
+			...this.selectedServiceConfig,
+		};
+		// 补全 gist token（从 UI 输入框获取）
+		if (this.selectedServiceType === "github-gist") {
+			if (this.gistToken) config.token = this.gistToken;
+			if (!config.url) config.url = "https://api.github.com";
+		}
+
+		const services = createUploadServices(this.app);
+		const result = await uploadToService(
+			services,
+			this.selectedServiceType,
+			config,
+			{
+				content: this.fileContent,
+				fileName: this.generatedFileName,
+				folderPath: storagePath,
+			},
+			this.selectedServiceConfig.skipSslVerify ?? this.settings.remoteSkipSslVerify
 		);
 
-		try {
-			const folderPath = storagePath;
-			if (
-				folderPath &&
-				!(await this.app.vault.adapter.exists(folderPath))
-			) {
-				await this.app.vault.createFolder(folderPath);
-			}
-
-			if (await this.app.vault.adapter.exists(fullPath)) {
-				new Notice(`File already exists: ${fullPath}`);
-			} else {
-				await this.app.vault.create(fullPath, this.fileContent);
-				new Notice(`File created: ${fullPath}`);
-			}
-
-			const linkPath = this.getLinkPath(fullPath);
-			const info: EmbedLinkInfo = {
-				linkPath,
-				displayName: this.getDisplayName(),
-				content: this.fileContent,
-				extension: this.fileExt,
-				symbolName: this.symbolName,
-				highlightSpec: this.highlightSpec,
-				storagePathType: this.modalStoragePathType,
-				storagePath: storagePath,
-			};
-			this.onSubmit(info);
-			this.close();
-		} catch (error: unknown) {
-			const message =
-				error instanceof Error ? error.message : String(error);
-			new Notice(`Failed to create file: ${message}`);
+		if (!result.success) {
+			new Notice(`Upload failed: ${result.error}`);
+			return;
 		}
+
+		// 根据上传类型构建 linkPath
+		let linkPath: string;
+		if (this.selectedServiceType === "local") {
+			// 本地上传：沿用现有的 getLinkPath 逻辑（带 @/# 修饰符）
+			const fullPath = normalizePath(
+				`${storagePath}/${this.generatedFileName}`
+			);
+			linkPath = this.getLinkPath(fullPath);
+			new Notice(`File created: ${fullPath}`);
+		} else {
+			// 远程上传：直接使用返回的 URL
+			linkPath = result.reference!;
+			new Notice(
+				`File uploaded to ${this.selectedServiceType}: ${linkPath}`
+			);
+		}
+
+		const info: EmbedLinkInfo = {
+			linkPath,
+			displayName: this.getDisplayName(),
+			useAlias: this.useAlias,
+			content: this.fileContent,
+			extension: this.fileExt,
+			symbolName: this.symbolName,
+			highlightSpec: this.highlightSpec,
+			storagePathType: this.modalStoragePathType,
+			storagePath: storagePath,
+		};
+		this.onSubmit(info);
+		this.close();
 	}
 
 	onClose() {

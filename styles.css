@@ -32,8 +32,8 @@
 /* Toolbar */
 .code-embed-container .code-embed-toolbar {
 	position: absolute;
-	top: 6px;
-	right: 6px;
+	top: 0;
+	right: 0;
 	display: flex;
 	flex-direction: row;
 	z-index: 10;
@@ -282,6 +282,67 @@
 	margin-top: 0.25em;
 	color: var(--text-muted);
 	font-size: var(--font-smaller);
+}
+
+/* === Upload Source Cards (Settings) === */
+
+.code-import-upload-source-section .upload-source-card {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 0.75em 1em;
+	margin-bottom: 1em;
+}
+
+.code-import-upload-source-section .upload-source-card-header {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.5em;
+	padding-bottom: 0.5em;
+	margin-bottom: 0.5em;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.code-import-upload-source-section .upload-source-card-alias-input {
+	flex: 1;
+}
+
+.code-import-upload-source-section .upload-source-card-alias-input .setting-item {
+	border-top: none;
+	padding: 0;
+}
+
+.code-import-upload-source-section .upload-source-card-delete {
+	flex-shrink: 0;
+	align-self: center;
+}
+
+.code-import-upload-source-section .upload-source-card-delete .setting-item {
+	border-top: none;
+	padding: 0;
+}
+
+.code-import-upload-source-section .upload-source-card-body .setting-item {
+	border-top: none;
+}
+
+.code-import-upload-source-section .upload-source-add {
+	margin-top: 0.5em;
+}
+
+.code-import-upload-source-section .upload-source-add .setting-item-description {
+	margin-top: 0.25em;
+	color: var(--text-muted);
+	font-size: var(--font-smaller);
+}
+
+/* Upload source summary in modal */
+.code-import-file-modal .upload-source-summary {
+	padding: 0.5em 0;
+	color: var(--text-muted);
+	font-size: var(--font-smaller);
+	font-family: var(--font-monospace);
+	border-bottom: 1px solid var(--background-modifier-border);
+	margin-bottom: 0.75em;
 }
 
 /* === Link Preview === */
