@@ -46,7 +46,7 @@ export class ViewRenderer {
 						codeLines[lineIdx] = `<span class="code-highlight-line">${codeLines[lineIdx] || "&nbsp;"}</span>`;
 					}
 				}
-				codeEl.innerHTML = codeLines.join("\n");
+				codeEl.replaceChildren(...Array.from(new DOMParser().parseFromString(codeLines.join("\n"), "text/html").body.childNodes));
 			}
 		}
 

@@ -69,7 +69,7 @@ function buildExtensionRow(
 		type: "text",
 		cls: "extension-table-input",
 		attr: {
-			placeholder: "e.g. javascript",
+			placeholder: "E.g. JavaScript",
 			style: "border:none;outline:none;box-shadow:none;background:transparent;width:100%;",
 		},
 	});
@@ -85,7 +85,7 @@ function buildExtensionRow(
 		type: "text",
 		cls: "extension-table-input",
 		attr: {
-			placeholder: "e.g. js",
+			placeholder: "E.g. Js",
 			style: "border:none;outline:none;box-shadow:none;background:transparent;width:100%;",
 		},
 	});

@@ -2,6 +2,11 @@ import type { RemoteServiceConfig } from "../types";
 import type { RemoteReadResult, RemoteService } from "./types";
 import { dispatchHttpRequest, buildFullPath, normalizeBaseUrl, enrichError, decodeBase64Content } from "../utils/http-client";
 
+interface GitLabFileResponse {
+	encoding?: string;
+	content?: string;
+}
+
 export const gitlabService: RemoteService = {
 	serviceType: "gitlab" as const,
 
@@ -24,7 +29,7 @@ export const gitlabService: RemoteService = {
 			};
 
 			const resp = await dispatchHttpRequest({ url, skipSslVerify, headers });
-			const body = JSON.parse(resp.text);
+			const body = JSON.parse(resp.text) as GitLabFileResponse;
 
 			// GitLab API returns base64-encoded content (same pattern as GitHub)
 			if (body.encoding === "base64" && body.content) {

@@ -22,6 +22,20 @@ export default tseslint.config(
 		},
 	},
 	...obsidianmd.configs.recommended,
+	{
+		plugins: { obsidianmd },
+		rules: {
+			"obsidianmd/ui/sentence-case": ["error", {
+				// 这些是技术标识/产品名/代号，不适用 sentence-case 规则
+				ignoreRegex: [
+					"WebDAV",
+					"GitHub Gist",
+					"L\\d+-L\\d+",
+					"ghp_",
+				],
+			}],
+		},
+	},
 	globalIgnores([
 		"node_modules",
 		"dist",

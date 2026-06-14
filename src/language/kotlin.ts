@@ -1,23 +1,15 @@
 import { BaseExtractor } from "./base-extractor";
 import type { DefPattern } from "./base-extractor";
 
-// 修饰符正则片段（内联，不共享）
 const VIS_MOD = "(?:(?:public|private|protected|static|final|abstract|virtual|override|inline|constexpr|explicit)\\s+)*";
 
-export class TypeScriptExtractor extends BaseExtractor {
-	readonly languages = ["typescript", "tsx"];
+export class KotlinExtractor extends BaseExtractor {
+	readonly languages = ["kotlin"];
 
 	readonly defPatterns: DefPattern[] = [
-		// [modifiers] function name(  (含 function* generator)
+		// fun Name(  with optional generics <T>
 		{
-			regex: new RegExp(
-				`^(\\s*)${VIS_MOD}(?:export\\s+)?(?:default\\s+)?(?:async\\s+)?function\\*?\\s*([a-zA-Z_]\\w*)\\s*\\(`
-			),
-			nameGroup: 2,
-		},
-		// const/let/var name = (...) =>
-		{
-			regex: /^(\s*)(?:export\s+)?(?:const|let|var)\s+([a-zA-Z_]\w*)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>/,
+			regex: /^(\s*)(?:override\s+)?fun\s+([a-zA-Z_]\w*)\s*(?:<[^>]*>)?\s*\(/,
 			nameGroup: 2,
 		},
 		// [modifiers] class Name
@@ -27,42 +19,25 @@ export class TypeScriptExtractor extends BaseExtractor {
 			),
 			nameGroup: 2,
 		},
-		// get name() {  or  set name(val) {
-		{
-			regex: /^(\s*)(?:get|set)\s+([a-zA-Z_]\w*)\s*\([^)]*\)\s*\{/,
-			nameGroup: 2,
-		},
-		// [modifiers] method() {  (简写方法)
-		{
-			regex: new RegExp(
-				`^(\\s*)${VIS_MOD}(?:async\\s+)?([a-zA-Z_]\\w*)\\s*\\([^)]*\\)\\s*\\{`
-			),
-			nameGroup: 2,
-		},
 		// interface Name {
 		{
-			regex: /^(\s*)(?:export\s+)?interface\s+([a-zA-Z_]\w*)/,
+			regex: /^(\s*)interface\s+([a-zA-Z_]\w*)/,
 			nameGroup: 2,
 		},
-		// type Name =
+		// object Name {
 		{
-			regex: /^(\s*)(?:export\s+)?type\s+([a-zA-Z_]\w*)\s*=/,
+			regex: /^(\s*)object\s+([a-zA-Z_]\w*)/,
 			nameGroup: 2,
 		},
-		// enum Name {
+		// enum class Name {
 		{
-			regex: /^(\s*)(?:export\s+)?(?:const\s+)?enum\s+([a-zA-Z_]\w*)/,
-			nameGroup: 2,
-		},
-		// namespace Name {  or  module Name {
-		{
-			regex: /^(\s*)(?:export\s+)?(?:namespace|module)\s+([a-zA-Z_]\w*)/,
+			regex: /^(\s*)enum\s+class\s+([a-zA-Z_]\w*)/,
 			nameGroup: 2,
 		},
 	];
 
 	stripComments(lines: string[]): boolean[] {
-		const flags: boolean[] = new Array(lines.length).fill(false);
+		const flags: boolean[] = new Array<boolean>(lines.length).fill(false);
 		let inComment = false;
 		for (let i = 0; i < lines.length; i++) {
 			if (inComment) {

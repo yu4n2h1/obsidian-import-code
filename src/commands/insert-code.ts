@@ -43,12 +43,12 @@ export function createEditLastCodeCallback(
 		loadLastFileReference(): Promise<LastFileReference | null>;
 		saveLastFileReference(ref: LastFileReference): Promise<void>;
 	}
-): (editor: Editor) => void {
+): (editor: Editor) => Promise<void> {
 	return async (editor: Editor) => {
 		const lastRef = await refStore.loadLastFileReference();
 		if (!lastRef) {
 			new Notice(
-				'No code file created yet. Use "Insert embed code" first.'
+				'No code file created yet. Use "insert embed code" first.'
 			);
 			return;
 		}

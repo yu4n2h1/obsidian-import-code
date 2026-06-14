@@ -46,7 +46,7 @@ export function buildEmbedStorageTab(
 
 	new Setting(embedGroup)
 		.setName("Skip SSL certificate verification")
-		.setDesc("For direct HTTPS wiki-link URLs only. Skip certificate validation for self-signed/expired/insecure certificates (desktop only). Configure per-service SSL skip in Remote Source Aliases below.")
+		.setDesc("For direct HTTPS wiki-link URLs only. Skip certificate validation for self-signed/expired/insecure certificates (desktop only). Configure per-service SSL skip in remote source aliases below.")
 		.addToggle((toggle) =>
 			toggle
 				.setValue(plugin.settings.remoteSkipSslVerify)

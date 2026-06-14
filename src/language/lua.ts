@@ -17,9 +17,14 @@ export class LuaExtractor extends BaseExtractor {
 		},
 	];
 
+	detectByFirstLine(firstLine: string): string | null {
+		if (this.matchShebang(firstLine, ["lua"])) return "lua";
+		return null;
+	}
+
 	stripComments(lines: string[]): boolean[] {
 		// Lua 支持 -- 行注释 和 --[[ ]] 多行注释
-		const flags: boolean[] = new Array(lines.length).fill(false);
+		const flags: boolean[] = new Array<boolean>(lines.length).fill(false);
 		let inComment = false;
 		for (let i = 0; i < lines.length; i++) {
 			const line = lines[i] ?? "";

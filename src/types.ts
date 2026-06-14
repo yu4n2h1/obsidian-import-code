@@ -1,3 +1,5 @@
+import { EXTENSION_TO_LANGUAGE } from "./utils/constants";
+
 export interface ExtensionEntry {
 	suffix: string;   // file extension without dot, e.g. "js"
 	dialect: string;  // display name, e.g. "javascript"
@@ -12,26 +14,13 @@ export interface CodeEmbedSettings {
 	remoteSources: Record<string, RemoteSourceEntry>;
 }
 
-// Keep in sync with EXTENSION_TO_LANGUAGE in src/utils/constants.ts
 function buildDefaultExtensions(): ExtensionEntry[] {
-	const map: Record<string, string> = {
-		js: "javascript", ts: "typescript", py: "python", rb: "ruby",
-		java: "java", c: "c", cpp: "cpp", h: "c", hpp: "cpp",
-		cs: "csharp", go: "go", rs: "rust", swift: "swift", kt: "kotlin",
-		scala: "scala", php: "php", sh: "bash", bash: "bash", zsh: "bash",
-		ps1: "powershell", sql: "sql", html: "html", css: "css",
-		scss: "scss", less: "less", json: "json", xml: "xml",
-		yaml: "yaml", yml: "yaml", toml: "toml", md: "markdown",
-		lua: "lua", r: "r", pl: "perl", ex: "elixir", exs: "elixir",
-		erl: "erlang", clj: "clojure", hs: "haskell", ml: "ocaml",
-		fs: "fsharp", vue: "vue", svelte: "svelte", jsx: "jsx", tsx: "tsx",
-	};
 	const activeByDefault = new Set([
 		"js", "ts", "py", "java", "c", "cpp", "go", "rs", "rb",
 		"php", "sh", "sql", "html", "css", "json", "yaml", "xml",
 	]);
 	const entries: ExtensionEntry[] = [];
-	for (const [suffix, dialect] of Object.entries(map)) {
+	for (const [suffix, dialect] of Object.entries(EXTENSION_TO_LANGUAGE)) {
 		entries.push({ suffix, dialect, active: activeByDefault.has(suffix) });
 	}
 	return entries;

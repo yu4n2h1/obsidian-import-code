@@ -1,51 +1,44 @@
 import { BaseExtractor } from "./base-extractor";
 import type { DefPattern } from "./base-extractor";
 
-const VIS_MOD = "(?:(?:public|private|protected|static|final|abstract|virtual|override|inline|constexpr|explicit)\\s+)*";
-
-export class PhpExtractor extends BaseExtractor {
-	readonly languages = ["php"];
+export class SwiftExtractor extends BaseExtractor {
+	readonly languages = ["swift"];
 
 	readonly defPatterns: DefPattern[] = [
-		// [modifiers] function name(
+		// func name(  or  public func name(  or  private func name(
 		{
-			regex: new RegExp(
-				`^(\\s*)${VIS_MOD}function\\s+([a-zA-Z_]\\w*)\\s*\\(`
-			),
+			regex: /^(\s*)(?:(?:public|private|internal|fileprivate|open)\s+)?func\s+([a-zA-Z_]\w*)\s*\(/,
 			nameGroup: 2,
 		},
-		// [modifiers] class Name
+		// class Name {
 		{
-			regex: new RegExp(
-				`^(\\s*)${VIS_MOD}(?:\\w+\\s+)*class\\s+([a-zA-Z_]\\w*)`
-			),
+			regex: /^(\s*)(?:(?:public|private|internal|fileprivate|open)\s+)?class\s+([a-zA-Z_]\w*)/,
 			nameGroup: 2,
 		},
-		// [modifiers] interface Name
+		// struct Name {
 		{
-			regex: new RegExp(
-				`^(\\s*)${VIS_MOD}(?:\\w+\\s+)*interface\\s+([a-zA-Z_]\\w*)`
-			),
+			regex: /^(\s*)(?:(?:public|private|internal|fileprivate|open)\s+)?struct\s+([a-zA-Z_]\w*)/,
 			nameGroup: 2,
 		},
-		// [modifiers] trait Name
+		// enum Name {
 		{
-			regex: new RegExp(
-				`^(\\s*)${VIS_MOD}(?:\\w+\\s+)*trait\\s+([a-zA-Z_]\\w*)`
-			),
+			regex: /^(\s*)(?:(?:public|private|internal|fileprivate|open)\s+)?enum\s+([a-zA-Z_]\w*)/,
 			nameGroup: 2,
 		},
-		// [modifiers] method() {  (简写方法)
+		// protocol Name {
 		{
-			regex: new RegExp(
-				`^(\\s*)${VIS_MOD}(?:async\\s+)?([a-zA-Z_]\\w*)\\s*\\([^)]*\\)\\s*\\{`
-			),
+			regex: /^(\s*)(?:(?:public|private|internal|fileprivate|open)\s+)?protocol\s+([a-zA-Z_]\w*)/,
+			nameGroup: 2,
+		},
+		// extension Name {
+		{
+			regex: /^(\s*)extension\s+([a-zA-Z_]\w*)/,
 			nameGroup: 2,
 		},
 	];
 
 	stripComments(lines: string[]): boolean[] {
-		const flags: boolean[] = new Array(lines.length).fill(false);
+		const flags: boolean[] = new Array<boolean>(lines.length).fill(false);
 		let inComment = false;
 		for (let i = 0; i < lines.length; i++) {
 			if (inComment) {

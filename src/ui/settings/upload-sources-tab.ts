@@ -169,7 +169,7 @@ function buildLocalFields(
 			.setName("Absolute storage path")
 			.setDesc("Path relative to vault root, e.g. assets/code")
 			.addText((text) => {
-				text.setPlaceholder("assets/code");
+				text.setPlaceholder("Assets/code");
 				text.setValue(cfg.absolutePath ?? "assets");
 				text.onChange(async (value) => {
 					cfg.absolutePath = value.trim();
@@ -210,9 +210,9 @@ function buildWebdavFields(
 
 	new Setting(body)
 		.setName("Username (optional)")
-		.setDesc("Username for Basic authentication")
+		.setDesc("Username for basic authentication")
 		.addText((text) => {
-			text.setPlaceholder("username");
+			text.setPlaceholder("Username");
 			text.setValue(cfg.username ?? "");
 			text.onChange(async (value) => {
 				cfg.username = value.trim() || undefined;
@@ -224,7 +224,7 @@ function buildWebdavFields(
 		.setName("Token")
 		.setDesc("Token or password for authentication")
 		.addText((text) => {
-			text.setPlaceholder("token or password");
+			text.setPlaceholder("Token or password");
 			text.inputEl.type = "password";
 			text.setValue(cfg.token ?? "");
 			text.onChange(async (value) => {
@@ -237,7 +237,7 @@ function buildWebdavFields(
 		.setName("Path prefix")
 		.setDesc("Directory path on the WebDAV server, e.g. uploads/code")
 		.addText((text) => {
-			text.setPlaceholder("uploads/code");
+			text.setPlaceholder("Uploads/code");
 			text.setValue(cfg.pathPrefix ?? "");
 			text.onChange(async (value) => {
 				cfg.pathPrefix = value.trim() || undefined;

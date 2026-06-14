@@ -79,7 +79,7 @@ function buildRemoteSourceSection(
 				dd.addOption("gitlab", "GitLab");
 				dd.addOption("gitea", "Gitea");
 				dd.addOption("webdav", "WebDAV");
-				dd.addOption("local", "Local Directory");
+				dd.addOption("local", "Local directory");
 				dd.setValue(entry.serviceType);
 				dd.onChange(async (value) => {
 					entry.serviceType = value as RemoteServiceType;
@@ -100,7 +100,7 @@ function buildRemoteSourceSection(
 				path: entry.config.path,
 				skipSslVerify: entry.config.skipSslVerify,
 			},
-			async (key, value) => {
+			(key, value) => {
 				switch (key) {
 					case "url":
 						entry.config.url = value as string;
@@ -124,7 +124,7 @@ function buildRemoteSourceSection(
 						entry.config.skipSslVerify = value as boolean;
 						break;
 				}
-				await plugin.saveSettings();
+				void plugin.saveSettings();
 			}
 		);
 	}

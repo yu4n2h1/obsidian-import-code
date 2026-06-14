@@ -29,14 +29,14 @@ function getRequire(): (id: string) => unknown {
 	if (_requireFn !== undefined) return _requireFn as (id: string) => unknown;
 
 	// 1. window.require (Obsidian preload)
-	const winReq = win().require;
+	const winReq: unknown = win().require;
 	if (typeof winReq === "function") {
 		_requireFn = winReq as (id: string) => unknown;
 		return _requireFn;
 	}
 
 	// 2. globalThis.require (might differ from window in some contexts)
-	const globalReq = glob().require;
+	const globalReq: unknown = glob().require;
 	if (typeof globalReq === "function" && globalReq !== winReq) {
 		_requireFn = globalReq as (id: string) => unknown;
 		return _requireFn;
@@ -45,7 +45,7 @@ function getRequire(): (id: string) => unknown {
 	// 3. CJS free-variable require via indirect eval
 	try {
 		// eslint-disable-next-line no-eval
-		const cjsReq = (0, eval)("typeof require === 'function' ? require : undefined");
+		const cjsReq: unknown = (0, eval)("typeof require === 'function' ? require : undefined");
 		if (typeof cjsReq === "function") {
 			_requireFn = cjsReq as (id: string) => unknown;
 			return _requireFn;
@@ -61,7 +61,7 @@ function getRequire(): (id: string) => unknown {
 }
 
 function loadHttpsModule(): unknown {
-	const process = win().process as AnyObj | undefined;
+	const process = win().process as { versions?: { electron?: string } } | undefined;
 	const isElectron = !!(process?.versions?.electron);
 	if (!isElectron) {
 		throw new Error(
@@ -212,7 +212,7 @@ interface HttpsModule {
 }
 
 function getHttpsModule(): HttpsModule {
-	return getHttps() as unknown as HttpsModule;
+	return getHttps() as HttpsModule;
 }
 
 const MAX_REDIRECTS = 5;

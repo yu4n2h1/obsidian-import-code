@@ -128,4 +128,37 @@ export abstract class BaseExtractor {
 	protected prependDecorators(_lines: string[], defIdx: number): number {
 		return defIdx;
 	}
+
+	// ---- 语言识别（可选，子类按需覆盖） ----
+
+	/**
+	 * 通过首行强信号（shebang 解释器名、<?xml / <?php / <!DOCTYPE html 等文件头标记）检测语言。
+	 * 返回匹配到的主文件扩展名（如 "py"、"js"），不匹配返回 null。
+	 * 默认不参与检测；子类按需覆盖。
+	 */
+	detectByFirstLine(_firstLine: string): string | null {
+		return null;
+	}
+
+	/**
+	 * 通过内容启发式（前 2000 字符的特征模式）检测语言。
+	 * firstLine 为首行（已 trim），head 为已 trimStart 的前 2000 字符。
+	 * 返回匹配到的主文件扩展名，不匹配返回 null。默认不参与检测；子类按需覆盖。
+	 */
+	detectByContent(_firstLine: string, _head: string): string | null {
+		return null;
+	}
+
+	/** shebang 辅助：判断首行（需以 #! 开头）解释器路径是否包含给定名称之一（大小写不敏感）。 */
+	protected matchShebang(firstLine: string, interpreters: string[]): boolean {
+		if (!firstLine.startsWith("#!")) return false;
+		const parts = firstLine.substring(2).trim().split(/\s+/);
+		for (const part of parts) {
+			const lower = part.toLowerCase();
+			for (const interp of interpreters) {
+				if (lower.includes(interp.toLowerCase())) return true;
+			}
+		}
+		return false;
+	}
 }

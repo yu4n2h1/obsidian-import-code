@@ -197,7 +197,7 @@ export default class importCode extends Plugin {
 		try {
 			const https = getHttps();
 			if (https && typeof (https as Record<string, unknown>).request === "function") {
-				console.log(
+				console.debug(
 					"[Code Embed] SSL skip verification is available. Node.js HTTPS module loaded successfully."
 				);
 			} else {
@@ -223,7 +223,7 @@ export default class importCode extends Plugin {
 		this.app.workspace.iterateAllLeaves((leaf) => {
 			if (leaf.view instanceof MarkdownView) {
 				const state = leaf.view.getState();
-				leaf.view.setState(state, { history: false });
+				void leaf.view.setState(state, { history: false });
 			}
 		});
 	}

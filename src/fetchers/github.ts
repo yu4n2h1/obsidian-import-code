@@ -2,6 +2,11 @@ import type { RemoteServiceConfig } from "../types";
 import type { RemoteReadResult, RemoteService } from "./types";
 import { dispatchHttpRequest, enrichError, encodePathSegments, buildFullPath, normalizeBaseUrl, decodeBase64Content } from "../utils/http-client";
 
+interface GitHubContentsResponse {
+	encoding?: string;
+	content?: string;
+}
+
 export const githubService: RemoteService = {
 	serviceType: "github" as const,
 
@@ -24,7 +29,7 @@ export const githubService: RemoteService = {
 
 			const resp = await dispatchHttpRequest({ url, skipSslVerify, headers });
 
-			const body = JSON.parse(resp.text);
+			const body = JSON.parse(resp.text) as GitHubContentsResponse;
 			if (body.encoding === "base64" && body.content) {
 				return { success: true, content: decodeBase64Content(body.content) };
 			}

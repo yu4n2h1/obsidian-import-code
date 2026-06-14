@@ -1,39 +1,39 @@
 import { BaseExtractor } from "./base-extractor";
 import type { DefPattern } from "./base-extractor";
 
-export class RustExtractor extends BaseExtractor {
-	readonly languages = ["rust"];
+export class GoExtractor extends BaseExtractor {
+	readonly languages = ["go"];
 
 	readonly defPatterns: DefPattern[] = [
-		// pub fn Name(  with optional (crate|super|self) qualifier and generics <T>
+		// func Name(  with optional generics <T>
 		{
-			regex: /^(\s*)(?:pub(?:\s*\(\s*(?:crate|super|self)\s*\))?\s+)?fn\s+([a-zA-Z_]\w*)\s*(?:<[^>]*>)?\s*\(/,
+			regex: /^(\s*)func\s+([a-zA-Z_]\w*)\s*(?:<[^>]*>)?\s*\(/,
 			nameGroup: 2,
 		},
-		// impl Name {  or  impl Trait for Name {
+		// func (receiver Type) Name(
 		{
-			regex: /^(\s*)impl\s+(?:[\w:]+\s+for\s+)?([a-zA-Z_]\w*)/,
+			regex: /^(\s*)func\s+\(\w+\s+\*?\w+\)\s+([a-zA-Z_]\w*)\s*\(/,
 			nameGroup: 2,
 		},
-		// trait Name {
+		// type Name struct {
 		{
-			regex: /^(\s*)(?:pub\s+)?trait\s+([a-zA-Z_]\w*)/,
+			regex: /^(\s*)type\s+([a-zA-Z_]\w*)\s+struct\s*\{/,
 			nameGroup: 2,
 		},
-		// enum Name {
+		// type Name interface {
 		{
-			regex: /^(\s*)(?:pub\s+)?enum\s+([a-zA-Z_]\w*)/,
-			nameGroup: 2,
-		},
-		// struct Name {
-		{
-			regex: /^(\s*)(?:pub\s+)?struct\s+([a-zA-Z_]\w*)/,
+			regex: /^(\s*)type\s+([a-zA-Z_]\w*)\s+interface\s*\{/,
 			nameGroup: 2,
 		},
 	];
 
+	detectByContent(_firstLine: string, head: string): string | null {
+		if (/\bfunc\s+main\b/.test(head) && /\bpackage\s+main\b/.test(head)) return "go";
+		return null;
+	}
+
 	stripComments(lines: string[]): boolean[] {
-		const flags: boolean[] = new Array(lines.length).fill(false);
+		const flags: boolean[] = new Array<boolean>(lines.length).fill(false);
 		let inComment = false;
 		for (let i = 0; i < lines.length; i++) {
 			if (inComment) {

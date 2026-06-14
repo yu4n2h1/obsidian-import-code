@@ -251,7 +251,7 @@ export class FileModal extends Modal {
 				.setName("Absolute storage path")
 				.setDesc("Path relative to vault root")
 				.addText((text) => {
-					text.setPlaceholder("assets/code");
+					text.setPlaceholder("Assets/code");
 					text.setValue(this.modalAbsolutePath);
 					text.onChange((value) => {
 						this.modalAbsolutePath = value.trim();
@@ -390,7 +390,7 @@ export class FileModal extends Modal {
 
 		// 存储路径类型相关的 UI（仅回退模式存在）
 		if (isLocal && this.pathInputEl) {
-			this.pathInputEl.style.display = "block";
+			this.pathInputEl.setCssProps({ display: "block" });
 		}
 		if (this.absoluteRowEl) {
 			this.absoluteRowEl.style.display =

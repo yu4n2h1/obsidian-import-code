@@ -8,6 +8,14 @@ import { dispatchHttpRequest, normalizeBaseUrl } from "../utils/http-client";
  * 通过 GitHub REST API (POST /gists) 创建私有 Gist，
  * 返回 raw URL 作为可嵌入的引用路径。
  */
+interface GistFile {
+	raw_url: string;
+}
+
+interface GistResponse {
+	files?: Record<string, GistFile>;
+}
+
 export const githubGistUploadService: UploadService = {
 	serviceType: "github-gist" as const,
 
@@ -47,7 +55,7 @@ export const githubGistUploadService: UploadService = {
 		});
 
 		// 解析响应，提取 raw_url
-		const data = JSON.parse(resp.text);
+		const data = JSON.parse(resp.text) as GistResponse;
 		const gistFile = data.files?.[ctx.fileName];
 		if (!gistFile?.raw_url) {
 			return {
