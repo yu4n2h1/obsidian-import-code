@@ -1,5 +1,6 @@
-import { Setting } from "obsidian";
+import { Notice, Setting } from "obsidian";
 import type { SettingsProvider, UploadSourceEntry } from "../../types";
+import { rebuildSettingsSection } from "./rebuild";
 
 export function buildUploadSourcesTab(
 	containerEl: HTMLElement,
@@ -37,6 +38,11 @@ function buildUploadSourceSection(
 					const trimmed = value.trim();
 					if (!trimmed || trimmed === currentAlias) return;
 					const sources = plugin.settings.uploadSources;
+					if (sources[trimmed]) {
+						new Notice(`Alias "${trimmed}" already exists`);
+						text.setValue(currentAlias);
+						return;
+					}
 					sources[trimmed] = entry;
 					delete sources[currentAlias];
 					currentAlias = trimmed;
@@ -79,7 +85,7 @@ function buildUploadSourceSection(
 			});
 
 		// Conditional config fields based on upload type
-		buildUploadConfigFields(body, currentEntry, plugin);
+		buildUploadConfigFields(body, containerEl, currentEntry, plugin);
 	}
 
 	// Add button
@@ -87,7 +93,9 @@ function buildUploadSourceSection(
 	new Setting(addRow).addButton((btn) => {
 		btn.setButtonText("Add upload source");
 		btn.onClick(async () => {
-			const alias = `upload-${Object.keys(plugin.settings.uploadSources).length + 1}`;
+			let n = 1;
+			while (plugin.settings.uploadSources[`upload-${n}`]) n++;
+			const alias = `upload-${n}`;
 			plugin.settings.uploadSources[alias] = {
 				uploadType: "local",
 				useAlias: true,
@@ -105,6 +113,7 @@ function buildUploadSourceSection(
 
 function buildUploadConfigFields(
 	body: HTMLElement,
+	containerEl: HTMLElement,
 	entry: UploadSourceEntry,
 	plugin: SettingsProvider
 ): void {
@@ -123,7 +132,7 @@ function buildUploadConfigFields(
 		});
 
 	if (entry.uploadType === "local") {
-		buildLocalFields(body, cfg, plugin);
+		buildLocalFields(body, containerEl, cfg, plugin);
 	} else if (entry.uploadType === "webdav") {
 		buildWebdavFields(body, cfg, plugin);
 	} else if (entry.uploadType === "github-gist") {
@@ -133,6 +142,7 @@ function buildUploadConfigFields(
 
 function buildLocalFields(
 	body: HTMLElement,
+	containerEl: HTMLElement,
 	cfg: UploadSourceEntry["config"],
 	plugin: SettingsProvider
 ): void {
@@ -148,7 +158,7 @@ function buildLocalFields(
 				cfg.storagePathType = value as "absolute" | "relative";
 				await plugin.saveSettings();
 				// Rebuild to swap path input
-				rebuildParentSection(body, plugin);
+				rebuildSection(containerEl, plugin);
 			});
 		});
 
@@ -293,24 +303,9 @@ function rebuildSection(
 	containerEl: HTMLElement,
 	plugin: SettingsProvider
 ): void {
-	const old = containerEl.querySelector(
-		".code-import-upload-source-section"
+	rebuildSettingsSection(
+		containerEl,
+		"code-import-upload-source-section",
+		(el) => buildUploadSourceSection(el, plugin)
 	);
-	if (old) {
-		old.remove();
-		buildUploadSourceSection(containerEl, plugin);
-	}
-}
-
-function rebuildParentSection(
-	body: HTMLElement,
-	plugin: SettingsProvider
-): void {
-	// Walk up to find the section wrapper, then rebuild from the container
-	const section = body.closest(".code-import-upload-source-section");
-	if (!section) return;
-	const containerEl = section.parentElement;
-	if (!containerEl) return;
-	section.remove();
-	buildUploadSourceSection(containerEl as HTMLElement, plugin);
 }

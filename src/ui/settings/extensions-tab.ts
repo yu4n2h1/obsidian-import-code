@@ -1,5 +1,6 @@
 import { Setting } from "obsidian";
 import type { SettingsProvider, ExtensionEntry } from "../../types";
+import { rebuildSettingsSection } from "./rebuild";
 
 export function buildExtensionsTab(
 	containerEl: HTMLElement,
@@ -90,7 +91,7 @@ function buildExtensionRow(
 	});
 	suffixInput.value = entry.suffix;
 	suffixInput.addEventListener("input", () => {
-		entry.suffix = suffixInput.value.trim();
+		entry.suffix = suffixInput.value.trim().toLowerCase();
 		void plugin.saveSettings();
 	});
 
@@ -125,7 +126,9 @@ function rebuildExtensionTable(
 	containerEl: HTMLElement,
 	plugin: SettingsProvider
 ): void {
-	const oldWrapper = containerEl.querySelector(".extension-table-section");
-	if (oldWrapper) oldWrapper.remove();
-	buildExtensionTable(containerEl, plugin);
+	rebuildSettingsSection(
+		containerEl,
+		"extension-table-section",
+		(el) => buildExtensionTable(el, plugin)
+	);
 }

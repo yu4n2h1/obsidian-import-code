@@ -1,6 +1,6 @@
 import type { RemoteServiceConfig } from "../types";
 import type { UploadResult, UploadService } from "./types";
-import { dispatchHttpRequest, enrichError } from "../utils/http-client";
+import { dispatchHttpRequest, normalizeBaseUrl } from "../utils/http-client";
 
 /**
  * GitHub Gist 上传服务。
@@ -16,56 +16,46 @@ export const githubGistUploadService: UploadService = {
 		ctx: { content: string; fileName: string },
 		skipSslVerify: boolean
 	): Promise<UploadResult> {
-		try {
-			const baseUrl = (config.url || "https://api.github.com").replace(
-				/\/+$/,
-				""
-			);
-			const url = `${baseUrl}/gists`;
+		const baseUrl = normalizeBaseUrl(config.url || "https://api.github.com");
+		const url = `${baseUrl}/gists`;
 
-			const headers: Record<string, string> = {
-				"Accept": "application/vnd.github+json",
-				"X-GitHub-Api-Version": "2026-03-10",
-				"Content-Type": "application/json",
-			};
-			if (config.token) {
-				headers["Authorization"] = `Bearer ${config.token}`;
-			}
+		const headers: Record<string, string> = {
+			"Accept": "application/vnd.github+json",
+			"X-GitHub-Api-Version": "2026-03-10",
+			"Content-Type": "application/json",
+		};
+		if (config.token) {
+			headers["Authorization"] = `Bearer ${config.token}`;
+		}
 
-			const body = JSON.stringify({
-				description: `Code snippet: ${ctx.fileName}`,
-				public: false,
-				files: {
-					[ctx.fileName]: {
-						content: ctx.content,
-					},
+		const body = JSON.stringify({
+			description: `Code snippet: ${ctx.fileName}`,
+			public: false,
+			files: {
+				[ctx.fileName]: {
+					content: ctx.content,
 				},
-			});
+			},
+		});
 
-			const resp = await dispatchHttpRequest({
-				url,
-				method: "POST",
-				body,
-				skipSslVerify,
-				headers,
-			});
+		const resp = await dispatchHttpRequest({
+			url,
+			method: "POST",
+			body,
+			skipSslVerify,
+			headers,
+		});
 
-			// 解析响应，提取 raw_url
-			const data = JSON.parse(resp.text);
-			const gistFile = data.files?.[ctx.fileName];
-			if (!gistFile?.raw_url) {
-				return {
-					success: false,
-					error: "GitHub Gist upload failed: raw_url not found in response",
-				};
-			}
-
-			return { success: true, reference: gistFile.raw_url };
-		} catch (err) {
+		// 解析响应，提取 raw_url
+		const data = JSON.parse(resp.text);
+		const gistFile = data.files?.[ctx.fileName];
+		if (!gistFile?.raw_url) {
 			return {
 				success: false,
-				error: enrichError(err, "GitHub Gist upload failed"),
+				error: "GitHub Gist upload failed: raw_url not found in response",
 			};
 		}
+
+		return { success: true, reference: gistFile.raw_url };
 	},
 };

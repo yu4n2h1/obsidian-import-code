@@ -127,11 +127,32 @@ export function encodePathSegments(filePath: string): string {
 }
 
 /**
+ * Strip trailing slashes from a base URL.
+ * Shared by buildServiceUrl and the github-gist uploader.
+ */
+export function normalizeBaseUrl(url: string): string {
+	return url.replace(/\/+$/, "");
+}
+
+/**
+ * Decode a base64-encoded string into UTF-8 text.
+ * Used by the github and gitlab fetchers for base64-encoded file content.
+ */
+export function decodeBase64Content(b64: string): string {
+	const binary = atob(b64);
+	const bytes = new Uint8Array(binary.length);
+	for (let i = 0; i < binary.length; i++) {
+		bytes[i] = binary.charCodeAt(i);
+	}
+	return new TextDecoder().decode(bytes);
+}
+
+/**
  * Build a full service URL from config and file path.
  * Used by generic and webdav fetchers to avoid duplication.
  */
 export function buildServiceUrl(config: { url: string; path?: string }, filePath: string): string {
-	const base = config.url.replace(/\/+$/, "");
+	const base = normalizeBaseUrl(config.url);
 	const fullPath = buildFullPath(config.path, filePath);
 	const encoded = encodePathSegments(fullPath);
 	return `${base}/${encoded}`;
@@ -141,9 +162,6 @@ export function buildServiceUrl(config: { url: string; path?: string }, filePath
 
 export function enrichError(err: unknown, context: string): string {
 	const message = err instanceof Error ? err.message : String(err);
-	if (message.includes("Skip SSL") || message.includes("SSL skip")) {
-		return `${context}: ${message}`;
-	}
 	return `${context}: ${message}`;
 }
 

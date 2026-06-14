@@ -32,6 +32,8 @@ export class FileModal extends Modal {
 
 	// Path UI
 	private pathInputEl?: HTMLElement;
+	private absoluteRowEl: HTMLElement | null = null;
+	private relativeRowEl: HTMLElement | null = null;
 	private storagePathSectionEl?: HTMLElement;
 	private uploadTargetEl?: HTMLElement;
 	private gistTokenEl?: HTMLElement;
@@ -39,7 +41,9 @@ export class FileModal extends Modal {
 	// Upload target
 	private selectedServiceType: UploadServiceType = "local";
 	private selectedServiceConfig: Partial<RemoteServiceConfig> = {};
-	private gistToken: string = "";
+	// 回退模式下用户输入的 gist token（独立持久，避免切换服务类型再切回 gist 时丢失——
+	// selectedServiceConfig 在切换时会被重置，而该 token 是 UI 持久态，不可与提交配置混为一谈）
+	private fallbackGistToken: string = "";
 	// 是否在生成的 wiki 链接中带别名（![[path|alias]] vs ![[path]]）
 	private useAlias: boolean = true;
 
@@ -52,24 +56,11 @@ export class FileModal extends Modal {
 	constructor(
 		app: App,
 		settings: PluginSettings,
-		onSubmit: (info: EmbedLinkInfo) => void,
-		uploadServiceType?: UploadServiceType,
-		uploadServiceConfig?: Partial<RemoteServiceConfig>
+		onSubmit: (info: EmbedLinkInfo) => void
 	) {
 		super(app);
 		this.settings = settings;
 		this.onSubmit = onSubmit;
-
-		// Initialize upload target
-		if (uploadServiceType) {
-			this.selectedServiceType = uploadServiceType;
-		}
-		if (uploadServiceConfig) {
-			this.selectedServiceConfig = uploadServiceConfig;
-			if (uploadServiceConfig.token) {
-				this.gistToken = uploadServiceConfig.token;
-			}
-		}
 
 		// Initialize editable storage path with built-in defaults (used only by the
 		// backward-compat path UI when no upload source is configured).
@@ -129,44 +120,7 @@ export class FileModal extends Modal {
 			this.summaryEl = contentEl.createDiv({
 				cls: "upload-source-summary",
 			});
-
-			// Override refreshSourceSummary with closure over summaryEl
-			this.refreshSourceSummary = () => {
-				if (!this.summaryEl) return;
-				const entry =
-					this.settings.uploadSources[
-						this.selectedUploadSourceAlias
-					];
-				if (!entry) {
-					this.summaryEl.setText("");
-					return;
-				}
-				const cfg = entry.config;
-				if (entry.uploadType === "local") {
-					const pathType = cfg.storagePathType ?? "absolute";
-					const path =
-						pathType === "relative"
-							? cfg.relativePath ?? "./"
-							: cfg.absolutePath ?? "assets";
-					this.summaryEl.setText(
-						`Path: ${path} (${pathType})`
-					);
-				} else if (entry.uploadType === "webdav") {
-					this.summaryEl.setText(
-						`URL: ${cfg.url || "(not set)"}`
-					);
-				} else {
-					this.summaryEl.setText(
-						`API: ${cfg.apiUrl || "https://api.github.com"}`
-					);
-				}
-			};
 			this.refreshSourceSummary();
-
-			// Override toggleUploadSections — no path toggling needed
-			this.toggleUploadSections = () => {
-				this.refreshSourceSummary();
-			};
 		} else {
 			// === 回退模式：手动配置上传目标 ===
 			this.uploadTargetEl = contentEl.createDiv({
@@ -204,7 +158,10 @@ export class FileModal extends Modal {
 								entry?.config ?? {};
 						} else if (value === "github-gist") {
 							this.selectedServiceType = "github-gist";
-							this.selectedServiceConfig = {};
+							// 从持久态恢复已输入的 token，避免切换服务类型再切回 gist 时丢失
+							this.selectedServiceConfig = {
+								token: this.fallbackGistToken,
+							};
 						} else {
 							this.selectedServiceType = "local";
 							this.selectedServiceConfig = {};
@@ -223,12 +180,12 @@ export class FileModal extends Modal {
 				.addText((text) => {
 					text.setPlaceholder("ghp_xxxxxxxxxxxx");
 					text.inputEl.type = "password";
-					text.setValue(this.gistToken);
+					text.setValue(this.fallbackGistToken);
 					text.onChange((value) => {
-						this.gistToken = value.trim();
+						this.fallbackGistToken = value.trim();
 						this.selectedServiceConfig = {
 							...this.selectedServiceConfig,
-							token: this.gistToken,
+							token: value.trim(),
 						};
 					});
 				});
@@ -266,9 +223,6 @@ export class FileModal extends Modal {
 			});
 
 		// 3. Storage path controls (only in backward-compat / non-alias mode)
-		let absoluteRow: HTMLElement | null = null;
-		let relativeRow: HTMLElement | null = null;
-
 		if (!hasUploadSources) {
 			new Setting(contentEl)
 				.setName("Storage path type")
@@ -315,10 +269,10 @@ export class FileModal extends Modal {
 					});
 				});
 
-			absoluteRow = this.pathInputEl.querySelector(
+			this.absoluteRowEl = this.pathInputEl.querySelector(
 				".setting-item:nth-child(1)"
 			) as HTMLElement;
-			relativeRow = this.pathInputEl.querySelector(
+			this.relativeRowEl = this.pathInputEl.querySelector(
 				".setting-item:nth-child(2)"
 			) as HTMLElement;
 		}
@@ -389,43 +343,7 @@ export class FileModal extends Modal {
 		});
 
 		// Setup visibility based on initial state
-		const setVisibility = () => {
-			const isLocal = this.selectedServiceType === "local";
-			const isAbsolute = this.modalStoragePathType === "absolute";
-
-			// 上传目标相关的 UI（仅回退模式存在）
-			if (this.storagePathSectionEl) {
-				this.storagePathSectionEl.style.display = isLocal
-					? ""
-					: "none";
-			}
-			if (this.gistTokenEl) {
-				this.gistTokenEl.style.display =
-					this.selectedServiceType === "github-gist" ? "" : "none";
-			}
-
-			// 存储路径类型相关的 UI（仅回退模式存在）
-			if (isLocal && this.pathInputEl) {
-				this.pathInputEl.style.display = "block";
-			}
-			if (absoluteRow) {
-				absoluteRow.style.display =
-					isLocal && isAbsolute ? "" : "none";
-			}
-			if (relativeRow) {
-				relativeRow.style.display =
-					isLocal && !isAbsolute ? "" : "none";
-			}
-		};
-
-		// Only override toggle methods in backward-compat mode
-		if (!hasUploadSources) {
-			this.toggleStorageSections = () => setVisibility();
-			this.toggleUploadSections = () => setVisibility();
-		} else {
-			this.toggleStorageSections = () => {};
-		}
-		setVisibility();
+		this.applyVisibility();
 
 		// Clipboard auto-fill
 		try {
@@ -442,11 +360,46 @@ export class FileModal extends Modal {
 	}
 
 	private toggleStorageSections(): void {
-		// Overridden in onOpen with closure over local DOM elements
+		// 别名模式下无需切换存储路径 UI；仅回退模式（无上传源）应用可见性
+		if (this.summaryEl) return;
+		this.applyVisibility();
 	}
 
 	private toggleUploadSections(): void {
-		// Overridden in onOpen with closure over local DOM elements
+		// 别名模式刷新摘要；回退模式切换可见性
+		if (this.summaryEl) {
+			this.refreshSourceSummary();
+		} else {
+			this.applyVisibility();
+		}
+	}
+
+	/** 根据当前上传目标与存储路径类型，切换回退模式 UI 的可见性。 */
+	private applyVisibility(): void {
+		const isLocal = this.selectedServiceType === "local";
+		const isAbsolute = this.modalStoragePathType === "absolute";
+
+		// 上传目标相关的 UI（仅回退模式存在）
+		if (this.storagePathSectionEl) {
+			this.storagePathSectionEl.style.display = isLocal ? "" : "none";
+		}
+		if (this.gistTokenEl) {
+			this.gistTokenEl.style.display =
+				this.selectedServiceType === "github-gist" ? "" : "none";
+		}
+
+		// 存储路径类型相关的 UI（仅回退模式存在）
+		if (isLocal && this.pathInputEl) {
+			this.pathInputEl.style.display = "block";
+		}
+		if (this.absoluteRowEl) {
+			this.absoluteRowEl.style.display =
+				isLocal && isAbsolute ? "" : "none";
+		}
+		if (this.relativeRowEl) {
+			this.relativeRowEl.style.display =
+				isLocal && !isAbsolute ? "" : "none";
+		}
 	}
 
 	/** 从 settings 中的上传源别名配置中提取上传参数 */
@@ -471,7 +424,6 @@ export class FileModal extends Modal {
 			} else {
 				this.modalAbsolutePath = cfg.absolutePath ?? "assets";
 			}
-			this.gistToken = "";
 		} else if (entry.uploadType === "webdav") {
 			this.selectedServiceConfig = {
 				url: cfg.url ?? "",
@@ -480,20 +432,39 @@ export class FileModal extends Modal {
 				path: cfg.pathPrefix,
 				skipSslVerify: cfg.skipSslVerify,
 			};
-			this.gistToken = "";
 		} else if (entry.uploadType === "github-gist") {
 			this.selectedServiceConfig = {
 				url: cfg.apiUrl ?? "https://api.github.com",
 				token: cfg.token ?? "",
 				skipSslVerify: cfg.skipSslVerify,
 			};
-			this.gistToken = cfg.token ?? "";
 		}
 	}
 
-	/** 刷新上传源摘要信息 */
+	/** 刷新上传源摘要信息（仅别名模式下 summaryEl 存在时生效）。 */
 	private refreshSourceSummary(): void {
-		// Overridden in onOpen with closure over summaryEl
+		if (!this.summaryEl) return;
+		const entry =
+			this.settings.uploadSources[this.selectedUploadSourceAlias];
+		if (!entry) {
+			this.summaryEl.setText("");
+			return;
+		}
+		const cfg = entry.config;
+		if (entry.uploadType === "local") {
+			const pathType = cfg.storagePathType ?? "absolute";
+			const path =
+				pathType === "relative"
+					? cfg.relativePath ?? "./"
+					: cfg.absolutePath ?? "assets";
+			this.summaryEl.setText(`Path: ${path} (${pathType})`);
+		} else if (entry.uploadType === "webdav") {
+			this.summaryEl.setText(`URL: ${cfg.url || "(not set)"}`);
+		} else {
+			this.summaryEl.setText(
+				`API: ${cfg.apiUrl || "https://api.github.com"}`
+			);
+		}
 	}
 
 	private guessAndSetExtension(): void {
@@ -646,9 +617,8 @@ export class FileModal extends Modal {
 			token: "",
 			...this.selectedServiceConfig,
 		};
-		// 补全 gist token（从 UI 输入框获取）
+		// 补全 gist API URL 默认值（token 已在 selectedServiceConfig 中）
 		if (this.selectedServiceType === "github-gist") {
-			if (this.gistToken) config.token = this.gistToken;
 			if (!config.url) config.url = "https://api.github.com";
 		}
 

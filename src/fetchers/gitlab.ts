@@ -1,6 +1,6 @@
 import type { RemoteServiceConfig } from "../types";
 import type { RemoteReadResult, RemoteService } from "./types";
-import { dispatchHttpRequest, buildFullPath } from "../utils/http-client";
+import { dispatchHttpRequest, buildFullPath, normalizeBaseUrl, enrichError, decodeBase64Content } from "../utils/http-client";
 
 export const gitlabService: RemoteService = {
 	serviceType: "gitlab" as const,
@@ -11,8 +11,8 @@ export const gitlabService: RemoteService = {
 				return { success: false, error: "Repository is required (format: owner/repo or numeric project ID)" };
 			}
 
-			const baseUrl = config.url.replace(/\/+$/, "");
-			const repo = config.repo.replace(/\/+$/, "");
+			const baseUrl = normalizeBaseUrl(config.url || "https://gitlab.com");
+			const repo = normalizeBaseUrl(config.repo);
 			const branch = config.branch || "main";
 			const encodedRepo = encodeURIComponent(repo);
 			const fullPath = buildFullPath(config.path, filePath);
@@ -28,18 +28,12 @@ export const gitlabService: RemoteService = {
 
 			// GitLab API returns base64-encoded content (same pattern as GitHub)
 			if (body.encoding === "base64" && body.content) {
-				const binary = atob(body.content);
-				const bytes = new Uint8Array(binary.length);
-				for (let i = 0; i < binary.length; i++) {
-					bytes[i] = binary.charCodeAt(i);
-				}
-				return { success: true, content: new TextDecoder().decode(bytes) };
+				return { success: true, content: decodeBase64Content(body.content) };
 			}
 
 			return { success: true, content: resp.text };
 		} catch (err) {
-			const message = err instanceof Error ? err.message : String(err);
-			return { success: false, error: `GitLab read failed: ${message}` };
+			return { success: false, error: enrichError(err, "GitLab read failed") };
 		}
 	},
 };

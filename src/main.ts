@@ -10,7 +10,7 @@ import { DEFAULT_SETTINGS, type PluginSettings, type LastFileReference, type Ext
 import { EXTENSION_TO_LANGUAGE } from "./utils/constants";
 import { importCodeSettingsTab } from "./settings";
 import { CodeEmbedProcessor } from "./ui/renderer/code-embed";
-import { debounce, parseEmbedSource } from "./utils/helpers";
+import { debounce } from "./utils/helpers";
 import { EditorView, ViewPlugin } from "@codemirror/view";
 import { createInsertCodeCallback, createEditLastCodeCallback } from "./commands/insert-code";
 import { getHttps } from "./utils/http-client";
@@ -162,36 +162,19 @@ export default class importCode extends Plugin {
 			const fileName = file.name;
 
 			this.app.workspace.iterateAllLeaves((leaf) => {
-				if (leaf.view instanceof MarkdownView) {
-					const container = leaf.view.containerEl;
-					const embeds = container.querySelectorAll(".internal-embed.code-link-processed");
+				if (!(leaf.view instanceof MarkdownView)) return;
+				const container = leaf.view.containerEl;
+				const sourcePath = leaf.view.file?.path || "";
+				const embeds = container.querySelectorAll(".internal-embed.code-link-processed");
 
-					embeds.forEach((embed: Element) => {
-						const embedEl = embed as HTMLElement;
-						const rawSrc = embedEl.getAttribute("src");
-						if (!rawSrc) return;
-
-						const { filePath: embedFilePath, symbolName, highlightSpec } = parseEmbedSource(rawSrc);
-
-						if (
-							embedFilePath === filePath ||
-							embedFilePath === fileName ||
-							filePath.endsWith(embedFilePath)
-						) {
-							if (!this.codeProcessor.isProcessingAllowed(embedFilePath)) return;
-
-							const sourcePath = (leaf.view as MarkdownView).file?.path || "";
-							embedEl.classList.add("code-link-processed");
-							embedEl.empty();
-							this.codeProcessor.processFile(
-								embedFilePath, symbolName, embedEl, sourcePath, highlightSpec
-							).catch((err) => {
-								console.error("processFile failed in modify handler:", err);
-								embedEl.setText(`Error: ${err instanceof Error ? err.message : String(err)}`);
-							});
-						}
-					});
-				}
+				embeds.forEach((embed: Element) => {
+					// 文件匹配作为 predicate 传入；解析（含 IPv6 还原）、守卫、渲染都由 processEmbedElement 统一处理
+					this.codeProcessor.processEmbedElement(
+						embed as HTMLElement,
+						sourcePath,
+						(p) => p.filePath === filePath || p.filePath === fileName || filePath.endsWith(p.filePath)
+					);
+				});
 			});
 		}, 300);
 

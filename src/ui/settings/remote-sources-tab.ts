@@ -1,6 +1,9 @@
-import { Setting } from "obsidian";
+import { Notice, Setting } from "obsidian";
 import type { SettingsProvider, RemoteServiceType } from "../../types";
 import { buildRemoteConfigFields } from "./remote-config-fields";
+import { rebuildSettingsSection } from "./rebuild";
+
+const REMOTE_SOURCE_SECTION = "code-import-remote-source-section";
 
 export function buildRemoteSourcesTab(
 	containerEl: HTMLElement,
@@ -9,11 +12,20 @@ export function buildRemoteSourcesTab(
 	buildRemoteSourceSection(containerEl, plugin);
 }
 
+function rebuildSection(
+	containerEl: HTMLElement,
+	plugin: SettingsProvider
+): void {
+	rebuildSettingsSection(containerEl, REMOTE_SOURCE_SECTION, (el) =>
+		buildRemoteSourceSection(el, plugin)
+	);
+}
+
 function buildRemoteSourceSection(
 	containerEl: HTMLElement,
 	plugin: SettingsProvider
 ): void {
-	const wrapper = containerEl.createDiv({ cls: "setting-items code-import-remote-source-section" });
+	const wrapper = containerEl.createDiv({ cls: `setting-items ${REMOTE_SOURCE_SECTION}` });
 
 	new Setting(wrapper).setName("Remote source aliases").setHeading();
 
@@ -34,6 +46,11 @@ function buildRemoteSourceSection(
 					const trimmed = value.trim();
 					if (!trimmed || trimmed === currentAlias) return;
 					const sources = plugin.settings.remoteSources;
+					if (sources[trimmed]) {
+						new Notice(`Alias "${trimmed}" already exists`);
+						text.setValue(currentAlias);
+						return;
+					}
 					sources[trimmed] = entry;
 					delete sources[currentAlias];
 					currentAlias = trimmed;
@@ -48,11 +65,7 @@ function buildRemoteSourceSection(
 				btn.onClick(async () => {
 					delete plugin.settings.remoteSources[alias];
 					await plugin.saveSettings();
-					const oldWrapper = containerEl.querySelector(".code-import-remote-source-section");
-					if (oldWrapper) {
-						oldWrapper.remove();
-						buildRemoteSourceSection(containerEl, plugin);
-					}
+					rebuildSection(containerEl, plugin);
 				});
 			});
 
@@ -71,11 +84,7 @@ function buildRemoteSourceSection(
 				dd.onChange(async (value) => {
 					entry.serviceType = value as RemoteServiceType;
 					await plugin.saveSettings();
-					const oldWrapper = containerEl.querySelector(".code-import-remote-source-section");
-					if (oldWrapper) {
-						oldWrapper.remove();
-						buildRemoteSourceSection(containerEl, plugin);
-					}
+					rebuildSection(containerEl, plugin);
 				});
 			});
 
@@ -125,17 +134,15 @@ function buildRemoteSourceSection(
 		.addButton((btn) => {
 			btn.setButtonText("Add remote source");
 			btn.onClick(async () => {
-				const alias = `source-${Object.keys(plugin.settings.remoteSources).length + 1}`;
+				let n = 1;
+				while (plugin.settings.remoteSources[`source-${n}`]) n++;
+				const alias = `source-${n}`;
 				plugin.settings.remoteSources[alias] = {
 					serviceType: "generic",
 					config: { url: "", token: "", skipSslVerify: false },
 				};
 				await plugin.saveSettings();
-				const oldWrapper = containerEl.querySelector(".code-import-remote-source-section");
-				if (oldWrapper) {
-					oldWrapper.remove();
-					buildRemoteSourceSection(containerEl, plugin);
-				}
+				rebuildSection(containerEl, plugin);
 			});
 		});
 	addRow.createDiv({

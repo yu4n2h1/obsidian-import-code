@@ -1,17 +1,17 @@
 import type { RemoteServiceConfig } from "../types";
 import type { RemoteReadResult, RemoteService } from "./types";
-import { dispatchHttpRequest, enrichError, encodePathSegments, buildFullPath } from "../utils/http-client";
+import { dispatchHttpRequest, enrichError, encodePathSegments, buildFullPath, normalizeBaseUrl, decodeBase64Content } from "../utils/http-client";
 
 export const githubService: RemoteService = {
 	serviceType: "github" as const,
 
 	async read(config: RemoteServiceConfig, filePath: string, skipSslVerify: boolean): Promise<RemoteReadResult> {
 		try {
-			const repo = (config.repo || "").replace(/\/+$/, "");
+			const repo = normalizeBaseUrl(config.repo || "");
 			const branch = config.branch || "main";
 			const fullPath = buildFullPath(config.path, filePath);
 			const encoded = encodePathSegments(fullPath);
-			const baseUrl = (config.url || "https://api.github.com").replace(/\/+$/, "");
+			const baseUrl = normalizeBaseUrl(config.url || "https://api.github.com");
 			const url = `${baseUrl}/repos/${repo}/contents/${encoded}?ref=${branch}`;
 
 			const headers: Record<string, string> = {
@@ -26,12 +26,7 @@ export const githubService: RemoteService = {
 
 			const body = JSON.parse(resp.text);
 			if (body.encoding === "base64" && body.content) {
-				const binary = atob(body.content);
-				const bytes = new Uint8Array(binary.length);
-				for (let i = 0; i < binary.length; i++) {
-					bytes[i] = binary.charCodeAt(i);
-				}
-				return { success: true, content: new TextDecoder().decode(bytes) };
+				return { success: true, content: decodeBase64Content(body.content) };
 			}
 			return { success: true, content: resp.text };
 		} catch (err) {

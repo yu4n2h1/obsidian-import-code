@@ -102,12 +102,5 @@ export function debounce<T extends (...args: any[]) => void>(
 export function getSupportedExtensions(settings: CodeEmbedSettings): string[] {
 	return settings.codeFileExtensions
 		.filter((entry) => entry.active && entry.suffix.length > 0)
-		.map((entry) => entry.suffix);
-}
-
-export function isExtensionSupported(
-	settings: CodeEmbedSettings,
-	extension: string
-): boolean {
-	return getSupportedExtensions(settings).includes(extension);
+		.map((entry) => entry.suffix.toLowerCase());
 }

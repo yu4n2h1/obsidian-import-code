@@ -9,6 +9,7 @@ import type {
 import { createLocalUploadService } from "./local";
 import { webdavUploadService } from "./webdav";
 import { githubGistUploadService } from "./github-gist";
+import { enrichError } from "../utils/http-client";
 
 /**
  * 构建上传服务注册表。
@@ -24,6 +25,36 @@ export function createUploadServices(
 		webdav: webdavUploadService,
 		"github-gist": githubGistUploadService,
 	};
+}
+
+/**
+ * 每种上传服务的错误上下文（供 enrichError 统一包装）。
+ * 用 switch 而非 Record 索引，避免 noUncheckedIndexedAccess 下的类型断言。
+ */
+function uploadErrorContext(serviceType: UploadServiceType): string {
+	switch (serviceType) {
+		case "local":
+			return "Local upload failed";
+		case "webdav":
+			return "WebDAV upload failed";
+		case "github-gist":
+			return "GitHub Gist upload failed";
+	}
+}
+
+/**
+ * 统一的上传错误封装：捕获服务抛出的异常并用 enrichError 包装为失败结果。
+ * 服务自行返回的 in-band 失败（如 { success: false, error }）原样透传。
+ */
+async function withUploadError(
+	context: string,
+	fn: () => Promise<UploadResult>
+): Promise<UploadResult> {
+	try {
+		return await fn();
+	} catch (err) {
+		return { success: false, error: enrichError(err, context) };
+	}
 }
 
 /**
@@ -49,7 +80,9 @@ export async function uploadToService(
 			error: `Unsupported upload service type: ${serviceType}`,
 		};
 	}
-	return service.upload(config, ctx, skipSslVerify);
+	return withUploadError(uploadErrorContext(serviceType), () =>
+		service.upload(config, ctx, skipSslVerify)
+	);
 }
 
 // Barrel re-exports

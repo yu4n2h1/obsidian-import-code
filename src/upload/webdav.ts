@@ -1,10 +1,6 @@
 import type { RemoteServiceConfig } from "../types";
 import type { UploadResult, UploadService } from "./types";
-import {
-	dispatchHttpRequest,
-	enrichError,
-	buildServiceUrl,
-} from "../utils/http-client";
+import { dispatchHttpRequest, buildServiceUrl } from "../utils/http-client";
 
 /**
  * 构建 WebDAV 认证头。
@@ -28,28 +24,21 @@ export const webdavUploadService: UploadService = {
 		ctx: { content: string; fileName: string },
 		skipSslVerify: boolean
 	): Promise<UploadResult> {
-		try {
-			const url = buildServiceUrl(config, ctx.fileName);
-			const headers: Record<string, string> = {
-				"Content-Type": "application/octet-stream",
-			};
-			const auth = buildAuthHeader(config);
-			if (auth) headers["Authorization"] = auth;
+		const url = buildServiceUrl(config, ctx.fileName);
+		const headers: Record<string, string> = {
+			"Content-Type": "application/octet-stream",
+		};
+		const auth = buildAuthHeader(config);
+		if (auth) headers["Authorization"] = auth;
 
-			await dispatchHttpRequest({
-				url,
-				method: "PUT",
-				body: ctx.content,
-				skipSslVerify,
-				headers,
-			});
+		await dispatchHttpRequest({
+			url,
+			method: "PUT",
+			body: ctx.content,
+			skipSslVerify,
+			headers,
+		});
 
-			return { success: true, reference: url };
-		} catch (err) {
-			return {
-				success: false,
-				error: enrichError(err, "WebDAV upload failed"),
-			};
-		}
+		return { success: true, reference: url };
 	},
 };
