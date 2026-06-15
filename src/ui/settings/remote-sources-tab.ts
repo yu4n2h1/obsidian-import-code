@@ -32,13 +32,13 @@ function buildRemoteSourceSection(
 	const entries = Object.entries(plugin.settings.remoteSources);
 
 	for (const [alias, entry] of entries) {
-		const card = wrapper.createDiv({ cls: "remote-source-card" });
+		// Group separator
+		wrapper.createDiv({ cls: "remote-source-separator" });
 
-		// Card header: alias input + delete button
-		const header = card.createDiv({ cls: "remote-source-card-header" });
-		const inputContainer = header.createDiv({ cls: "remote-source-card-alias-input" });
-		new Setting(inputContainer)
+		// Alias + Delete on same row
+		new Setting(wrapper)
 			.setName("Alias")
+			.setDesc("Display name used in wiki links")
 			.addText((text) => {
 				text.setValue(alias);
 				let currentAlias = alias;
@@ -56,9 +56,7 @@ function buildRemoteSourceSection(
 					currentAlias = trimmed;
 					await plugin.saveSettings();
 				});
-			});
-		const btnContainer = header.createDiv({ cls: "remote-source-card-delete" });
-		new Setting(btnContainer)
+			})
 			.addButton((btn) => {
 				btn.setButtonText("Delete");
 				btn.setWarning();
@@ -69,9 +67,8 @@ function buildRemoteSourceSection(
 				});
 			});
 
-		// Card body: service type + config fields
-		const body = card.createDiv({ cls: "setting-items remote-source-card-body" });
-		new Setting(body)
+		// Service type
+		new Setting(wrapper)
 			.setName("Service type")
 			.addDropdown((dd) => {
 				dd.addOption("generic", "Generic URL");
@@ -89,7 +86,7 @@ function buildRemoteSourceSection(
 			});
 
 		buildRemoteConfigFields(
-			body,
+			wrapper,
 			entry.serviceType,
 			{
 				url: entry.config.url,

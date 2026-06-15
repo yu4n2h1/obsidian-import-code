@@ -233,45 +233,11 @@
 	display: none;
 }
 
-/* === Remote Source Cards (Settings) === */
+/* === Remote Source Section (Settings) === */
 
-.code-import-remote-source-section .remote-source-card {
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 6px;
-	padding: 0.75em 1em;
-	margin-bottom: 1em;
-}
-
-.code-import-remote-source-section .remote-source-card-header {
-	display: flex;
-	align-items: flex-start;
-	gap: 0.5em;
-	padding-bottom: 0.5em;
-	margin-bottom: 0.5em;
-	border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.code-import-remote-source-section .remote-source-card-alias-input {
-	flex: 1;
-}
-
-.code-import-remote-source-section .remote-source-card-alias-input .setting-item {
-	border-top: none;
-	padding: 0;
-}
-
-.code-import-remote-source-section .remote-source-card-delete {
-	flex-shrink: 0;
-	align-self: center;
-}
-
-.code-import-remote-source-section .remote-source-card-delete .setting-item {
-	border-top: none;
-	padding: 0;
-}
-
-.code-import-remote-source-section .remote-source-card-body .setting-item {
-	border-top: none;
+.code-import-remote-source-section .remote-source-separator {
+	border-top: 1px solid var(--background-modifier-border);
+	margin: 1em 0;
 }
 
 .code-import-remote-source-section .remote-source-add {
@@ -284,45 +250,11 @@
 	font-size: var(--font-smaller);
 }
 
-/* === Upload Source Cards (Settings) === */
+/* === Upload Source Section (Settings) === */
 
-.code-import-upload-source-section .upload-source-card {
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 6px;
-	padding: 0.75em 1em;
-	margin-bottom: 1em;
-}
-
-.code-import-upload-source-section .upload-source-card-header {
-	display: flex;
-	align-items: flex-start;
-	gap: 0.5em;
-	padding-bottom: 0.5em;
-	margin-bottom: 0.5em;
-	border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.code-import-upload-source-section .upload-source-card-alias-input {
-	flex: 1;
-}
-
-.code-import-upload-source-section .upload-source-card-alias-input .setting-item {
-	border-top: none;
-	padding: 0;
-}
-
-.code-import-upload-source-section .upload-source-card-delete {
-	flex-shrink: 0;
-	align-self: center;
-}
-
-.code-import-upload-source-section .upload-source-card-delete .setting-item {
-	border-top: none;
-	padding: 0;
-}
-
-.code-import-upload-source-section .upload-source-card-body .setting-item {
-	border-top: none;
+.code-import-upload-source-section .upload-source-separator {
+	border-top: 1px solid var(--background-modifier-border);
+	margin: 1em 0;
 }
 
 .code-import-upload-source-section .upload-source-add {

@@ -22,15 +22,13 @@ function buildUploadSourceSection(
 	const entries = Object.entries(plugin.settings.uploadSources);
 
 	for (const [alias, entry] of entries) {
-		const card = wrapper.createDiv({ cls: "upload-source-card" });
+		// Group separator
+		wrapper.createDiv({ cls: "upload-source-separator" });
 
-		// Card header: alias input + delete button
-		const header = card.createDiv({ cls: "upload-source-card-header" });
-		const inputContainer = header.createDiv({
-			cls: "upload-source-card-alias-input",
-		});
-		new Setting(inputContainer)
+		// Alias + Delete on same row
+		new Setting(wrapper)
 			.setName("Alias")
+			.setDesc("Display name used in wiki links")
 			.addText((text) => {
 				text.setValue(alias);
 				let currentAlias = alias;
@@ -48,28 +46,20 @@ function buildUploadSourceSection(
 					currentAlias = trimmed;
 					await plugin.saveSettings();
 				});
+			})
+			.addButton((btn) => {
+				btn.setButtonText("Delete");
+				btn.setWarning();
+				btn.onClick(async () => {
+					delete plugin.settings.uploadSources[alias];
+					await plugin.saveSettings();
+					rebuildSection(containerEl, plugin);
+				});
 			});
-		const btnContainer = header.createDiv({
-			cls: "upload-source-card-delete",
-		});
-		new Setting(btnContainer).addButton((btn) => {
-			btn.setButtonText("Delete");
-			btn.setWarning();
-			btn.onClick(async () => {
-				delete plugin.settings.uploadSources[alias];
-				await plugin.saveSettings();
-				rebuildSection(containerEl, plugin);
-			});
-		});
-
-		// Card body: upload type + conditional config fields
-		const body = card.createDiv({
-			cls: "setting-items upload-source-card-body",
-		});
 
 		// Upload type dropdown
 		let currentEntry: UploadSourceEntry = entry;
-		new Setting(body)
+		new Setting(wrapper)
 			.setName("Upload type")
 			.addDropdown((dd) => {
 				dd.addOption("local", "Local (Obsidian vault)");
@@ -85,7 +75,7 @@ function buildUploadSourceSection(
 			});
 
 		// Conditional config fields based on upload type
-		buildUploadConfigFields(body, containerEl, currentEntry, plugin);
+		buildUploadConfigFields(wrapper, containerEl, currentEntry, plugin);
 	}
 
 	// Add button
