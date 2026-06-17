@@ -21,7 +21,7 @@ export class FileReader {
 	/** 根据链路模式分发读取，返回完整的 FileContext */
 	async read(link: ResolvedLink, sourcePath: string): Promise<FileContext> {
 		const { filePath, mode } = link;
-		const [, language] = getLanguageFromPath(filePath);
+		const [, language] = getLanguageFromPath(filePath, this.settings);
 
 		const content =
 			mode === "http"  ? await this.readFromHttp(filePath)

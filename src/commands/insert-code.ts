@@ -39,6 +39,7 @@ export function createInsertCodeCallback(
 
 export function createEditLastCodeCallback(
 	app: App,
+	settings: PluginSettings,
 	refStore: {
 		loadLastFileReference(): Promise<LastFileReference | null>;
 		saveLastFileReference(ref: LastFileReference): Promise<void>;
@@ -55,6 +56,7 @@ export function createEditLastCodeCallback(
 
 		new EditLinkModal(
 			app,
+			settings,
 			lastRef,
 			(linkText: string, symbolName: string, highlightSpec: string) => {
 				editor.replaceSelection(linkText);

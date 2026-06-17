@@ -21,7 +21,7 @@ import { SwiftExtractor } from "./swift";
 import { CSharpExtractor } from "./csharp";
 import { ScalaExtractor } from "./scala";
 import { DefaultExtractor } from "./default";
-import { EXTENSION_TO_LANGUAGE } from "../utils/constants";
+
 
 // ---- extractor 实例（顺序即语言识别的遍历顺序；TypeScript 必须先于 JavaScript） ----
 
@@ -67,16 +67,8 @@ export function getAllExtractors(): readonly BaseExtractor[] {
 
 // ---- 语言名标准化 ----
 
-/**
- * 将原始扩展名（如 "py"）标准化为语言名（如 "python"）。
- * 修复 modal.ts 传入原始扩展名导致 STRATEGY_MAP 查找失败的 bug。
- */
-function normalizeLanguage(raw: string): string {
-	return EXTENSION_TO_LANGUAGE[raw] ?? raw;
-}
-
 function getExtractor(language: string): BaseExtractor {
-	return registry.get(normalizeLanguage(language)) ?? defaultExtractor;
+	return registry.get(language) ?? defaultExtractor;
 }
 
 // ---- 公共 API（签名与旧 code-extractor.ts 完全兼容） ----

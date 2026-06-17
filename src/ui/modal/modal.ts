@@ -491,6 +491,13 @@ export class FileModal extends Modal {
 			.join("");
 	}
 
+	private getDialectForExtension(extension: string): string {
+		const entry = this.settings.codeFileExtensions.find(
+			(e) => e.suffix.toLowerCase() === extension.toLowerCase(),
+		);
+		return entry?.dialect || extension;
+	}
+
 	private async generateFileName(
 		content: string,
 		extension: string,
@@ -507,7 +514,8 @@ export class FileModal extends Modal {
 				: `${customName.trim()}.${extension}`;
 		}
 		// "auto" mode (or custom strategy with empty name)
-		const symbolName = extractFirstSymbolName(content, extension);
+		const dialect = this.getDialectForExtension(extension);
+			const symbolName = extractFirstSymbolName(content, dialect);
 		if (symbolName) {
 			const kebab = symbolName
 				.replace(/([a-z])([A-Z])/g, "$1-$2")
