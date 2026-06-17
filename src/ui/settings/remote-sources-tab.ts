@@ -25,18 +25,19 @@ function buildRemoteSourceSection(
 	containerEl: HTMLElement,
 	plugin: SettingsProvider
 ): void {
-	const wrapper = containerEl.createDiv({ cls: `setting-items ${REMOTE_SOURCE_SECTION}` });
+	const section = containerEl.createDiv({ cls: REMOTE_SOURCE_SECTION });
 
-	new Setting(wrapper).setName("Remote source aliases").setHeading();
+	const headingGroup = section.createDiv({ cls: "setting-items" });
+	new Setting(headingGroup).setName("Remote source aliases").setHeading();
 
 	const entries = Object.entries(plugin.settings.remoteSources);
 
 	for (const [alias, entry] of entries) {
-		// Group separator
-		wrapper.createDiv({ cls: "remote-source-separator" });
+		// Each source is its own setting-items group
+		const sourceGroup = section.createDiv({ cls: "setting-items" });
 
 		// Alias + Delete on same row
-		new Setting(wrapper)
+		new Setting(sourceGroup)
 			.setName("Alias")
 			.setDesc("Display name used in wiki links")
 			.addText((text) => {
@@ -68,7 +69,7 @@ function buildRemoteSourceSection(
 			});
 
 		// Service type
-		new Setting(wrapper)
+		new Setting(sourceGroup)
 			.setName("Service type")
 			.addDropdown((dd) => {
 				dd.addOption("generic", "Generic URL");
@@ -86,7 +87,7 @@ function buildRemoteSourceSection(
 			});
 
 		buildRemoteConfigFields(
-			wrapper,
+			sourceGroup,
 			entry.serviceType,
 			{
 				url: entry.config.url,
@@ -126,7 +127,7 @@ function buildRemoteSourceSection(
 		);
 	}
 
-	const addRow = wrapper.createDiv({ cls: "remote-source-add" });
+	const addRow = section.createDiv({ cls: "remote-source-add" });
 	new Setting(addRow)
 		.addButton((btn) => {
 			btn.setButtonText("Add remote source");

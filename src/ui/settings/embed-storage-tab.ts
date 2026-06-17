@@ -6,9 +6,8 @@ export function buildEmbedStorageTab(
 	plugin: SettingsProvider
 ): void {
 	// ---- Code Embed ----
-	new Setting(containerEl).setName("Code embed").setHeading();
-
 	const embedGroup = containerEl.createDiv({ cls: "setting-items" });
+	new Setting(embedGroup).setName("Code embed").setHeading();
 
 	new Setting(embedGroup)
 		.setName("Enable code embed")

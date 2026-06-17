@@ -235,9 +235,8 @@
 
 /* === Remote Source Section (Settings) === */
 
-.code-import-remote-source-section .remote-source-separator {
-	border-top: 1px solid var(--background-modifier-border);
-	margin: 1em 0;
+.code-import-remote-source-section .setting-items {
+	margin-bottom: 1.5em;
 }
 
 .code-import-remote-source-section .remote-source-add {
@@ -252,9 +251,8 @@
 
 /* === Upload Source Section (Settings) === */
 
-.code-import-upload-source-section .upload-source-separator {
-	border-top: 1px solid var(--background-modifier-border);
-	margin: 1em 0;
+.code-import-upload-source-section .setting-items {
+	margin-bottom: 1.5em;
 }
 
 .code-import-upload-source-section .upload-source-add {

@@ -13,20 +13,21 @@ function buildUploadSourceSection(
 	containerEl: HTMLElement,
 	plugin: SettingsProvider
 ): void {
-	const wrapper = containerEl.createDiv({
-		cls: "setting-items code-import-upload-source-section",
+	const section = containerEl.createDiv({
+		cls: "code-import-upload-source-section",
 	});
 
-	new Setting(wrapper).setName("Upload source aliases").setHeading();
+	const headingGroup = section.createDiv({ cls: "setting-items" });
+	new Setting(headingGroup).setName("Upload source aliases").setHeading();
 
 	const entries = Object.entries(plugin.settings.uploadSources);
 
 	for (const [alias, entry] of entries) {
-		// Group separator
-		wrapper.createDiv({ cls: "upload-source-separator" });
+		// Each source is its own setting-items group
+		const sourceGroup = section.createDiv({ cls: "setting-items" });
 
 		// Alias + Delete on same row
-		new Setting(wrapper)
+		new Setting(sourceGroup)
 			.setName("Alias")
 			.setDesc("Display name used in wiki links")
 			.addText((text) => {
@@ -59,7 +60,7 @@ function buildUploadSourceSection(
 
 		// Upload type dropdown
 		let currentEntry: UploadSourceEntry = entry;
-		new Setting(wrapper)
+		new Setting(sourceGroup)
 			.setName("Upload type")
 			.addDropdown((dd) => {
 				dd.addOption("local", "Local (Obsidian vault)");
@@ -75,11 +76,11 @@ function buildUploadSourceSection(
 			});
 
 		// Conditional config fields based on upload type
-		buildUploadConfigFields(wrapper, containerEl, currentEntry, plugin);
+		buildUploadConfigFields(sourceGroup, containerEl, currentEntry, plugin);
 	}
 
 	// Add button
-	const addRow = wrapper.createDiv({ cls: "upload-source-add" });
+	const addRow = section.createDiv({ cls: "upload-source-add" });
 	new Setting(addRow).addButton((btn) => {
 		btn.setButtonText("Add upload source");
 		btn.onClick(async () => {
