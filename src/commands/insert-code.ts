@@ -13,8 +13,10 @@ export function createInsertCodeCallback(
 ): (editor: Editor) => void {
 	return (editor: Editor) => {
 		new FileModal(app, settings, (info: EmbedLinkInfo) => {
-			const { linkPath, displayName } = info;
-			const link = `![[${linkPath}|${displayName}]]`;
+			const { linkPath, displayName, useAlias } = info;
+			const link = useAlias
+				? `![[${linkPath}|${displayName}]]`
+				: `![[${linkPath}]]`;
 			editor.replaceSelection(link);
 
 			// Persist last file reference
@@ -22,6 +24,7 @@ export function createInsertCodeCallback(
 				linkPath: info.linkPath,
 				content: info.content,
 				fileName: displayName,
+				useAlias,
 				extension: info.extension,
 				symbolName: info.symbolName,
 				highlightSpec: info.highlightSpec,
@@ -40,12 +43,12 @@ export function createEditLastCodeCallback(
 		loadLastFileReference(): Promise<LastFileReference | null>;
 		saveLastFileReference(ref: LastFileReference): Promise<void>;
 	}
-): (editor: Editor) => void {
+): (editor: Editor) => Promise<void> {
 	return async (editor: Editor) => {
 		const lastRef = await refStore.loadLastFileReference();
 		if (!lastRef) {
 			new Notice(
-				'No code file created yet. Use "Insert embed code" first.'
+				'No code file created yet. Use "insert embed code" first.'
 			);
 			return;
 		}

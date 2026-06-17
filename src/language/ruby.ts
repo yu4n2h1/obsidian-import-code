@@ -22,9 +22,14 @@ export class RubyExtractor extends BaseExtractor {
 		},
 	];
 
+	detectByFirstLine(firstLine: string): string | null {
+		if (this.matchShebang(firstLine, ["ruby"])) return "rb";
+		return null;
+	}
+
 	stripComments(lines: string[]): boolean[] {
 		// Ruby 使用 # 注释（无 /* */），但 =begin/=end 多行注释极少见，忽略。
-		return new Array(lines.length).fill(false);
+		return new Array<boolean>(lines.length).fill(false);
 	}
 
 	extractBlock(

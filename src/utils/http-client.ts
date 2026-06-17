@@ -29,14 +29,14 @@ function getRequire(): (id: string) => unknown {
 	if (_requireFn !== undefined) return _requireFn as (id: string) => unknown;
 
 	// 1. window.require (Obsidian preload)
-	const winReq = win().require;
+	const winReq: unknown = win().require;
 	if (typeof winReq === "function") {
 		_requireFn = winReq as (id: string) => unknown;
 		return _requireFn;
 	}
 
 	// 2. globalThis.require (might differ from window in some contexts)
-	const globalReq = glob().require;
+	const globalReq: unknown = glob().require;
 	if (typeof globalReq === "function" && globalReq !== winReq) {
 		_requireFn = globalReq as (id: string) => unknown;
 		return _requireFn;
@@ -45,7 +45,7 @@ function getRequire(): (id: string) => unknown {
 	// 3. CJS free-variable require via indirect eval
 	try {
 		// eslint-disable-next-line no-eval
-		const cjsReq = (0, eval)("typeof require === 'function' ? require : undefined");
+		const cjsReq: unknown = (0, eval)("typeof require === 'function' ? require : undefined");
 		if (typeof cjsReq === "function") {
 			_requireFn = cjsReq as (id: string) => unknown;
 			return _requireFn;
@@ -61,7 +61,7 @@ function getRequire(): (id: string) => unknown {
 }
 
 function loadHttpsModule(): unknown {
-	const process = win().process as AnyObj | undefined;
+	const process = win().process as { versions?: { electron?: string } } | undefined;
 	const isElectron = !!(process?.versions?.electron);
 	if (!isElectron) {
 		throw new Error(
@@ -127,11 +127,32 @@ export function encodePathSegments(filePath: string): string {
 }
 
 /**
+ * Strip trailing slashes from a base URL.
+ * Shared by buildServiceUrl and the github-gist uploader.
+ */
+export function normalizeBaseUrl(url: string): string {
+	return url.replace(/\/+$/, "");
+}
+
+/**
+ * Decode a base64-encoded string into UTF-8 text.
+ * Used by the github and gitlab fetchers for base64-encoded file content.
+ */
+export function decodeBase64Content(b64: string): string {
+	const binary = atob(b64);
+	const bytes = new Uint8Array(binary.length);
+	for (let i = 0; i < binary.length; i++) {
+		bytes[i] = binary.charCodeAt(i);
+	}
+	return new TextDecoder().decode(bytes);
+}
+
+/**
  * Build a full service URL from config and file path.
  * Used by generic and webdav fetchers to avoid duplication.
  */
 export function buildServiceUrl(config: { url: string; path?: string }, filePath: string): string {
-	const base = config.url.replace(/\/+$/, "");
+	const base = normalizeBaseUrl(config.url);
 	const fullPath = buildFullPath(config.path, filePath);
 	const encoded = encodePathSegments(fullPath);
 	return `${base}/${encoded}`;
@@ -141,9 +162,6 @@ export function buildServiceUrl(config: { url: string; path?: string }, filePath
 
 export function enrichError(err: unknown, context: string): string {
 	const message = err instanceof Error ? err.message : String(err);
-	if (message.includes("Skip SSL") || message.includes("SSL skip")) {
-		return `${context}: ${message}`;
-	}
 	return `${context}: ${message}`;
 }
 
@@ -194,7 +212,7 @@ interface HttpsModule {
 }
 
 function getHttpsModule(): HttpsModule {
-	return getHttps() as unknown as HttpsModule;
+	return getHttps() as HttpsModule;
 }
 
 const MAX_REDIRECTS = 5;

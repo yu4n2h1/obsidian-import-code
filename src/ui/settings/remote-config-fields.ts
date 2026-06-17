@@ -74,7 +74,7 @@ export function buildRemoteConfigFields(
 		new Setting(container)
 			.setName(`${label} Repository`)
 			.addText((text) => {
-				text.setPlaceholder("owner/repo");
+				text.setPlaceholder("Owner/repo");
 				text.setValue(state.repo || "");
 				text.onChange((value) => onChange("repo", value.trim()));
 			});
@@ -82,7 +82,7 @@ export function buildRemoteConfigFields(
 		new Setting(container)
 			.setName(`${label} Branch`)
 			.addText((text) => {
-				text.setPlaceholder("main");
+				text.setPlaceholder("Main");
 				text.setValue(state.branch || "main");
 				text.onChange((value) => onChange("branch", value.trim() || "main"));
 			});
@@ -91,7 +91,7 @@ export function buildRemoteConfigFields(
 	new Setting(container)
 		.setName(`${label} Path`)
 		.addText((text) => {
-			text.setPlaceholder("code-snippets");
+			text.setPlaceholder("Code-snippets");
 			text.setValue(state.path || "");
 			text.onChange((value) => onChange("path", value.trim()));
 		});

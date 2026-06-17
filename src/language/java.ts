@@ -1,34 +1,57 @@
 import { BaseExtractor } from "./base-extractor";
 import type { DefPattern } from "./base-extractor";
 
-export class GoExtractor extends BaseExtractor {
-	readonly languages = ["go"];
+const VIS_MOD = "(?:(?:public|private|protected|static|final|abstract|virtual|override|inline|constexpr|explicit)\\s+)*";
+const STMT_KW = "(?:if|while|for|switch|catch|return|throw|new|delete|case|goto|using|namespace|include|import|export|try|else|do)\\b";
+
+export class JavaExtractor extends BaseExtractor {
+	readonly languages = ["java"];
 
 	readonly defPatterns: DefPattern[] = [
-		// func Name(  with optional generics <T>
+		// [modifiers] class Name
 		{
-			regex: /^(\s*)func\s+([a-zA-Z_]\w*)\s*(?:<[^>]*>)?\s*\(/,
+			regex: new RegExp(
+				`^(\\s*)${VIS_MOD}(?:\\w+\\s+)*class\\s+([a-zA-Z_]\\w*)`
+			),
 			nameGroup: 2,
 		},
-		// func (receiver Type) Name(
+		// [modifiers] returnType name(...) { or returnType name(...)\n
 		{
-			regex: /^(\s*)func\s+\(\w+\s+\*?\w+\)\s+([a-zA-Z_]\w*)\s*\(/,
+			regex: new RegExp(
+				`^(\\s*)${VIS_MOD}(?!${STMT_KW})([\\w<>\\[\\],\\s:]+?)\\s+([a-zA-Z_]\\w*)\\s*\\([^)]*\\)\\s*(?:const\\s*)?\\s*(?:\\{|$)`
+			),
+			nameGroup: 3,
+		},
+		// [modifiers] interface Name
+		{
+			regex: new RegExp(
+				`^(\\s*)${VIS_MOD}(?:\\w+\\s+)*interface\\s+([a-zA-Z_]\\w*)`
+			),
 			nameGroup: 2,
 		},
-		// type Name struct {
+		// [modifiers] enum Name
 		{
-			regex: /^(\s*)type\s+([a-zA-Z_]\w*)\s+struct\s*\{/,
+			regex: new RegExp(
+				`^(\\s*)${VIS_MOD}(?:\\w+\\s+)*enum\\s+([a-zA-Z_]\\w*)`
+			),
 			nameGroup: 2,
 		},
-		// type Name interface {
+		// [modifiers] method() {  (简写方法，无返回类型)
 		{
-			regex: /^(\s*)type\s+([a-zA-Z_]\w*)\s+interface\s*\{/,
+			regex: new RegExp(
+				`^(\\s*)${VIS_MOD}(?:async\\s+)?([a-zA-Z_]\\w*)\\s*\\([^)]*\\)\\s*\\{`
+			),
 			nameGroup: 2,
 		},
 	];
 
+	detectByContent(_firstLine: string, head: string): string | null {
+		if (/\bpackage\s+\w+\s*;/.test(head)) return "java";
+		return null;
+	}
+
 	stripComments(lines: string[]): boolean[] {
-		const flags: boolean[] = new Array(lines.length).fill(false);
+		const flags: boolean[] = new Array<boolean>(lines.length).fill(false);
 		let inComment = false;
 		for (let i = 0; i < lines.length; i++) {
 			if (inComment) {

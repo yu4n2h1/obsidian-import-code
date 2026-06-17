@@ -17,10 +17,21 @@ export class PythonExtractor extends BaseExtractor {
 		},
 	];
 
+	detectByFirstLine(firstLine: string): string | null {
+		if (this.matchShebang(firstLine, ["python3", "python"])) return "py";
+		return null;
+	}
+
+	detectByContent(_firstLine: string, head: string): string | null {
+		if (/^def\s+\w+\s*\(/.test(head)) return "py";
+		if (/^class\s+\w+.*:$/.test(head) && /^\s+def\s+/.test(head)) return "py";
+		return null;
+	}
+
 	stripComments(lines: string[]): boolean[] {
 		// Python 使用 # 注释，无 /* */ 多行注释。
 		// defPatterns 天然不会匹配以 # 开头的行，无需标记。
-		return new Array(lines.length).fill(false);
+		return new Array<boolean>(lines.length).fill(false);
 	}
 
 	extractBlock(

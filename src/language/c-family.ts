@@ -1,44 +1,43 @@
 import { BaseExtractor } from "./base-extractor";
 import type { DefPattern } from "./base-extractor";
 
-export class SwiftExtractor extends BaseExtractor {
-	readonly languages = ["swift"];
+const VIS_MOD = "(?:(?:public|private|protected|static|final|abstract|virtual|override|inline|constexpr|explicit)\\s+)*";
+const STMT_KW = "(?:if|while|for|switch|catch|return|throw|new|delete|case|goto|using|namespace|include|import|export|try|else|do)\\b";
+
+export class CExtractor extends BaseExtractor {
+	readonly languages = ["c", "cpp"];
 
 	readonly defPatterns: DefPattern[] = [
-		// func name(  or  public func name(  or  private func name(
+		// [modifiers] class/struct Name
 		{
-			regex: /^(\s*)(?:(?:public|private|internal|fileprivate|open)\s+)?func\s+([a-zA-Z_]\w*)\s*\(/,
+			regex: new RegExp(
+				`^(\\s*)${VIS_MOD}(?:\\w+\\s+)*(?:class|struct)\\s+([a-zA-Z_]\\w*)`
+			),
 			nameGroup: 2,
 		},
-		// class Name {
+		// enum [class] Name {  (C enum + C++ enum class)
 		{
-			regex: /^(\s*)(?:(?:public|private|internal|fileprivate|open)\s+)?class\s+([a-zA-Z_]\w*)/,
+			regex: /^(\s*)(?:enum(?:\s+class)?)\s+([a-zA-Z_]\w*)/,
 			nameGroup: 2,
 		},
-		// struct Name {
+		// [modifiers] returnType name(...) { or returnType name(...)\n
 		{
-			regex: /^(\s*)(?:(?:public|private|internal|fileprivate|open)\s+)?struct\s+([a-zA-Z_]\w*)/,
-			nameGroup: 2,
-		},
-		// enum Name {
-		{
-			regex: /^(\s*)(?:(?:public|private|internal|fileprivate|open)\s+)?enum\s+([a-zA-Z_]\w*)/,
-			nameGroup: 2,
-		},
-		// protocol Name {
-		{
-			regex: /^(\s*)(?:(?:public|private|internal|fileprivate|open)\s+)?protocol\s+([a-zA-Z_]\w*)/,
-			nameGroup: 2,
-		},
-		// extension Name {
-		{
-			regex: /^(\s*)extension\s+([a-zA-Z_]\w*)/,
-			nameGroup: 2,
+			regex: new RegExp(
+				`^(\\s*)(?!${STMT_KW})([\\w<>\\[\\],\\s:]+?)\\s+([a-zA-Z_]\\w*)\\s*\\([^)]*\\)\\s*(?:const\\s*)?\\s*(?:\\{|$)`
+			),
+			nameGroup: 3,
 		},
 	];
 
+	detectByContent(_firstLine: string, head: string): string | null {
+		if (/^#include\s*</.test(head)) {
+			return /iostream|std::/.test(head) ? "cpp" : "c";
+		}
+		return null;
+	}
+
 	stripComments(lines: string[]): boolean[] {
-		const flags: boolean[] = new Array(lines.length).fill(false);
+		const flags: boolean[] = new Array<boolean>(lines.length).fill(false);
 		let inComment = false;
 		for (let i = 0; i < lines.length; i++) {
 			if (inComment) {

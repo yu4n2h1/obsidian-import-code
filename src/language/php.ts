@@ -1,23 +1,17 @@
 import { BaseExtractor } from "./base-extractor";
 import type { DefPattern } from "./base-extractor";
 
-// 修饰符正则片段（内联，不共享）
 const VIS_MOD = "(?:(?:public|private|protected|static|final|abstract|virtual|override|inline|constexpr|explicit)\\s+)*";
 
-export class JavaScriptExtractor extends BaseExtractor {
-	readonly languages = ["javascript", "jsx"];
+export class PhpExtractor extends BaseExtractor {
+	readonly languages = ["php"];
 
 	readonly defPatterns: DefPattern[] = [
-		// [modifiers] function name(  (含 function* generator)
+		// [modifiers] function name(
 		{
 			regex: new RegExp(
-				`^(\\s*)${VIS_MOD}(?:export\\s+)?(?:default\\s+)?(?:async\\s+)?function\\*?\\s*([a-zA-Z_]\\w*)\\s*\\(`
+				`^(\\s*)${VIS_MOD}function\\s+([a-zA-Z_]\\w*)\\s*\\(`
 			),
-			nameGroup: 2,
-		},
-		// const/let/var name = (...) =>
-		{
-			regex: /^(\s*)(?:export\s+)?(?:const|let|var)\s+([a-zA-Z_]\w*)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>/,
 			nameGroup: 2,
 		},
 		// [modifiers] class Name
@@ -27,9 +21,18 @@ export class JavaScriptExtractor extends BaseExtractor {
 			),
 			nameGroup: 2,
 		},
-		// get name() {  or  set name(val) {
+		// [modifiers] interface Name
 		{
-			regex: /^(\s*)(?:get|set)\s+([a-zA-Z_]\w*)\s*\([^)]*\)\s*\{/,
+			regex: new RegExp(
+				`^(\\s*)${VIS_MOD}(?:\\w+\\s+)*interface\\s+([a-zA-Z_]\\w*)`
+			),
+			nameGroup: 2,
+		},
+		// [modifiers] trait Name
+		{
+			regex: new RegExp(
+				`^(\\s*)${VIS_MOD}(?:\\w+\\s+)*trait\\s+([a-zA-Z_]\\w*)`
+			),
 			nameGroup: 2,
 		},
 		// [modifiers] method() {  (简写方法)
@@ -41,8 +44,14 @@ export class JavaScriptExtractor extends BaseExtractor {
 		},
 	];
 
+	detectByFirstLine(firstLine: string): string | null {
+		if (this.matchShebang(firstLine, ["php"])) return "php";
+		if (firstLine.startsWith("<?php")) return "php";
+		return null;
+	}
+
 	stripComments(lines: string[]): boolean[] {
-		const flags: boolean[] = new Array(lines.length).fill(false);
+		const flags: boolean[] = new Array<boolean>(lines.length).fill(false);
 		let inComment = false;
 		for (let i = 0; i < lines.length; i++) {
 			if (inComment) {
@@ -61,7 +70,6 @@ export class JavaScriptExtractor extends BaseExtractor {
 		startIdx: number,
 		_defIndent: string
 	): string[] | null {
-		// 1. 找到第一个包含 { 的行
 		let i = startIdx;
 		let found = false;
 		for (; i < lines.length; i++) {
@@ -76,13 +84,11 @@ export class JavaScriptExtractor extends BaseExtractor {
 			return firstLine ? [firstLine] : null;
 		}
 
-		// 2. 收集从 startIdx 到 { 行的全部行
 		const result: string[] = [];
 		for (let j = startIdx; j <= i; j++) {
 			result.push(lines[j]!);
 		}
 
-		// 3. 计算 { 行上的括号深度
 		const openLine = lines[i];
 		if (!openLine) return null;
 
@@ -94,7 +100,6 @@ export class JavaScriptExtractor extends BaseExtractor {
 
 		if (depth === 0) return result;
 
-		// 4. 继续收集直到深度归零
 		for (let j = i + 1; j < lines.length; j++) {
 			const line = lines[j];
 			result.push(line!);

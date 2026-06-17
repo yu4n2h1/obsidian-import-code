@@ -1,4 +1,4 @@
-import { findSymbolLineRange } from "../extractors";
+import { findSymbolLineRange } from "../language";
 import type { LineRange } from "../utils/helpers";
 import type { Target, SlicedContent } from "./types";
 

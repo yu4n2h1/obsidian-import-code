@@ -29,8 +29,13 @@ export class HtmlExtractor extends BaseExtractor {
 	readonly languages = ["html"];
 	readonly defPatterns: DefPattern[] = [];
 
+	detectByFirstLine(firstLine: string): string | null {
+		if (/^<!DOCTYPE\s+html/i.test(firstLine) || /^<html\b/i.test(firstLine)) return "html";
+		return null;
+	}
+
 	stripComments(_lines: string[]): boolean[] {
-		return new Array(_lines.length).fill(false);
+		return new Array<boolean>(_lines.length).fill(false);
 	}
 
 	extractBlock(
@@ -101,8 +106,7 @@ export class HtmlExtractor extends BaseExtractor {
 				const line = lines[i];
 				if (!line) continue;
 				openRe.lastIndex = 0;
-				let m: RegExpExecArray | null;
-				while ((m = openRe.exec(line)) !== null) {
+				while (openRe.exec(line) !== null) {
 					if (count === nth) {
 						startLine = i;
 						break;

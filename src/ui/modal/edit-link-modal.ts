@@ -148,7 +148,9 @@ export class EditLinkModal extends Modal {
 
 	private buildLinkText(): string {
 		const { linkPath, displayName } = this.buildPathAndDisplay();
-		return `![[${linkPath}|${displayName}]]`;
+		return this.lastRef.useAlias ?? true
+			? `![[${linkPath}|${displayName}]]`
+			: `![[${linkPath}]]`;
 	}
 
 	private buildPathAndDisplay(): {

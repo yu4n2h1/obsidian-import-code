@@ -2,42 +2,37 @@ import { BaseExtractor } from "./base-extractor";
 import type { DefPattern } from "./base-extractor";
 
 const VIS_MOD = "(?:(?:public|private|protected|static|final|abstract|virtual|override|inline|constexpr|explicit)\\s+)*";
+const STMT_KW = "(?:if|while|for|switch|catch|return|throw|new|delete|case|goto|using|namespace|include|import|export|try|else|do)\\b";
 
-export class KotlinExtractor extends BaseExtractor {
-	readonly languages = ["kotlin"];
+export class CSharpExtractor extends BaseExtractor {
+	readonly languages = ["csharp"];
 
 	readonly defPatterns: DefPattern[] = [
-		// fun Name(  with optional generics <T>
-		{
-			regex: /^(\s*)(?:override\s+)?fun\s+([a-zA-Z_]\w*)\s*(?:<[^>]*>)?\s*\(/,
-			nameGroup: 2,
-		},
-		// [modifiers] class Name
+		// [modifiers] class/interface/struct/enum Name
 		{
 			regex: new RegExp(
-				`^(\\s*)${VIS_MOD}(?:\\w+\\s+)*class\\s+([a-zA-Z_]\\w*)`
+				`^(\\s*)${VIS_MOD}(?:\\w+\\s+)*(?:class|interface|struct|enum)\\s+([a-zA-Z_]\\w*)`
 			),
 			nameGroup: 2,
 		},
-		// interface Name {
+		// [modifiers] returnType name(...) { or returnType name(...)\n
 		{
-			regex: /^(\s*)interface\s+([a-zA-Z_]\w*)/,
-			nameGroup: 2,
+			regex: new RegExp(
+				`^(\\s*)${VIS_MOD}(?!${STMT_KW})([\\w<>\\[\\],\\s:]+?)\\s+([a-zA-Z_]\\w*)\\s*\\([^)]*\\)\\s*(?:const\\s*)?\\s*(?:\\{|$)`
+			),
+			nameGroup: 3,
 		},
-		// object Name {
+		// [modifiers] method() {  (简写方法)
 		{
-			regex: /^(\s*)object\s+([a-zA-Z_]\w*)/,
-			nameGroup: 2,
-		},
-		// enum class Name {
-		{
-			regex: /^(\s*)enum\s+class\s+([a-zA-Z_]\w*)/,
+			regex: new RegExp(
+				`^(\\s*)${VIS_MOD}(?:async\\s+)?([a-zA-Z_]\\w*)\\s*\\([^)]*\\)\\s*\\{`
+			),
 			nameGroup: 2,
 		},
 	];
 
 	stripComments(lines: string[]): boolean[] {
-		const flags: boolean[] = new Array(lines.length).fill(false);
+		const flags: boolean[] = new Array<boolean>(lines.length).fill(false);
 		let inComment = false;
 		for (let i = 0; i < lines.length; i++) {
 			if (inComment) {

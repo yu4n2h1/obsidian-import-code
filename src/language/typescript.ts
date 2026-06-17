@@ -1,36 +1,74 @@
 import { BaseExtractor } from "./base-extractor";
 import type { DefPattern } from "./base-extractor";
 
+// 修饰符正则片段（内联，不共享）
 const VIS_MOD = "(?:(?:public|private|protected|static|final|abstract|virtual|override|inline|constexpr|explicit)\\s+)*";
-const STMT_KW = "(?:if|while|for|switch|catch|return|throw|new|delete|case|goto|using|namespace|include|import|export|try|else|do)\\b";
 
-export class CExtractor extends BaseExtractor {
-	readonly languages = ["c", "cpp"];
+export class TypeScriptExtractor extends BaseExtractor {
+	readonly languages = ["typescript", "tsx"];
 
 	readonly defPatterns: DefPattern[] = [
-		// [modifiers] class/struct Name
+		// [modifiers] function name(  (含 function* generator)
 		{
 			regex: new RegExp(
-				`^(\\s*)${VIS_MOD}(?:\\w+\\s+)*(?:class|struct)\\s+([a-zA-Z_]\\w*)`
+				`^(\\s*)${VIS_MOD}(?:export\\s+)?(?:default\\s+)?(?:async\\s+)?function\\*?\\s*([a-zA-Z_]\\w*)\\s*\\(`
 			),
 			nameGroup: 2,
 		},
-		// enum [class] Name {  (C enum + C++ enum class)
+		// const/let/var name = (...) =>
 		{
-			regex: /^(\s*)(?:enum(?:\s+class)?)\s+([a-zA-Z_]\w*)/,
+			regex: /^(\s*)(?:export\s+)?(?:const|let|var)\s+([a-zA-Z_]\w*)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>/,
 			nameGroup: 2,
 		},
-		// [modifiers] returnType name(...) { or returnType name(...)\n
+		// [modifiers] class Name
 		{
 			regex: new RegExp(
-				`^(\\s*)(?!${STMT_KW})([\\w<>\\[\\],\\s:]+?)\\s+([a-zA-Z_]\\w*)\\s*\\([^)]*\\)\\s*(?:const\\s*)?\\s*(?:\\{|$)`
+				`^(\\s*)${VIS_MOD}(?:\\w+\\s+)*class\\s+([a-zA-Z_]\\w*)`
 			),
-			nameGroup: 3,
+			nameGroup: 2,
+		},
+		// get name() {  or  set name(val) {
+		{
+			regex: /^(\s*)(?:get|set)\s+([a-zA-Z_]\w*)\s*\([^)]*\)\s*\{/,
+			nameGroup: 2,
+		},
+		// [modifiers] method() {  (简写方法)
+		{
+			regex: new RegExp(
+				`^(\\s*)${VIS_MOD}(?:async\\s+)?([a-zA-Z_]\\w*)\\s*\\([^)]*\\)\\s*\\{`
+			),
+			nameGroup: 2,
+		},
+		// interface Name {
+		{
+			regex: /^(\s*)(?:export\s+)?interface\s+([a-zA-Z_]\w*)/,
+			nameGroup: 2,
+		},
+		// type Name =
+		{
+			regex: /^(\s*)(?:export\s+)?type\s+([a-zA-Z_]\w*)\s*=/,
+			nameGroup: 2,
+		},
+		// enum Name {
+		{
+			regex: /^(\s*)(?:export\s+)?(?:const\s+)?enum\s+([a-zA-Z_]\w*)/,
+			nameGroup: 2,
+		},
+		// namespace Name {  or  module Name {
+		{
+			regex: /^(\s*)(?:export\s+)?(?:namespace|module)\s+([a-zA-Z_]\w*)/,
+			nameGroup: 2,
 		},
 	];
 
+	detectByContent(_firstLine: string, head: string): string | null {
+		if (/\bimport\s+React\b/.test(head)) return "tsx";
+		if (/\b(interface|type)\s+\w+\s*[<{]/.test(head) && /:\s*string\b/.test(head)) return "ts";
+		return null;
+	}
+
 	stripComments(lines: string[]): boolean[] {
-		const flags: boolean[] = new Array(lines.length).fill(false);
+		const flags: boolean[] = new Array<boolean>(lines.length).fill(false);
 		let inComment = false;
 		for (let i = 0; i < lines.length; i++) {
 			if (inComment) {

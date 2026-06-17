@@ -3,6 +3,7 @@ import type { SettingsProvider } from "./types";
 import { buildEmbedStorageTab } from "./ui/settings/embed-storage-tab";
 import { buildExtensionsTab } from "./ui/settings/extensions-tab";
 import { buildRemoteSourcesTab } from "./ui/settings/remote-sources-tab";
+import { buildUploadSourcesTab } from "./ui/settings/upload-sources-tab";
 
 export class importCodeSettingsTab extends PluginSettingTab {
 	plugin: SettingsProvider;
@@ -29,11 +30,15 @@ export class importCodeSettingsTab extends PluginSettingTab {
 		const remoteSourcesPanel = containerEl.createDiv({
 			cls: "code-import-tab-panel",
 		});
+		const uploadSourcesPanel = containerEl.createDiv({
+			cls: "code-import-tab-panel",
+		});
 
 		const tabs = [
 			{ label: "Embed & Storage", panel: embedStoragePanel },
 			{ label: "File Extensions", panel: extensionsPanel },
 			{ label: "Remote Sources", panel: remoteSourcesPanel },
+			{ label: "Upload Sources", panel: uploadSourcesPanel },
 		];
 
 		// Build tab buttons with click handlers
@@ -58,5 +63,6 @@ export class importCodeSettingsTab extends PluginSettingTab {
 		buildEmbedStorageTab(embedStoragePanel, this.plugin);
 		buildExtensionsTab(extensionsPanel, this.plugin);
 		buildRemoteSourcesTab(remoteSourcesPanel, this.plugin);
+		buildUploadSourcesTab(uploadSourcesPanel, this.plugin);
 	}
 }

@@ -10,7 +10,7 @@ import { DEFAULT_SETTINGS, type PluginSettings, type LastFileReference, type Ext
 import { EXTENSION_TO_LANGUAGE } from "./utils/constants";
 import { importCodeSettingsTab } from "./settings";
 import { CodeEmbedProcessor } from "./ui/renderer/code-embed";
-import { debounce, parseEmbedSource } from "./utils/helpers";
+import { debounce } from "./utils/helpers";
 import { EditorView, ViewPlugin } from "@codemirror/view";
 import { createInsertCodeCallback, createEditLastCodeCallback } from "./commands/insert-code";
 import { getHttps } from "./utils/http-client";
@@ -40,6 +40,36 @@ export default class importCode extends Plugin {
 				});
 			}
 			loadedData.codeFileExtensions = migratedEntries;
+		}
+
+		// Migrate old global storage-path fields into a default Local upload source.
+		// 旧版本把 storagePathType/absoluteStoragePath/relativeStoragePath 存在顶层，
+		// 唯一化后这些字段已移除，需把它们搬进 uploadSources.Local 以保留用户配置。
+		const legacy = loadedData as Record<string, unknown>;
+		if ("absoluteStoragePath" in legacy || "relativeStoragePath" in legacy) {
+			if (
+				!loadedData.uploadSources ||
+				Object.keys(loadedData.uploadSources).length === 0
+			) {
+				loadedData.uploadSources = {
+					Local: {
+						uploadType: "local",
+						useAlias: true,
+						config: {
+							storagePathType:
+								(legacy.storagePathType as "absolute" | "relative") ??
+								"absolute",
+							absolutePath:
+								(legacy.absoluteStoragePath as string) ?? "assets",
+							relativePath:
+								(legacy.relativeStoragePath as string) ?? "./",
+						},
+					},
+				};
+			}
+			delete legacy.storagePathType;
+			delete legacy.absoluteStoragePath;
+			delete legacy.relativeStoragePath;
 		}
 
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, loadedData);
@@ -132,36 +162,19 @@ export default class importCode extends Plugin {
 			const fileName = file.name;
 
 			this.app.workspace.iterateAllLeaves((leaf) => {
-				if (leaf.view instanceof MarkdownView) {
-					const container = leaf.view.containerEl;
-					const embeds = container.querySelectorAll(".internal-embed.code-link-processed");
+				if (!(leaf.view instanceof MarkdownView)) return;
+				const container = leaf.view.containerEl;
+				const sourcePath = leaf.view.file?.path || "";
+				const embeds = container.querySelectorAll(".internal-embed.code-link-processed");
 
-					embeds.forEach((embed: Element) => {
-						const embedEl = embed as HTMLElement;
-						const rawSrc = embedEl.getAttribute("src");
-						if (!rawSrc) return;
-
-						const { filePath: embedFilePath, symbolName, highlightSpec } = parseEmbedSource(rawSrc);
-
-						if (
-							embedFilePath === filePath ||
-							embedFilePath === fileName ||
-							filePath.endsWith(embedFilePath)
-						) {
-							if (!this.codeProcessor.isProcessingAllowed(embedFilePath)) return;
-
-							const sourcePath = (leaf.view as MarkdownView).file?.path || "";
-							embedEl.classList.add("code-link-processed");
-							embedEl.empty();
-							this.codeProcessor.processFile(
-								embedFilePath, symbolName, embedEl, sourcePath, highlightSpec
-							).catch((err) => {
-								console.error("processFile failed in modify handler:", err);
-								embedEl.setText(`Error: ${err instanceof Error ? err.message : String(err)}`);
-							});
-						}
-					});
-				}
+				embeds.forEach((embed: Element) => {
+					// 文件匹配作为 predicate 传入；解析（含 IPv6 还原）、守卫、渲染都由 processEmbedElement 统一处理
+					this.codeProcessor.processEmbedElement(
+						embed as HTMLElement,
+						sourcePath,
+						(p) => p.filePath === filePath || p.filePath === fileName || filePath.endsWith(p.filePath)
+					);
+				});
 			});
 		}, 300);
 
@@ -184,7 +197,7 @@ export default class importCode extends Plugin {
 		try {
 			const https = getHttps();
 			if (https && typeof (https as Record<string, unknown>).request === "function") {
-				console.log(
+				console.debug(
 					"[Code Embed] SSL skip verification is available. Node.js HTTPS module loaded successfully."
 				);
 			} else {
@@ -210,7 +223,7 @@ export default class importCode extends Plugin {
 		this.app.workspace.iterateAllLeaves((leaf) => {
 			if (leaf.view instanceof MarkdownView) {
 				const state = leaf.view.getState();
-				leaf.view.setState(state, { history: false });
+				void leaf.view.setState(state, { history: false });
 			}
 		});
 	}
