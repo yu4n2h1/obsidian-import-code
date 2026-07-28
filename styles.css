@@ -141,23 +141,25 @@
 
 /* Folding —— 超过阈值时代码块默认折叠，工具栏加展开按钮 */
 .code-embed-foldable.code-embed-folded .code-embed-wrapper pre {
-	max-height: 10em;
-	overflow: hidden;
+	max-height: var(--code-embed-fold-height, 10em);
+	overflow: auto;
 	position: relative;
 }
 
 .code-embed-foldable.code-embed-folded .code-embed-wrapper pre::after {
 	content: "";
-	position: absolute;
+	position: sticky;
 	left: 0;
 	right: 0;
 	bottom: 0;
-	height: 3em;
+	display: block;
+	height: 2em;
+	margin-top: -2em;
 	pointer-events: none;
 	background: linear-gradient(
 		to bottom,
 		rgba(0, 0, 0, 0),
-		var(--background-primary) 90%
+		var(--background-primary) 80%
 	);
 }
 

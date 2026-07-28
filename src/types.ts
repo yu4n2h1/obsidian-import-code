@@ -16,6 +16,8 @@ export interface CodeEmbedSettings {
 	showLineNumbers: boolean;
 	/** 超过多少行时自动折叠代码块，0 = 从不折叠 */
 	foldThreshold: number;
+	/** 折叠状态下最多显示多少行（超出部分滚动查看） */
+	foldPreviewLines: number;
 	/** 是否让超长行换行显示（否则默认横向滚动） */
 	wrapLongLines: boolean;
 }
@@ -114,6 +116,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	remoteSources: {},
 	showLineNumbers: false,
 	foldThreshold: 50,
+	foldPreviewLines: 10,
 	wrapLongLines: false,
 	uploadSources: {
 		Local: {
