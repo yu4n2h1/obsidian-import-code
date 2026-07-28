@@ -21,10 +21,12 @@ export async function renderSuccess(
 	const { file, slice, sourcePath, options } = ctx;
 	const { displayContent, highlightLines, startLine } = slice;
 	const showLineNumbers = options?.showLineNumbers === true;
+	const wrapLongLines = options?.wrapLongLines === true;
 
 	const container = document.createElement("div");
 	container.className = "code-embed-container";
 	if (showLineNumbers) container.classList.add("code-embed-with-line-numbers");
+	if (wrapLongLines) container.classList.add("code-embed-wrap-lines");
 
 	buildToolbar(container, file, displayContent, sourcePath, app);
 
