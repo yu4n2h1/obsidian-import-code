@@ -55,6 +55,19 @@ export function buildEmbedStorageTab(
 				})
 		);
 
+	new Setting(embedGroup)
+		.setName("Show line numbers")
+		.setDesc("Display line numbers alongside embedded code. Numbers reflect real source-file line numbers (respects @-range offsets).")
+		.addToggle((toggle) =>
+			toggle
+				.setValue(plugin.settings.showLineNumbers)
+				.onChange(async (value: boolean) => {
+					plugin.settings.showLineNumbers = value;
+					await plugin.saveSettings();
+					plugin.resetMarkdownViews();
+				})
+		);
+
 	// ---- File Naming ----
 	buildStorageSection(containerEl, plugin);
 }

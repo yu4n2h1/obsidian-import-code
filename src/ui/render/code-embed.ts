@@ -18,11 +18,13 @@ export async function renderSuccess(
 	plugin: Component,
 	ctx: RenderContext,
 ): Promise<HTMLElement> {
-	const { file, slice, sourcePath } = ctx;
-	const { displayContent, highlightLines } = slice;
+	const { file, slice, sourcePath, options } = ctx;
+	const { displayContent, highlightLines, startLine } = slice;
+	const showLineNumbers = options?.showLineNumbers === true;
 
 	const container = document.createElement("div");
 	container.className = "code-embed-container";
+	if (showLineNumbers) container.classList.add("code-embed-with-line-numbers");
 
 	buildToolbar(container, file, displayContent, sourcePath, app);
 
@@ -39,9 +41,13 @@ export async function renderSuccess(
 		plugin,
 	);
 
-	if (highlightLines.length > 0) {
+	// 行高亮 & 行号都需要遍历 <code> 里的行结构，共用一次 DFS 扁平化。
+	// 若只有行号无高亮，也走同一函数，highlightLines 空数组走通默认路径。
+	if (highlightLines.length > 0 || showLineNumbers) {
 		const codeEl = wrapper.querySelector("code");
-		if (codeEl) applyLineHighlights(codeEl, highlightLines);
+		if (codeEl) {
+			applyLineHighlights(codeEl, highlightLines, showLineNumbers ? startLine : null);
+		}
 	}
 
 	return container;
@@ -128,7 +134,11 @@ function buildToolbar(
  * 就命中不到内层元素，Prism 语法着色全部丢失。历史上曾这样做过，导致
  * 「高亮成功但原生代码高亮消失」的 bug。
  */
-function applyLineHighlights(codeEl: HTMLElement, highlightLines: number[]): void {
+function applyLineHighlights(
+	codeEl: HTMLElement,
+	highlightLines: number[],
+	startLineForNumbering: number | null,
+): void {
 	interface FlatToken { text: string; classes: string[]; }
 
 	// 1. DFS 扁平化：收集所有叶子文本节点，每个携带从根到叶的 class 栈；
@@ -175,6 +185,13 @@ function applyLineHighlights(codeEl: HTMLElement, highlightLines: number[]): voi
 
 		const lineEl = document.createElement("span");
 		lineEl.className = isHighlighted ? "code-line code-highlight-line" : "code-line";
+
+		if (startLineForNumbering !== null) {
+			const numEl = document.createElement("span");
+			numEl.className = "code-line-no";
+			numEl.textContent = String(startLineForNumbering + lineIdx);
+			lineEl.appendChild(numEl);
+		}
 
 		if (lineTokens.length === 0) {
 			if (isHighlighted) lineEl.textContent = "\u00a0";
