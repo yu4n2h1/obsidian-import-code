@@ -1,7 +1,0 @@
-{
-  "metadataGeneration": {
-    "branchName": {
-      "instructions": "分支以feature/、bug-fix/、refactor，主分支则用main，开发分支用develop，每次仅仅涉及UI的改动，分支则需要ui/开头"
-    }
-  }
-}
