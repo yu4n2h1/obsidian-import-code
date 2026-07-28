@@ -11,7 +11,7 @@ function countLines(s: string): number {
 	return count;
 }
 
-export function convertToDisplayOrd(
+export function computeDisplayRange(
 	target: Target | null,
 	content: string,
 	language: string,
@@ -34,7 +34,7 @@ export function convertToDisplayOrd(
 	return { start: 1, end: countLines(content) };
 }
 
-export function convertToHighlightOrd(
+export function computeHighlightLines(
 	target: Target | null,
 	displayContent: string,
 	language: string,
@@ -69,25 +69,19 @@ export function convertToHighlightOrd(
 	return [];
 }
 
-/**
- * 阶段 4：符号→行号转换 + 内容切片。
- * 输入 FileContext + TargetResult，输出 SlicedContent。
- */
 export function sliceContent(
 	content: string,
-	language: string,
-	display: Target | null,
+	displayRange: LineRange,
 	highlight: Target | null,
+	language: string,
 ): SlicedContent {
-	const displayRange = convertToDisplayOrd(display, content, language);
-
 	// `slice` 自动 clamp end 到数组长度，无需 Math.min
 	const lines = content.split("\n");
 	const displayContent = lines
 		.slice(Math.max(0, displayRange.start - 1), displayRange.end)
 		.join("\n");
 
-	const highlightLines = convertToHighlightOrd(highlight, displayContent, language);
+	const highlightLines = computeHighlightLines(highlight, displayContent, language);
 
 	return { displayContent, highlightLines };
 }

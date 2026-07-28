@@ -1,0 +1,188 @@
+import {
+	App,
+	MarkdownRenderer,
+	Component,
+	setIcon,
+} from "obsidian";
+import type { RenderContext } from "../../pipeline/types";
+
+/**
+ * 阶段 5：渲染层。接收 RenderContext，组装代码嵌入 DOM。
+ * 从 pipeline/view-renderer.ts 抽取为纯函数，增加 sourceMode 分支。
+ */
+
+// ── 公开渲染函数 ──
+
+export function renderSuccess(
+	app: App,
+	plugin: Component,
+	ctx: RenderContext,
+): HTMLElement {
+	const { file, slice, sourcePath } = ctx;
+	const { displayContent, highlightLines } = slice;
+
+	const container = document.createElement("div");
+	container.className = "code-embed-container";
+
+	buildToolbar(container, file, displayContent, sourcePath, app);
+
+	const wrapper = container.createDiv({ cls: "code-embed-wrapper" });
+	void MarkdownRenderer.render(
+		app,
+		`\`\`\`${file.language}\n${displayContent}\n\`\`\``,
+		wrapper,
+		sourcePath,
+		plugin,
+	);
+
+	if (highlightLines.length > 0) {
+		const codeEl = wrapper.querySelector("code");
+		if (codeEl) applyLineHighlights(codeEl, highlightLines);
+	}
+
+	return container;
+}
+
+export function renderError(message: string): HTMLElement {
+	const container = document.createElement("div");
+	container.className = "code-embed-container";
+	const errorDiv = container.createDiv({ cls: "code-link-error" });
+	errorDiv.textContent = `Error: ${message}`;
+	return container;
+}
+
+// ── 内部工具函数 ──
+
+/**
+ * 构建工具栏：打开按钮 + 语言/复制按钮。
+ * sourceMode 分支：local 走 Obsidian 内部链接，http/alias 走浏览器新标签页。
+ */
+function buildToolbar(
+	container: HTMLElement,
+	file: RenderContext["file"],
+	displayContent: string,
+	sourcePath: string,
+	app: App,
+): void {
+	const toolbar = container.createDiv({ cls: "code-embed-toolbar" });
+
+	const openButton = toolbar.createEl("button", { cls: "code-embed-open-btn" });
+
+	if (file.sourceMode === "local") {
+		openButton.addEventListener("click", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			void app.workspace.openLinkText(file.filePath, sourcePath);
+		});
+	} else {
+		// http 或 alias 模式
+		openButton.addEventListener("click", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			window.open(file.filePath, "_blank");
+		});
+	}
+
+	setIcon(openButton, "external-link");
+	openButton.setAttribute("aria-label", "Open file");
+
+	const langLabel = toolbar.createEl("button", {
+		cls: "code-block-flair",
+		text: file.language,
+		attr: { "aria-label": "复制" },
+	});
+	langLabel.dataset.content = displayContent;
+	langLabel.addEventListener("click", (e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		const btn = e.currentTarget as HTMLButtonElement;
+		const content = btn.dataset.content;
+		if (!content) return;
+		void (async () => {
+			try {
+				await navigator.clipboard.writeText(content);
+				btn.textContent = "已复制";
+				setTimeout(() => { btn.textContent = file.language; }, 1500);
+			} catch (err) {
+				console.error("复制失败:", err);
+			}
+		})();
+	});
+}
+
+/**
+ * 对 Prism 渲染后的 <code> 元素按「逻辑行」应用高亮 class。
+ *
+ * 不能用 codeEl.innerHTML.split("\n")：PHP 等 markup-templating 语言的
+ * Prism token span 会跨行，split 切断 span → DOMParser 重解析时 DOM 错乱，
+ * 导致整片高亮。改为按 DOM 结构扁平化、按文本中的 \n 分行重建。
+ */
+function applyLineHighlights(codeEl: HTMLElement, highlightLines: number[]): void {
+	interface FlatToken { text: string; classes: string[]; }
+
+	// 1. DFS 扁平化：收集所有叶子文本节点，每个携带从根到叶的原子 class 栈
+	const tokens: FlatToken[] = [];
+	const walk = (node: Node, classStack: string[]): void => {
+		if (node.nodeType === Node.TEXT_NODE) {
+			const text = node.textContent;
+			if (text) tokens.push({ text, classes: classStack });
+			return;
+		}
+		if (node.nodeType === Node.ELEMENT_NODE) {
+			const el = node as HTMLElement;
+			const cls = typeof el.className === "string" ? el.className : "";
+			const newStack = cls
+				? [...classStack, ...cls.split(/\s+/).filter(Boolean)]
+				: classStack;
+			el.childNodes.forEach((child) => walk(child, newStack));
+		}
+	};
+	walk(codeEl, []);
+
+	// 2. 按文本中的 \n 切分为行（跨行 token 的各段继承同一 class 栈）
+	const lines: FlatToken[][] = [];
+	let currentLine: FlatToken[] = [];
+	lines.push(currentLine);
+	for (const tok of tokens) {
+		const parts = tok.text.split("\n");
+		parts.forEach((part, i) => {
+			if (i > 0) {
+				currentLine = [];
+				lines.push(currentLine);
+			}
+			if (part) currentLine.push({ text: part, classes: tok.classes });
+		});
+	}
+
+	// 3. 重建每行 DOM：每行一个 .code-line，高亮行加 .code-highlight-line
+	const highlightSet = new Set(highlightLines);
+	const newNodes: Node[] = [];
+	lines.forEach((lineTokens, lineIdx) => {
+		const isHighlighted = highlightSet.has(lineIdx);
+
+		const lineEl = document.createElement("span");
+		lineEl.className = isHighlighted ? "code-line code-highlight-line" : "code-line";
+
+		if (lineTokens.length === 0) {
+			if (isHighlighted) lineEl.textContent = "\u00a0";
+		} else {
+			for (const tok of lineTokens) {
+				let parent: HTMLElement = lineEl;
+				for (const cls of tok.classes) {
+					const span = document.createElement("span");
+					span.className = cls;
+					parent.appendChild(span);
+					parent = span;
+				}
+				parent.appendChild(document.createTextNode(tok.text));
+			}
+		}
+
+		newNodes.push(lineEl);
+		if (lineIdx < lines.length - 1) {
+			newNodes.push(document.createTextNode("\n"));
+		}
+	});
+
+	codeEl.replaceChildren(...newNodes);
+}

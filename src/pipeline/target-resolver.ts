@@ -30,6 +30,8 @@ export function classifyTargets(
 	symbolName: string,
 	highlightSpec: string,
 ): TargetResult {
+	// # 表示「在展示内容上高亮」（display 走 @ 提取，highlight 走 # 高亮），
+	// 两者独立解析，不互相提升 —— 否则 `#symbol` 会退化成提取（与 @ 等价）。
 	return {
 		display: resolveTarget(symbolName),
 		highlight: resolveTarget(highlightSpec),
