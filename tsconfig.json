@@ -20,7 +20,6 @@
 		"strictBindCallApply": true,
 		"allowSyntheticDefaultImports": true,
 		"esModuleInterop": true,
-		
 		"verbatimModuleSyntax": true,
 		"useUnknownInCatchVariables": true,
 		"inlineSourceMap": true,
