@@ -136,7 +136,17 @@ export class CodeEmbedProcessor {
 		targetElement.setAttribute("data-code-link-handled", "true");
 		targetElement.addClass("code-link-block");
 		targetElement.empty();
-		targetElement.createDiv({ cls: "code-link-loading", text: "Loading..." });
+		// 本地文件几乎瞬间可用，简单 Loading 文本足矣；远程/alias 会走网络，
+		// 用骨架屏减轻等待时的空白感。
+		const isRemote = isRemoteUrl(filePath) || isAliasPath(filePath);
+		if (isRemote) {
+			const skeleton = targetElement.createDiv({ cls: "code-link-skeleton" });
+			skeleton.createDiv({ cls: "code-link-skeleton-line" });
+			skeleton.createDiv({ cls: "code-link-skeleton-line" });
+			skeleton.createDiv({ cls: "code-link-skeleton-line" });
+		} else {
+			targetElement.createDiv({ cls: "code-link-loading", text: "Loading..." });
+		}
 
 		let result: PipelineResult;
 		const inflight = this.inFlight.get(filePath);
