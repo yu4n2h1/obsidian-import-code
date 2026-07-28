@@ -105,7 +105,7 @@ function applyFoldable(
 	const btn = document.createElement("button");
 	btn.className = "code-embed-fold-btn";
 	const setLabel = (folded: boolean) => {
-		btn.textContent = folded ? `展开 (${totalLines} 行)` : "收起";
+		btn.textContent = folded ? `展开 ${totalLines}` : "收起";
 		btn.setAttribute("aria-expanded", folded ? "false" : "true");
 	};
 	setLabel(true);

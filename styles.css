@@ -163,18 +163,26 @@
 	);
 }
 
-.code-embed-fold-btn {
-	padding: 2px 10px;
-	font-size: var(--font-smaller);
-	border: 1px solid var(--background-modifier-border);
-	background: var(--background-secondary);
-	color: var(--text-normal);
-	border-radius: 4px;
+/* 折叠按钮复用工具栏其他按钮的样式（.code-block-flair / .code-embed-open-btn），
+   保持视觉统一；仅 uppercase 与 lang flair 区分，这里不要 uppercase */
+.code-embed-container .code-embed-fold-btn {
+	appearance: none;
+	height: 32px;
+	padding: 0 10px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--code-bracket-background);
+	transition: all 0.2s ease;
 	cursor: pointer;
+	border: none !important;
+	border-radius: 0 !important;
+	font-size: var(--font-smaller);
 }
 
-.code-embed-fold-btn:hover {
-	background: var(--background-modifier-hover);
+.code-embed-container .code-embed-fold-btn:hover,
+.code-embed-container .code-embed-fold-btn:active {
+	opacity: 0.7;
 }
 
 /* Wrap long lines —— 启用时代码块超长行换行显示（否则横向滚动） */
