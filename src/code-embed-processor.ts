@@ -172,14 +172,10 @@ export class CodeEmbedProcessor {
 
 			targetElement.empty();
 			targetElement.appendChild(el);
-			// 阻止代码块内点击冒泡（保持现有行为）
+			// 只吞冒泡，不 preventDefault：冒泡上去会让 Obsidian 把 .internal-embed
+			// 当作 wiki link 触发跳转（这是我们真正要阻止的）。但 preventDefault
+			// 会顺带压掉文本选择、原生右键等浏览器默认行为，副作用过大。
 			el.addEventListener("click", (e: MouseEvent) => {
-				const target = e.target as HTMLElement;
-				if (target.closest("button")) {
-					e.stopPropagation();
-					return;
-				}
-				e.preventDefault();
 				e.stopPropagation();
 			});
 		} else {
