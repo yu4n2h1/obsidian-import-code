@@ -176,6 +176,9 @@ export class CodeEmbedProcessor {
 				file: result.file,
 				slice: result.slice,
 				sourcePath,
+				options: {
+					showLineNumbers: this.settings.showLineNumbers === true,
+				},
 			});
 			// renderSuccess 内部有 await MarkdownRenderer.render，异步返回后再查一次 token。
 			if (!isCurrent()) return;

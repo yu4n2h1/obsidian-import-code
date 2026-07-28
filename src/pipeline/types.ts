@@ -28,14 +28,22 @@ export interface SlicedContent {
 	displayContent: string;
 	/** 高亮行索引（0-based，相对于 displayContent） */
 	highlightLines: number[];
+	/** displayContent 首行在源文件中的 1-based 行号（用于行号显示） */
+	startLine: number;
 }
 
 // ── 渲染输入 ──
+
+export interface RenderOptions {
+	/** 是否显示行号 */
+	showLineNumbers?: boolean;
+}
 
 export interface RenderContext {
 	file: ResolvedContent;
 	slice: SlicedContent;
 	sourcePath: string;
+	options?: RenderOptions;
 }
 
 // ── Pipeline 结果 ──

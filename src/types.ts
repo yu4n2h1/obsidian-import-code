@@ -12,6 +12,8 @@ export interface CodeEmbedSettings {
 	remoteSkipSslVerify: boolean;
 	codeFileExtensions: ExtensionEntry[];
 	remoteSources: Record<string, RemoteSourceEntry>;
+	/** 是否在代码块左侧显示行号（基于源文件真实行号，考虑 @ 提取的偏移） */
+	showLineNumbers: boolean;
 }
 
 function buildDefaultExtensions(): ExtensionEntry[] {
@@ -106,6 +108,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	codeFileExtensions: buildDefaultExtensions(),
 	fileNameStrategy: "hash",
 	remoteSources: {},
+	showLineNumbers: false,
 	uploadSources: {
 		Local: {
 			uploadType: "local",

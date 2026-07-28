@@ -119,6 +119,26 @@
 	100% { background-position: -200% 0; }
 }
 
+/* Line numbers —— 启用时给每行 .code-line 前挂 .code-line-no gutter */
+.code-embed-with-line-numbers .code-line {
+	display: inline;
+}
+
+.code-embed-with-line-numbers .code-line-no {
+	display: inline-block;
+	width: 3em;
+	padding-right: 1em;
+	margin-right: 0.5em;
+	text-align: right;
+	color: var(--text-faint);
+	border-right: 1px solid var(--background-modifier-border);
+	user-select: none;
+	-webkit-user-select: none;
+	/* 不参与 Prism 语法着色 */
+	font-family: var(--font-monospace);
+	font-variant-numeric: tabular-nums;
+}
+
 /* Hide Obsidian's default copy button inside our code embeds */
 .code-embed-container button.copy-code-button,
 .code-embed-wrapper button.copy-code-button {
