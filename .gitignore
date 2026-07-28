@@ -24,3 +24,12 @@ data.json
 # Local tool state (memory / fts index)
 .lingxiao/
 
+# Personal tool configs (not project-related)
+paseo.json
+CHANGELOG.md
+
+# Build artifacts & caches
+*.log
+*.tsbuildinfo
+.eslintcache
+
