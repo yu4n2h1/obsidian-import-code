@@ -24,3 +24,8 @@ data.json
 # Local tool state (memory / fts index)
 .lingxiao/
 
+# Build artifacts & caches
+*.log
+*.tsbuildinfo
+.eslintcache
+
