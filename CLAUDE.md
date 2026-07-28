@@ -21,16 +21,18 @@ main ← develop ← {bug-fix/xxx, feature/xxx, refactor/xxx, ...}
    - `bug-fix/xxx` — bug 修复
    - `feature/xxx` — 新功能
    - `refactor/xxx` — 重构
+   - `docs/xxx` — 仅文档改动
 3. **在任务分支上完成改动 + 本地验证**（`yarn build` + `yarn lint` 都要过）。
-4. **把任务分支合回 develop**。多条任务分支可以并行合入 develop。
+4. **把任务分支合回 develop**。可以并行签多条任务分支；合回 develop 无需等其它分支就绪。合完后如果还有下一件事，可以立刻再从最新的 develop 签新分支——不用等 main。
 5. **在 develop 上统一集成测试**——多条分支合到一起后可能有冲突或语义冲突（编译过但行为不对），**冲突和联调问题都在 develop 上解决**，不要回到任务分支反复来回改。
-6. **develop 通过测试后合并到 main**。main 上不做任何直接开发。
+6. **develop 合并到 main —— 必须由用户单独确认后才能执行**。这是整个流程的唯一硬闸门。main 上不做任何直接开发。
 
 **给 Claude Code 的约束**：
 
 - 用户说"改一下 X" / "修个 bug" 时，**先检查当前分支**：若在 main / develop 上，主动提示需要按上述流程签出任务分支后再动手，不要在 main / develop 上直接改代码。
-- 分支名让用户拍板；如果用户没指定，按改动性质给出建议（bug-fix / feature / refactor）供选择。
-- 完成任务分支的改动并 commit 后，**不要**擅自合并到 develop——由用户或明确指令来触发合并动作。
+- 分支名让用户拍板；如果用户没指定，按改动性质给出建议（bug-fix / feature / refactor / docs）供选择。
+- 任务分支上的 commit、以及**任务分支 → develop 的合并**可以在改动完成 + 本地验证通过后自主执行，不需要每次都问；用户可随时打断或要求先暂停。
+- **develop → main 的合并必须停下来问用户**——即便任务已经"看起来做完"、build/lint 都过了，也不主动动手。要用户明确说"合到 main" / "发布" / "上线" 之类才做。
 - 合并策略默认 `--no-ff`（保留分支拓扑），除非用户另有指示。
 
 ## Build & Development
