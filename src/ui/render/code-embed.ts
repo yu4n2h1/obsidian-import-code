@@ -57,7 +57,8 @@ export async function renderSuccess(
 	if (foldThreshold > 0) {
 		const totalLines = displayContent.split("\n").length;
 		if (totalLines > foldThreshold) {
-			applyFoldable(container, wrapper, totalLines);
+			const previewLines = options?.foldPreviewLines ?? 10;
+			applyFoldable(container, wrapper, totalLines, previewLines);
 		}
 	}
 
@@ -79,16 +80,24 @@ export function renderError(message: string): HTMLElement {
  *
  * 默认折叠（container 加 .code-embed-folded），wrapper 上的 CSS
  * 限制 max-height 只显示前几行，并加渐变遮罩暗示"下面还有"。
- * 按钮 toggle 折叠 class 与自身文本。
+ * 折叠态下 pre 仍可滚动查看完整内容。按钮 toggle 折叠 class 与自身文本。
+ *
+ * previewLines 通过 CSS 变量 --code-embed-fold-height 传给 pre 的 max-height，
+ * 避免硬编码行数。
  */
 function applyFoldable(
 	container: HTMLElement,
 	wrapper: HTMLElement,
 	totalLines: number,
+	previewLines: number,
 ): void {
-	// wrapper 参数保留：未来若需要 wrapper 特化行为可用；当前只挂 container 的 class。
 	void wrapper;
 	container.classList.add("code-embed-foldable", "code-embed-folded");
+	// previewLines 行 × 1.5em 行高 + 一点 padding，作为折叠态可见高度。
+	container.style.setProperty(
+		"--code-embed-fold-height",
+		`calc(${previewLines} * 1.5em + 1em)`,
+	);
 
 	const toolbar = container.querySelector(".code-embed-toolbar");
 	if (!toolbar) return;

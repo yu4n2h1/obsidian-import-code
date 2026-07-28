@@ -85,6 +85,22 @@ export function buildEmbedStorageTab(
 		);
 
 	new Setting(embedGroup)
+		.setName("Folded preview lines")
+		.setDesc("Number of lines visible when a code block is folded. Excess content is scrollable within the folded view.")
+		.addText((text) =>
+			text
+				.setPlaceholder("10")
+				.setValue(String(plugin.settings.foldPreviewLines))
+				.onChange(async (value: string) => {
+					const parsed = parseInt(value, 10);
+					if (isNaN(parsed) || parsed < 0) return;
+					plugin.settings.foldPreviewLines = parsed;
+					await plugin.saveSettings();
+					plugin.resetMarkdownViews();
+				})
+		);
+
+	new Setting(embedGroup)
 		.setName("Wrap long lines")
 		.setDesc("Wrap lines that exceed the code block's width instead of showing horizontal scroll.")
 		.addToggle((toggle) =>

@@ -39,6 +39,8 @@ export interface RenderOptions {
 	showLineNumbers?: boolean;
 	/** 超过多少行自动折叠；0 或 undefined 表示不折叠 */
 	foldThreshold?: number;
+	/** 折叠状态下最多显示多少行（超出部分滚动查看） */
+	foldPreviewLines?: number;
 	/** 是否让超长行换行；false 或 undefined = 横向滚动 */
 	wrapLongLines?: boolean;
 }
