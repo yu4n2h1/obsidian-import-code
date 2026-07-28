@@ -33,14 +33,20 @@ export interface UploadContext {
 }
 
 /**
+ * 上传操作的参数包。
+ * 对应 UploadService.upload() 的入参。
+ */
+export interface UploadParams {
+	config: RemoteServiceConfig;
+	ctx: UploadContext;
+	skipSslVerify: boolean;
+}
+
+/**
  * 上传服务的统一接口。
  * 镜像 fetchers 的 RemoteService 接口。
  */
 export interface UploadService {
 	readonly serviceType: UploadServiceType;
-	upload(
-		config: RemoteServiceConfig,
-		ctx: UploadContext,
-		skipSslVerify: boolean
-	): Promise<UploadResult>;
+	upload(params: UploadParams): Promise<UploadResult>;
 }

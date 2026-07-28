@@ -5,6 +5,7 @@ import type {
 	UploadResult,
 	UploadContext,
 	UploadService,
+	UploadParams,
 } from "./types";
 import { createLocalUploadService } from "./local";
 import { webdavUploadService } from "./webdav";
@@ -81,9 +82,9 @@ export async function uploadToService(
 		};
 	}
 	return withUploadError(uploadErrorContext(serviceType), () =>
-		service.upload(config, ctx, skipSslVerify)
+		service.upload({ config, ctx, skipSslVerify })
 	);
 }
 
 // Barrel re-exports
-export type { UploadServiceType, UploadResult, UploadContext, UploadService };
+export type { UploadServiceType, UploadResult, UploadContext, UploadService, UploadParams };

@@ -5,11 +5,12 @@ import {
 	Component,
 	MarkdownRenderer,
 } from "obsidian";
-import type { LastFileReference } from "../../types";
+import type { LastFileReference, CodeEmbedSettings } from "../../types";
 import { getLanguageFromPath } from "../../utils/language";
 
 export class EditLinkModal extends Modal {
 	private lastRef: LastFileReference;
+	private settings: CodeEmbedSettings;
 	private symbolName: string;
 	private highlightSpec: string;
 	private linkPreviewEl?: HTMLElement;
@@ -18,10 +19,12 @@ export class EditLinkModal extends Modal {
 
 	constructor(
 		app: App,
+		settings: CodeEmbedSettings,
 		lastRef: LastFileReference,
 		onSubmit: (linkText: string, symbolName: string, highlightSpec: string) => void
 	) {
 		super(app);
+		this.settings = settings;
 		this.lastRef = lastRef;
 		this.symbolName = lastRef.symbolName;
 		this.highlightSpec = lastRef.highlightSpec;
@@ -63,7 +66,8 @@ export class EditLinkModal extends Modal {
 		});
 
 		const [, language] = getLanguageFromPath(
-			`file.${this.lastRef.extension}`
+			`file.${this.lastRef.extension}`,
+			this.settings,
 		);
 		const markdownCodeBlock =
 			"```" + language + "\n" + this.lastRef.content + "\n```";

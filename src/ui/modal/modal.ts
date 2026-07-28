@@ -480,6 +480,10 @@ export class FileModal extends Modal {
 		}
 	}
 
+	/**
+	 * 计算内容的 SHA-256 摘要并返回前 16 字节（32 个十六进制字符）。
+	 * 调用方通常再 `.substring(0, N)` 截到所需长度。
+	 */
 	private async computeFileHash(content: string): Promise<string> {
 		const encoder = new TextEncoder();
 		const data = encoder.encode(content);
@@ -491,6 +495,13 @@ export class FileModal extends Modal {
 			.join("");
 	}
 
+	private getDialectForExtension(extension: string): string {
+		const entry = this.settings.codeFileExtensions.find(
+			(e) => e.suffix.toLowerCase() === extension.toLowerCase(),
+		);
+		return entry?.dialect || extension;
+	}
+
 	private async generateFileName(
 		content: string,
 		extension: string,
@@ -499,7 +510,9 @@ export class FileModal extends Modal {
 	): Promise<string> {
 		if (strategy === "hash") {
 			const hash = await this.computeFileHash(content);
-			return `${hash.substring(0, 8)}.${extension}`;
+			// 16 个十六进制字符 = 64 bit：碰撞概率 ~50% @ 4×10⁹ 个文件，实际等价于永不碰撞。
+			// 旧版为 8 位 (32 bit)，~65k 个文件即到 50%，容易撞。
+			return `${hash.substring(0, 16)}.${extension}`;
 		}
 		if ((strategy === "content" || strategy === "custom") && customName.trim()) {
 			return customName.trim().endsWith(`.${extension}`)
@@ -507,7 +520,8 @@ export class FileModal extends Modal {
 				: `${customName.trim()}.${extension}`;
 		}
 		// "auto" mode (or custom strategy with empty name)
-		const symbolName = extractFirstSymbolName(content, extension);
+		const dialect = this.getDialectForExtension(extension);
+			const symbolName = extractFirstSymbolName(content, dialect);
 		if (symbolName) {
 			const kebab = symbolName
 				.replace(/([a-z])([A-Z])/g, "$1-$2")

@@ -1,5 +1,5 @@
 import type { RemoteServiceConfig } from "../types";
-import type { RemoteReadResult, RemoteService } from "./types";
+import type { RemoteReadResult, RemoteService, RemoteReadParams } from "./types";
 import { buildFullPath, enrichError, getRequire } from "../utils/http-client";
 function resolveFullPath(config: RemoteServiceConfig, filePath: string): string {
 	const baseDir = config.url || "";
@@ -11,7 +11,8 @@ function resolveFullPath(config: RemoteServiceConfig, filePath: string): string 
 export const localService: RemoteService = {
 	serviceType: "local" as const,
 
-	async read(config: RemoteServiceConfig, filePath: string, _skipSslVerify: boolean): Promise<RemoteReadResult> {
+	async read(params: RemoteReadParams): Promise<RemoteReadResult> {
+		const { config, filePath } = params;
 		try {
 			const fullPath = resolveFullPath(config, filePath);
 			const requireFn = getRequire();

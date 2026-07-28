@@ -1,11 +1,11 @@
-import type { RemoteServiceConfig } from "../types";
-import type { RemoteReadResult, RemoteService } from "./types";
+import type { RemoteReadResult, RemoteService, RemoteReadParams } from "./types";
 import { dispatchHttpRequest, enrichError, encodePathSegments, buildFullPath, normalizeBaseUrl } from "../utils/http-client";
 
 export const giteaService: RemoteService = {
 	serviceType: "gitea" as const,
 
-	async read(config: RemoteServiceConfig, filePath: string, skipSslVerify: boolean): Promise<RemoteReadResult> {
+	async read(params: RemoteReadParams): Promise<RemoteReadResult> {
+		const { config, filePath, skipSslVerify } = params;
 		try {
 			const baseUrl = normalizeBaseUrl(config.url);
 			const repo = normalizeBaseUrl(config.repo || "");

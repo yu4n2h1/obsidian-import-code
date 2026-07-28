@@ -1,6 +1,5 @@
 import { App, normalizePath } from "obsidian";
-import type { RemoteServiceConfig } from "../types";
-import type { UploadResult, UploadService } from "./types";
+import type { UploadResult, UploadService, UploadParams } from "./types";
 
 /**
  * 创建本地 Vault 上传服务。
@@ -12,11 +11,8 @@ export function createLocalUploadService(app: App): UploadService {
 	return {
 		serviceType: "local" as const,
 
-		async upload(
-			_config: RemoteServiceConfig,
-			ctx: { content: string; fileName: string; folderPath?: string },
-			_skipSslVerify: boolean
-		): Promise<UploadResult> {
+		async upload(params: UploadParams): Promise<UploadResult> {
+			const { ctx } = params;
 			const folderPath = ctx.folderPath || "";
 			const fullPath = normalizePath(
 				folderPath ? `${folderPath}/${ctx.fileName}` : ctx.fileName

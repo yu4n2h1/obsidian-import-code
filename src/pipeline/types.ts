@@ -1,62 +1,54 @@
 import type { LineRange } from "../utils/helpers";
 
-// ---- Link mode ----
+// ── 数据获取层输出 ──
 
-/** Wiki Link 的两种处理模式 */
-export type LinkMode = "http" | "alias" | "local";
+export type SourceMode = "http" | "alias" | "local";
 
-// ---- ResolvedLink（阶段 1 输出） ----
-
-/** 链接路由阶段的输出：文件路径 + 模式 */
-export interface ResolvedLink {
-	filePath: string;
-	mode: LinkMode;
-}
-
-// ---- FileContext（阶段 2 输出） ----
-
-/** 文件读取阶段的输出 */
-export interface FileContext {
+export interface ResolvedContent {
 	content: string;
-	filePath: string;
 	language: string;
+	filePath: string;
+	sourceMode: SourceMode;
 }
 
-// ---- TargetResult（阶段 3 输出） ----
+// ── 目标解析层输出 ──
 
-type TargetType = "symbol" | "line";
+/** Target 是 discriminated union：symbol 按名称提取，line 按行号范围切片 */
+export type Target = { type: "symbol"; name: string } | { type: "line"; lineRange: LineRange };
 
-/** 单个目标描述 */
-export interface Target {
-	type: TargetType;
-	name?: string;
-	lineRange?: LineRange;
-}
-
-/** 目标解析阶段的输出 */
 export interface TargetResult {
 	display: Target | null;
 	highlight: Target | null;
 }
 
-// ---- SlicedContent（阶段 4 输出） ----
+// ── 切片层输出 ──
 
-/** 符号转换 + 内容切片阶段的输出 */
 export interface SlicedContent {
-	/** 按 displayRange 切片后的展示内容 */
+	/** 按 display 目标切片后的展示内容 */
 	displayContent: string;
-	/** 高亮行索引（相对于 displayContent，0-based） */
+	/** 高亮行索引（0-based，相对于 displayContent） */
 	highlightLines: number[];
 }
 
-// ---- RenderContext（阶段 5 输入） ----
+// ── 渲染输入 ──
 
-/** 视图渲染阶段的输入 */
 export interface RenderContext {
-	/** 文件元数据 */
-	file: FileContext;
-	/** 阶段 4 产出 */
+	file: ResolvedContent;
 	slice: SlicedContent;
-	/** 当前文档路径（用于链接跳转） */
 	sourcePath: string;
 }
+
+// ── Pipeline 结果 ──
+
+export interface PipelineSuccess {
+	success: true;
+	file: ResolvedContent;
+	slice: SlicedContent;
+}
+
+export interface PipelineError {
+	success: false;
+	error: string;
+}
+
+export type PipelineResult = PipelineSuccess | PipelineError;

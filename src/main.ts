@@ -7,9 +7,9 @@ import {
 	type MarkdownPostProcessorContext,
 } from "obsidian";
 import { DEFAULT_SETTINGS, type PluginSettings, type LastFileReference, type ExtensionEntry } from "./types";
-import { EXTENSION_TO_LANGUAGE } from "./utils/constants";
+
 import { importCodeSettingsTab } from "./settings";
-import { CodeEmbedProcessor } from "./ui/renderer/code-embed";
+import { CodeEmbedProcessor } from "./code-embed-processor";
 import { debounce } from "./utils/helpers";
 import { EditorView, ViewPlugin } from "@codemirror/view";
 import { createInsertCodeCallback, createEditLastCodeCallback } from "./commands/insert-code";
@@ -35,7 +35,7 @@ export default class importCode extends Plugin {
 				seenSuffixes.add(suffix);
 				migratedEntries.push({
 					suffix,
-					dialect: EXTENSION_TO_LANGUAGE[suffix] ?? suffix,
+					dialect: suffix,
 					active: true,
 				});
 			}
@@ -110,7 +110,7 @@ export default class importCode extends Plugin {
 		this.addSettingTab(new importCodeSettingsTab(this.app, this));
 
 		const insertCodeCallback = createInsertCodeCallback(this.app, this.settings, this);
-		const editLastCodeCallback = createEditLastCodeCallback(this.app, this);
+		const editLastCodeCallback = createEditLastCodeCallback(this.app, this.settings, this);
 
 		this.addCommand({
 			id: "create-code-file",

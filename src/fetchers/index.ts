@@ -50,5 +50,5 @@ export function readFromService(
 			error: `Unsupported service type: ${serviceType}`,
 		});
 	}
-	return service.read(config, filePath, skipSslVerify);
+	return service.read({ config, filePath, skipSslVerify });
 }
