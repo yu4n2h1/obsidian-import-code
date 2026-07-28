@@ -13,21 +13,29 @@ import type { RenderContext } from "../../pipeline/types";
 
 // ── 公开渲染函数 ──
 
-export function renderSuccess(
+export async function renderSuccess(
 	app: App,
 	plugin: Component,
 	ctx: RenderContext,
-): HTMLElement {
-	const { file, slice, sourcePath } = ctx;
-	const { displayContent, highlightLines } = slice;
+): Promise<HTMLElement> {
+	const { file, slice, sourcePath, options } = ctx;
+	const { displayContent, highlightLines, startLine } = slice;
+	const showLineNumbers = options?.showLineNumbers === true;
+	const wrapLongLines = options?.wrapLongLines === true;
 
 	const container = document.createElement("div");
 	container.className = "code-embed-container";
+	if (showLineNumbers) container.classList.add("code-embed-with-line-numbers");
+	if (wrapLongLines) container.classList.add("code-embed-wrap-lines");
 
 	buildToolbar(container, file, displayContent, sourcePath, app);
 
 	const wrapper = container.createDiv({ cls: "code-embed-wrapper" });
-	void MarkdownRenderer.render(
+	// MarkdownRenderer.render 是异步的：先 await 让 Obsidian 把 code 元素渲染上，
+	// 再做 querySelector 与高亮。历史上这里用 `void MarkdownRenderer.render(...)`
+	// 后紧接着 querySelector，依赖 Obsidian 当前实现里 render 同步落 DOM 的巧合——
+	// API 契约本身是异步，未来升级可能打破。
+	await MarkdownRenderer.render(
 		app,
 		`\`\`\`${file.language}\n${displayContent}\n\`\`\``,
 		wrapper,
@@ -35,9 +43,23 @@ export function renderSuccess(
 		plugin,
 	);
 
-	if (highlightLines.length > 0) {
+	// 行高亮 & 行号都需要遍历 <code> 里的行结构，共用一次 DFS 扁平化。
+	// 若只有行号无高亮，也走同一函数，highlightLines 空数组走通默认路径。
+	if (highlightLines.length > 0 || showLineNumbers) {
 		const codeEl = wrapper.querySelector("code");
-		if (codeEl) applyLineHighlights(codeEl, highlightLines);
+		if (codeEl) {
+			applyLineHighlights(codeEl, highlightLines, showLineNumbers ? startLine : null);
+		}
+	}
+
+	// 折叠：只在超过阈值时启用。默认折叠状态，用户点按钮切换。
+	const foldThreshold = options?.foldThreshold ?? 0;
+	if (foldThreshold > 0) {
+		const totalLines = displayContent.split("\n").length;
+		if (totalLines > foldThreshold) {
+			const previewLines = options?.foldPreviewLines ?? 10;
+			applyFoldable(container, wrapper, totalLines, previewLines);
+		}
 	}
 
 	return container;
@@ -52,6 +74,48 @@ export function renderError(message: string): HTMLElement {
 }
 
 // ── 内部工具函数 ──
+
+/**
+ * 给容器挂折叠状态与展开/收起按钮。
+ *
+ * 默认折叠（container 加 .code-embed-folded），wrapper 上的 CSS
+ * 限制 max-height 只显示前几行，并加渐变遮罩暗示"下面还有"。
+ * 折叠态下 pre 仍可滚动查看完整内容。按钮 toggle 折叠 class 与自身文本。
+ *
+ * previewLines 通过 CSS 变量 --code-embed-fold-height 传给 pre 的 max-height，
+ * 避免硬编码行数。
+ */
+function applyFoldable(
+	container: HTMLElement,
+	wrapper: HTMLElement,
+	totalLines: number,
+	previewLines: number,
+): void {
+	void wrapper;
+	container.classList.add("code-embed-foldable", "code-embed-folded");
+	// previewLines 行 × 1.5em 行高 + 一点 padding，作为折叠态可见高度。
+	container.style.setProperty(
+		"--code-embed-fold-height",
+		`calc(${previewLines} * 1.5em + 1em)`,
+	);
+
+	const toolbar = container.querySelector(".code-embed-toolbar");
+	if (!toolbar) return;
+
+	const btn = document.createElement("button");
+	btn.className = "code-embed-fold-btn";
+	const setLabel = (folded: boolean) => {
+		btn.textContent = folded ? `展开 ${totalLines}` : "收起";
+		btn.setAttribute("aria-expanded", folded ? "false" : "true");
+	};
+	setLabel(true);
+	btn.addEventListener("click", (e) => {
+		e.stopPropagation();
+		const folded = container.classList.toggle("code-embed-folded");
+		setLabel(folded);
+	});
+	toolbar.appendChild(btn);
+}
 
 /**
  * 构建工具栏：打开按钮 + 语言/复制按钮。
@@ -124,7 +188,11 @@ function buildToolbar(
  * 就命中不到内层元素，Prism 语法着色全部丢失。历史上曾这样做过，导致
  * 「高亮成功但原生代码高亮消失」的 bug。
  */
-function applyLineHighlights(codeEl: HTMLElement, highlightLines: number[]): void {
+function applyLineHighlights(
+	codeEl: HTMLElement,
+	highlightLines: number[],
+	startLineForNumbering: number | null,
+): void {
 	interface FlatToken { text: string; classes: string[]; }
 
 	// 1. DFS 扁平化：收集所有叶子文本节点，每个携带从根到叶的 class 栈；
@@ -171,6 +239,13 @@ function applyLineHighlights(codeEl: HTMLElement, highlightLines: number[]): voi
 
 		const lineEl = document.createElement("span");
 		lineEl.className = isHighlighted ? "code-line code-highlight-line" : "code-line";
+
+		if (startLineForNumbering !== null) {
+			const numEl = document.createElement("span");
+			numEl.className = "code-line-no";
+			numEl.textContent = String(startLineForNumbering + lineIdx);
+			lineEl.appendChild(numEl);
+		}
 
 		if (lineTokens.length === 0) {
 			if (isHighlighted) lineEl.textContent = "\u00a0";

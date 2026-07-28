@@ -55,6 +55,64 @@ export function buildEmbedStorageTab(
 				})
 		);
 
+	new Setting(embedGroup)
+		.setName("Show line numbers")
+		.setDesc("Display line numbers alongside embedded code. Numbers reflect real source-file line numbers (respects @-range offsets).")
+		.addToggle((toggle) =>
+			toggle
+				.setValue(plugin.settings.showLineNumbers)
+				.onChange(async (value: boolean) => {
+					plugin.settings.showLineNumbers = value;
+					await plugin.saveSettings();
+					plugin.resetMarkdownViews();
+				})
+		);
+
+	new Setting(embedGroup)
+		.setName("Auto-fold threshold")
+		.setDesc("Automatically fold code blocks longer than this many lines. Set 0 to disable folding.")
+		.addText((text) =>
+			text
+				.setPlaceholder("50")
+				.setValue(String(plugin.settings.foldThreshold))
+				.onChange(async (value: string) => {
+					const parsed = parseInt(value, 10);
+					if (isNaN(parsed) || parsed < 0) return;
+					plugin.settings.foldThreshold = parsed;
+					await plugin.saveSettings();
+					plugin.resetMarkdownViews();
+				})
+		);
+
+	new Setting(embedGroup)
+		.setName("Folded preview lines")
+		.setDesc("Number of lines visible when a code block is folded. Excess content is scrollable within the folded view.")
+		.addText((text) =>
+			text
+				.setPlaceholder("10")
+				.setValue(String(plugin.settings.foldPreviewLines))
+				.onChange(async (value: string) => {
+					const parsed = parseInt(value, 10);
+					if (isNaN(parsed) || parsed < 0) return;
+					plugin.settings.foldPreviewLines = parsed;
+					await plugin.saveSettings();
+					plugin.resetMarkdownViews();
+				})
+		);
+
+	new Setting(embedGroup)
+		.setName("Wrap long lines")
+		.setDesc("Wrap lines that exceed the code block's width instead of showing horizontal scroll.")
+		.addToggle((toggle) =>
+			toggle
+				.setValue(plugin.settings.wrapLongLines)
+				.onChange(async (value: boolean) => {
+					plugin.settings.wrapLongLines = value;
+					await plugin.saveSettings();
+					plugin.resetMarkdownViews();
+				})
+		);
+
 	// ---- File Naming ----
 	buildStorageSection(containerEl, plugin);
 }

@@ -12,6 +12,14 @@ export interface CodeEmbedSettings {
 	remoteSkipSslVerify: boolean;
 	codeFileExtensions: ExtensionEntry[];
 	remoteSources: Record<string, RemoteSourceEntry>;
+	/** 是否在代码块左侧显示行号（基于源文件真实行号，考虑 @ 提取的偏移） */
+	showLineNumbers: boolean;
+	/** 超过多少行时自动折叠代码块，0 = 从不折叠 */
+	foldThreshold: number;
+	/** 折叠状态下最多显示多少行（超出部分滚动查看） */
+	foldPreviewLines: number;
+	/** 是否让超长行换行显示（否则默认横向滚动） */
+	wrapLongLines: boolean;
 }
 
 function buildDefaultExtensions(): ExtensionEntry[] {
@@ -106,6 +114,10 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	codeFileExtensions: buildDefaultExtensions(),
 	fileNameStrategy: "hash",
 	remoteSources: {},
+	showLineNumbers: false,
+	foldThreshold: 50,
+	foldPreviewLines: 10,
+	wrapLongLines: false,
 	uploadSources: {
 		Local: {
 			uploadType: "local",

@@ -30,6 +30,10 @@ export class CodeEmbedProcessor {
 	private supportedExtensions: Set<string>;
 	// 请求去重：同一 filePath 的并发请求复用 Promise
 	private inFlight: Map<string, Promise<PipelineResult>>;
+	// 每个 targetElement 当前生效的 render token —— 用来在异步渲染完成时判断
+	// 「这个 target 是否已被更新的一次 processFile 调用接管」。旧渲染读到 token 变了
+	// 就丢弃自己的结果，避免把陈旧 DOM 追加到已重开的容器上。
+	private renderTokens: WeakMap<HTMLElement, symbol>;
 
 	constructor(app: App, settings: CodeEmbedSettings, plugin: Component) {
 		this.app = app;
@@ -38,6 +42,7 @@ export class CodeEmbedProcessor {
 		this.contentResolver = new ContentResolver(app, settings);
 		this.supportedExtensions = new Set(getSupportedExtensions(settings));
 		this.inFlight = new Map();
+		this.renderTokens = new WeakMap();
 	}
 
 	isProcessingAllowed(filePath: string): boolean {
@@ -111,6 +116,11 @@ export class CodeEmbedProcessor {
 	/**
 	 * 管线编排器：通过 executePipeline 执行"解析 → 目标分类 → 范围计算 → 切片 → 渲染"，
 	 * 替代旧版 5 阶段手动编排。支持请求去重（同一 filePath 的并发请求复用 Promise）。
+	 *
+	 * 竞态防护：为每次调用生成 render token 并挂在 targetElement 上。异步流程
+	 * 每个可能重入的节点后都比对 token，若已被更新的一次 processFile 调用取代
+	 * 就丢弃当前结果——避免 modify 事件在旧渲染未完成时又触发导致孤儿 DOM
+	 * 或错乱追加。
 	 */
 	private async processFile(
 		filePath: string,
@@ -119,10 +129,24 @@ export class CodeEmbedProcessor {
 		sourcePath: string,
 		highlightSpec: string = "",
 	): Promise<void> {
+		const token = Symbol("render");
+		this.renderTokens.set(targetElement, token);
+		const isCurrent = () => this.renderTokens.get(targetElement) === token;
+
 		targetElement.setAttribute("data-code-link-handled", "true");
 		targetElement.addClass("code-link-block");
 		targetElement.empty();
-		targetElement.createDiv({ cls: "code-link-loading", text: "Loading..." });
+		// 本地文件几乎瞬间可用，简单 Loading 文本足矣；远程/alias 会走网络，
+		// 用骨架屏减轻等待时的空白感。
+		const isRemote = isRemoteUrl(filePath) || isAliasPath(filePath);
+		if (isRemote) {
+			const skeleton = targetElement.createDiv({ cls: "code-link-skeleton" });
+			skeleton.createDiv({ cls: "code-link-skeleton-line" });
+			skeleton.createDiv({ cls: "code-link-skeleton-line" });
+			skeleton.createDiv({ cls: "code-link-skeleton-line" });
+		} else {
+			targetElement.createDiv({ cls: "code-link-loading", text: "Loading..." });
+		}
 
 		let result: PipelineResult;
 		const inflight = this.inFlight.get(filePath);
@@ -144,26 +168,34 @@ export class CodeEmbedProcessor {
 			}
 		}
 
-		targetElement.empty();
+		// 拿到 pipeline 结果后先检查 token：若已被后续调用取代，直接放弃。
+		if (!isCurrent()) return;
 
 		if (result.success) {
-			const el = renderSuccess(this.app, this.plugin, {
+			const el = await renderSuccess(this.app, this.plugin, {
 				file: result.file,
 				slice: result.slice,
 				sourcePath,
+				options: {
+					showLineNumbers: this.settings.showLineNumbers === true,
+					foldThreshold: this.settings.foldThreshold,
+					foldPreviewLines: this.settings.foldPreviewLines,
+					wrapLongLines: this.settings.wrapLongLines === true,
+				},
 			});
+			// renderSuccess 内部有 await MarkdownRenderer.render，异步返回后再查一次 token。
+			if (!isCurrent()) return;
+
+			targetElement.empty();
 			targetElement.appendChild(el);
-			// 阻止代码块内点击冒泡（保持现有行为）
+			// 只吞冒泡，不 preventDefault：冒泡上去会让 Obsidian 把 .internal-embed
+			// 当作 wiki link 触发跳转（这是我们真正要阻止的）。但 preventDefault
+			// 会顺带压掉文本选择、原生右键等浏览器默认行为，副作用过大。
 			el.addEventListener("click", (e: MouseEvent) => {
-				const target = e.target as HTMLElement;
-				if (target.closest("button")) {
-					e.stopPropagation();
-					return;
-				}
-				e.preventDefault();
 				e.stopPropagation();
 			});
 		} else {
+			targetElement.empty();
 			const el = renderError(result.error);
 			targetElement.appendChild(el);
 		}

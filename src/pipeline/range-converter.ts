@@ -83,5 +83,5 @@ export function sliceContent(
 
 	const highlightLines = computeHighlightLines(highlight, displayContent, language);
 
-	return { displayContent, highlightLines };
+	return { displayContent, highlightLines, startLine: displayRange.start };
 }
