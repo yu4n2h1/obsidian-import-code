@@ -222,6 +222,18 @@ export default class importCode extends Plugin {
 	public resetMarkdownViews(): void {
 		this.app.workspace.iterateAllLeaves((leaf) => {
 			if (leaf.view instanceof MarkdownView) {
+				const container = leaf.view.containerEl;
+				// 清除已处理标记：processEmbeds 会跳过带 .code-link-processed 的 embed，
+				// 若不清，setState 后 post-processor 重跑时这些 embed 仍被跳过，
+				// 导致设置变更（行号 / 换行 / 折叠阈值等）不生效。
+				const embeds = container.querySelectorAll(".internal-embed.code-link-processed");
+				embeds.forEach((embed: Element) => {
+					const embedEl = embed as HTMLElement;
+					embedEl.classList.remove("code-link-processed");
+					embedEl.removeAttribute("data-code-link-handled");
+					embedEl.empty();
+				});
+
 				const state = leaf.view.getState();
 				void leaf.view.setState(state, { history: false });
 			}
