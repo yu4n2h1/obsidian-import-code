@@ -219,13 +219,22 @@ export default class importCode extends Plugin {
 		}
 	}
 
+	/**
+	 * 让所有已渲染的 embed 用最新设置重新处理。
+	 *
+	 * 不走 leaf.view.setState()：那条路会让 Obsidian 全量重解析文档并重建 DOM，
+	 * 对大笔记既慢又异步；实时预览下 CodeMirror 的 ViewPlugin 还不随之触发
+	 * processEmbeds，导致「改设置后延时显示、要移动光标才出现」的问题。
+	 *
+	 * 改为直接对现有 embed 元素清标记 + 调 processEmbeds 同步重处理：
+	 * embed 元素本身仍在 DOM 里（只 empty 了内容），新 processor 持有最新
+	 * settings，processEmbedElement 会立即走 Loading -> pipeline -> 渲染。
+	 */
 	public resetMarkdownViews(): void {
 		this.app.workspace.iterateAllLeaves((leaf) => {
 			if (leaf.view instanceof MarkdownView) {
 				const container = leaf.view.containerEl;
-				// 清除已处理标记：processEmbeds 会跳过带 .code-link-processed 的 embed，
-				// 若不清，setState 后 post-processor 重跑时这些 embed 仍被跳过，
-				// 导致设置变更（行号 / 换行 / 折叠阈值等）不生效。
+				const sourcePath = leaf.view.file?.path || "";
 				const embeds = container.querySelectorAll(".internal-embed.code-link-processed");
 				embeds.forEach((embed: Element) => {
 					const embedEl = embed as HTMLElement;
@@ -233,9 +242,7 @@ export default class importCode extends Plugin {
 					embedEl.removeAttribute("data-code-link-handled");
 					embedEl.empty();
 				});
-
-				const state = leaf.view.getState();
-				void leaf.view.setState(state, { history: false });
+				this.codeProcessor.processEmbeds(container, sourcePath);
 			}
 		});
 	}
