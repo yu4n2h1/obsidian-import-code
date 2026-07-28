@@ -30,7 +30,7 @@ main ← develop ← {bug-fix/xxx, feature/xxx, refactor/xxx, ...}
 **给 Claude Code 的约束**：
 
 - 用户说"改一下 X" / "修个 bug" 时，**先检查当前分支**：若在 main / develop 上，主动提示需要按上述流程签出任务分支后再动手，不要在 main / develop 上直接改代码。
-- 分支名让用户拍板；如果用户没指定，按改动性质给出建议（bug-fix / feature / refactor / docs）供选择。
+- **分支名自主决定**——按改动性质选前缀（bug-fix / feature / refactor / docs），slug 用简洁的英文 kebab-case 描述内容。不需要每次问用户，除非分支目标本身就模糊到不足以命名。命完就用，不要停下来征求同意。
 - 任务分支上的 commit、以及**任务分支 → develop 的合并**可以在改动完成 + 本地验证通过后自主执行，不需要每次都问；用户可随时打断或要求先暂停。
 - **develop → main 的合并必须停下来问用户**——即便任务已经"看起来做完"、build/lint 都过了，也不主动动手。要用户明确说"合到 main" / "发布" / "上线" 之类才做。
 - 合并策略默认 `--no-ff`（保留分支拓扑），除非用户另有指示。
