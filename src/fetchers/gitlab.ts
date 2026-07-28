@@ -1,5 +1,4 @@
-import type { RemoteServiceConfig } from "../types";
-import type { RemoteReadResult, RemoteService } from "./types";
+import type { RemoteReadResult, RemoteService, RemoteReadParams } from "./types";
 import { dispatchHttpRequest, buildFullPath, normalizeBaseUrl, enrichError, decodeBase64Content } from "../utils/http-client";
 
 interface GitLabFileResponse {
@@ -10,7 +9,8 @@ interface GitLabFileResponse {
 export const gitlabService: RemoteService = {
 	serviceType: "gitlab" as const,
 
-	async read(config: RemoteServiceConfig, filePath: string, skipSslVerify: boolean): Promise<RemoteReadResult> {
+	async read(params: RemoteReadParams): Promise<RemoteReadResult> {
+		const { config, filePath, skipSslVerify } = params;
 		try {
 			if (!config.repo) {
 				return { success: false, error: "Repository is required (format: owner/repo or numeric project ID)" };

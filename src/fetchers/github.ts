@@ -1,5 +1,4 @@
-import type { RemoteServiceConfig } from "../types";
-import type { RemoteReadResult, RemoteService } from "./types";
+import type { RemoteReadResult, RemoteService, RemoteReadParams } from "./types";
 import { dispatchHttpRequest, enrichError, encodePathSegments, buildFullPath, normalizeBaseUrl, decodeBase64Content } from "../utils/http-client";
 
 interface GitHubContentsResponse {
@@ -10,7 +9,8 @@ interface GitHubContentsResponse {
 export const githubService: RemoteService = {
 	serviceType: "github" as const,
 
-	async read(config: RemoteServiceConfig, filePath: string, skipSslVerify: boolean): Promise<RemoteReadResult> {
+	async read(params: RemoteReadParams): Promise<RemoteReadResult> {
+		const { config, filePath, skipSslVerify } = params;
 		try {
 			const repo = normalizeBaseUrl(config.repo || "");
 			const branch = config.branch || "main";

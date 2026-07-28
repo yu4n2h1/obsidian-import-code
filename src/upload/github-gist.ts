@@ -1,5 +1,4 @@
-import type { RemoteServiceConfig } from "../types";
-import type { UploadResult, UploadService } from "./types";
+import type { UploadResult, UploadService, UploadParams } from "./types";
 import { dispatchHttpRequest, normalizeBaseUrl } from "../utils/http-client";
 
 /**
@@ -19,11 +18,8 @@ interface GistResponse {
 export const githubGistUploadService: UploadService = {
 	serviceType: "github-gist" as const,
 
-	async upload(
-		config: RemoteServiceConfig,
-		ctx: { content: string; fileName: string },
-		skipSslVerify: boolean
-	): Promise<UploadResult> {
+	async upload(params: UploadParams): Promise<UploadResult> {
+		const { config, ctx, skipSslVerify } = params;
 		const baseUrl = normalizeBaseUrl(config.url || "https://api.github.com");
 		const url = `${baseUrl}/gists`;
 

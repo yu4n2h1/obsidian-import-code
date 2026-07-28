@@ -6,7 +6,13 @@ export interface RemoteReadResult {
 	error?: string;
 }
 
+export interface RemoteReadParams {
+	config: RemoteServiceConfig;
+	filePath: string;
+	skipSslVerify: boolean;
+}
+
 export interface RemoteService {
 	readonly serviceType: RemoteServiceType;
-	read(config: RemoteServiceConfig, filePath: string, skipSslVerify: boolean): Promise<RemoteReadResult>;
+	read(params: RemoteReadParams): Promise<RemoteReadResult>;
 }

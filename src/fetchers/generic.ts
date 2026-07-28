@@ -1,5 +1,5 @@
 import type { RemoteServiceConfig } from "../types";
-import type { RemoteReadResult, RemoteService } from "./types";
+import type { RemoteReadResult, RemoteService, RemoteReadParams } from "./types";
 import { dispatchHttpRequest, enrichError, buildServiceUrl } from "../utils/http-client";
 
 function buildAuthHeader(config: RemoteServiceConfig): string | null {
@@ -10,7 +10,8 @@ function buildAuthHeader(config: RemoteServiceConfig): string | null {
 export const genericService: RemoteService = {
 	serviceType: "generic" as const,
 
-	async read(config: RemoteServiceConfig, filePath: string, skipSslVerify: boolean): Promise<RemoteReadResult> {
+	async read(params: RemoteReadParams): Promise<RemoteReadResult> {
+		const { config, filePath, skipSslVerify } = params;
 		try {
 			const url = buildServiceUrl(config, filePath);
 			const headers: Record<string, string> = {};

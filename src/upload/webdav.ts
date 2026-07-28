@@ -1,5 +1,5 @@
 import type { RemoteServiceConfig } from "../types";
-import type { UploadResult, UploadService } from "./types";
+import type { UploadResult, UploadService, UploadParams } from "./types";
 import { dispatchHttpRequest, buildServiceUrl } from "../utils/http-client";
 
 /**
@@ -19,11 +19,8 @@ function buildAuthHeader(config: RemoteServiceConfig): string | null {
 export const webdavUploadService: UploadService = {
 	serviceType: "webdav" as const,
 
-	async upload(
-		config: RemoteServiceConfig,
-		ctx: { content: string; fileName: string },
-		skipSslVerify: boolean
-	): Promise<UploadResult> {
+	async upload(params: UploadParams): Promise<UploadResult> {
+		const { config, ctx, skipSslVerify } = params;
 		const url = buildServiceUrl(config, ctx.fileName);
 		const headers: Record<string, string> = {
 			"Content-Type": "application/octet-stream",
