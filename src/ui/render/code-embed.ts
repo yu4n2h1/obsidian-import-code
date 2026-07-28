@@ -13,11 +13,11 @@ import type { RenderContext } from "../../pipeline/types";
 
 // ── 公开渲染函数 ──
 
-export function renderSuccess(
+export async function renderSuccess(
 	app: App,
 	plugin: Component,
 	ctx: RenderContext,
-): HTMLElement {
+): Promise<HTMLElement> {
 	const { file, slice, sourcePath } = ctx;
 	const { displayContent, highlightLines } = slice;
 
@@ -27,7 +27,11 @@ export function renderSuccess(
 	buildToolbar(container, file, displayContent, sourcePath, app);
 
 	const wrapper = container.createDiv({ cls: "code-embed-wrapper" });
-	void MarkdownRenderer.render(
+	// MarkdownRenderer.render 是异步的：先 await 让 Obsidian 把 code 元素渲染上，
+	// 再做 querySelector 与高亮。历史上这里用 `void MarkdownRenderer.render(...)`
+	// 后紧接着 querySelector，依赖 Obsidian 当前实现里 render 同步落 DOM 的巧合——
+	// API 契约本身是异步，未来升级可能打破。
+	await MarkdownRenderer.render(
 		app,
 		`\`\`\`${file.language}\n${displayContent}\n\`\`\``,
 		wrapper,
