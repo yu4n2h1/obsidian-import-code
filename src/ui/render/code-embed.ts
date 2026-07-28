@@ -116,11 +116,19 @@ function buildToolbar(
  * 不能用 codeEl.innerHTML.split("\n")：PHP 等 markup-templating 语言的
  * Prism token span 会跨行，split 切断 span → DOMParser 重解析时 DOM 错乱，
  * 导致整片高亮。改为按 DOM 结构扁平化、按文本中的 \n 分行重建。
+ *
+ * ⚠️ class 必须整段保留、**不能拆开**：Prism 主题的 CSS 用组合选择器
+ * （`.token.keyword`、`.token.string` 等），要求同一元素上同时挂 token
+ * 和具体类型 class。若在栈里把 "token keyword" split 成两个原子 class
+ * 再嵌套成 `<span class="token"><span class="keyword">`，`.token.keyword`
+ * 就命中不到内层元素，Prism 语法着色全部丢失。历史上曾这样做过，导致
+ * 「高亮成功但原生代码高亮消失」的 bug。
  */
 function applyLineHighlights(codeEl: HTMLElement, highlightLines: number[]): void {
 	interface FlatToken { text: string; classes: string[]; }
 
-	// 1. DFS 扁平化：收集所有叶子文本节点，每个携带从根到叶的原子 class 栈
+	// 1. DFS 扁平化：收集所有叶子文本节点，每个携带从根到叶的 class 栈；
+	//    栈的每一层是「一个 DOM 元素上的整段 className」，保留多 class 组合。
 	const tokens: FlatToken[] = [];
 	const walk = (node: Node, classStack: string[]): void => {
 		if (node.nodeType === Node.TEXT_NODE) {
@@ -130,10 +138,8 @@ function applyLineHighlights(codeEl: HTMLElement, highlightLines: number[]): voi
 		}
 		if (node.nodeType === Node.ELEMENT_NODE) {
 			const el = node as HTMLElement;
-			const cls = typeof el.className === "string" ? el.className : "";
-			const newStack = cls
-				? [...classStack, ...cls.split(/\s+/).filter(Boolean)]
-				: classStack;
+			const cls = typeof el.className === "string" ? el.className.trim() : "";
+			const newStack = cls ? [...classStack, cls] : classStack;
 			el.childNodes.forEach((child) => walk(child, newStack));
 		}
 	};
@@ -154,7 +160,10 @@ function applyLineHighlights(codeEl: HTMLElement, highlightLines: number[]): voi
 		});
 	}
 
-	// 3. 重建每行 DOM：每行一个 .code-line，高亮行加 .code-highlight-line
+	// 3. 重建每行 DOM：每行一个 .code-line，高亮行加 .code-highlight-line。
+	//    每层 span.className 直接用栈里保存的完整 class 串
+	//    （可能含空格分隔的多个 class，例如 "token keyword"，
+	//    这样 Prism 主题的组合选择器 `.token.keyword` 才能命中）。
 	const highlightSet = new Set(highlightLines);
 	const newNodes: Node[] = [];
 	lines.forEach((lineTokens, lineIdx) => {
