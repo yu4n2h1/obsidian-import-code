@@ -26,6 +26,7 @@ data.json
 
 # Personal tool configs (not project-related)
 paseo.json
+CHANGELOG.md
 
 # Build artifacts & caches
 *.log
