@@ -14,6 +14,8 @@ export interface CodeEmbedSettings {
 	remoteSources: Record<string, RemoteSourceEntry>;
 	/** 是否在代码块左侧显示行号（基于源文件真实行号，考虑 @ 提取的偏移） */
 	showLineNumbers: boolean;
+	/** 超过多少行时自动折叠代码块，0 = 从不折叠 */
+	foldThreshold: number;
 }
 
 function buildDefaultExtensions(): ExtensionEntry[] {
@@ -109,6 +111,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	fileNameStrategy: "hash",
 	remoteSources: {},
 	showLineNumbers: false,
+	foldThreshold: 50,
 	uploadSources: {
 		Local: {
 			uploadType: "local",

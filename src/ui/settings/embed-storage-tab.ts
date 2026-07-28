@@ -68,6 +68,22 @@ export function buildEmbedStorageTab(
 				})
 		);
 
+	new Setting(embedGroup)
+		.setName("Auto-fold threshold")
+		.setDesc("Automatically fold code blocks longer than this many lines. Set 0 to disable folding.")
+		.addText((text) =>
+			text
+				.setPlaceholder("50")
+				.setValue(String(plugin.settings.foldThreshold))
+				.onChange(async (value: string) => {
+					const parsed = parseInt(value, 10);
+					if (isNaN(parsed) || parsed < 0) return;
+					plugin.settings.foldThreshold = parsed;
+					await plugin.saveSettings();
+					plugin.resetMarkdownViews();
+				})
+		);
+
 	// ---- File Naming ----
 	buildStorageSection(containerEl, plugin);
 }

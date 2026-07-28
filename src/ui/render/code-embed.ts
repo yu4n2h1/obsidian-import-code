@@ -50,6 +50,15 @@ export async function renderSuccess(
 		}
 	}
 
+	// 折叠：只在超过阈值时启用。默认折叠状态，用户点按钮切换。
+	const foldThreshold = options?.foldThreshold ?? 0;
+	if (foldThreshold > 0) {
+		const totalLines = displayContent.split("\n").length;
+		if (totalLines > foldThreshold) {
+			applyFoldable(container, wrapper, totalLines);
+		}
+	}
+
 	return container;
 }
 
@@ -62,6 +71,40 @@ export function renderError(message: string): HTMLElement {
 }
 
 // ── 内部工具函数 ──
+
+/**
+ * 给容器挂折叠状态与展开/收起按钮。
+ *
+ * 默认折叠（container 加 .code-embed-folded），wrapper 上的 CSS
+ * 限制 max-height 只显示前几行，并加渐变遮罩暗示"下面还有"。
+ * 按钮 toggle 折叠 class 与自身文本。
+ */
+function applyFoldable(
+	container: HTMLElement,
+	wrapper: HTMLElement,
+	totalLines: number,
+): void {
+	// wrapper 参数保留：未来若需要 wrapper 特化行为可用；当前只挂 container 的 class。
+	void wrapper;
+	container.classList.add("code-embed-foldable", "code-embed-folded");
+
+	const toolbar = container.querySelector(".code-embed-toolbar");
+	if (!toolbar) return;
+
+	const btn = document.createElement("button");
+	btn.className = "code-embed-fold-btn";
+	const setLabel = (folded: boolean) => {
+		btn.textContent = folded ? `展开 (${totalLines} 行)` : "收起";
+		btn.setAttribute("aria-expanded", folded ? "false" : "true");
+	};
+	setLabel(true);
+	btn.addEventListener("click", (e) => {
+		e.stopPropagation();
+		const folded = container.classList.toggle("code-embed-folded");
+		setLabel(folded);
+	});
+	toolbar.appendChild(btn);
+}
 
 /**
  * 构建工具栏：打开按钮 + 语言/复制按钮。

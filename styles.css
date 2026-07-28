@@ -139,6 +139,42 @@
 	font-variant-numeric: tabular-nums;
 }
 
+/* Folding —— 超过阈值时代码块默认折叠，工具栏加展开按钮 */
+.code-embed-foldable.code-embed-folded .code-embed-wrapper pre {
+	max-height: 10em;
+	overflow: hidden;
+	position: relative;
+}
+
+.code-embed-foldable.code-embed-folded .code-embed-wrapper pre::after {
+	content: "";
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	height: 3em;
+	pointer-events: none;
+	background: linear-gradient(
+		to bottom,
+		rgba(0, 0, 0, 0),
+		var(--background-primary) 90%
+	);
+}
+
+.code-embed-fold-btn {
+	padding: 2px 10px;
+	font-size: var(--font-smaller);
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-secondary);
+	color: var(--text-normal);
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.code-embed-fold-btn:hover {
+	background: var(--background-modifier-hover);
+}
+
 /* Hide Obsidian's default copy button inside our code embeds */
 .code-embed-container button.copy-code-button,
 .code-embed-wrapper button.copy-code-button {

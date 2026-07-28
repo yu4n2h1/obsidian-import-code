@@ -37,6 +37,8 @@ export interface SlicedContent {
 export interface RenderOptions {
 	/** 是否显示行号 */
 	showLineNumbers?: boolean;
+	/** 超过多少行自动折叠；0 或 undefined 表示不折叠 */
+	foldThreshold?: number;
 }
 
 export interface RenderContext {
