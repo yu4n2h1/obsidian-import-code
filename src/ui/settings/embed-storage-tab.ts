@@ -84,6 +84,19 @@ export function buildEmbedStorageTab(
 				})
 		);
 
+	new Setting(embedGroup)
+		.setName("Wrap long lines")
+		.setDesc("Wrap lines that exceed the code block's width instead of showing horizontal scroll.")
+		.addToggle((toggle) =>
+			toggle
+				.setValue(plugin.settings.wrapLongLines)
+				.onChange(async (value: boolean) => {
+					plugin.settings.wrapLongLines = value;
+					await plugin.saveSettings();
+					plugin.resetMarkdownViews();
+				})
+		);
+
 	// ---- File Naming ----
 	buildStorageSection(containerEl, plugin);
 }

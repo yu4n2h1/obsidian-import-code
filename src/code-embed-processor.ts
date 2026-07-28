@@ -179,6 +179,7 @@ export class CodeEmbedProcessor {
 				options: {
 					showLineNumbers: this.settings.showLineNumbers === true,
 					foldThreshold: this.settings.foldThreshold,
+					wrapLongLines: this.settings.wrapLongLines === true,
 				},
 			});
 			// renderSuccess 内部有 await MarkdownRenderer.render，异步返回后再查一次 token。

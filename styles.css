@@ -175,6 +175,12 @@
 	background: var(--background-modifier-hover);
 }
 
+/* Wrap long lines —— 启用时代码块超长行换行显示（否则横向滚动） */
+.code-embed-wrap-lines .code-embed-wrapper pre code {
+	white-space: pre-wrap !important;
+	word-break: break-word;
+}
+
 /* Hide Obsidian's default copy button inside our code embeds */
 .code-embed-container button.copy-code-button,
 .code-embed-wrapper button.copy-code-button {
