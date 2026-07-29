@@ -1,8 +1,7 @@
 import { App, Component } from "obsidian";
 import type { CodeEmbedSettings } from "./types";
 import {
-	isRemoteUrl,
-	isAliasPath,
+	classifyPath,
 	isPartialIpv6Url,
 	tryRestoreIpv6Url,
 	parseEmbedSource,
@@ -51,7 +50,7 @@ export class CodeEmbedProcessor {
 		const [extension] = getLanguageFromPath(filePath, this.settings);
 		if (!this.supportedExtensions.has(extension)) return false;
 
-		if (isRemoteUrl(filePath) || isAliasPath(filePath)) {
+		if (classifyPath(filePath) !== "local") {
 			return this.settings.remoteCodeEmbedEnabled === "enabled";
 		}
 		return true;
@@ -138,7 +137,7 @@ export class CodeEmbedProcessor {
 		targetElement.empty();
 		// 本地文件几乎瞬间可用，简单 Loading 文本足矣；远程/alias 会走网络，
 		// 用骨架屏减轻等待时的空白感。
-		const isRemote = isRemoteUrl(filePath) || isAliasPath(filePath);
+		const isRemote = classifyPath(filePath) !== "local";
 		if (isRemote) {
 			const skeleton = targetElement.createDiv({ cls: "code-link-skeleton" });
 			skeleton.createDiv({ cls: "code-link-skeleton-line" });
