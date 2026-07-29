@@ -195,7 +195,10 @@ export class CodeEmbedProcessor {
 			});
 		} else {
 			targetElement.empty();
-			const el = renderError(result.error);
+			const el = renderError(result.error, () => {
+				// 重试：重新走一遍 processFile（会更新 token、清空、重新加载）。
+				void this.processFile(filePath, symbolName, targetElement, sourcePath, highlightSpec);
+			});
 			targetElement.appendChild(el);
 		}
 	}
