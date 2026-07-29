@@ -189,11 +189,23 @@ export class CodeEmbedProcessor {
 
 			targetElement.empty();
 			targetElement.appendChild(el);
-			// 只吞冒泡，不 preventDefault：冒泡上去会让 Obsidian 把 .internal-embed
-			// 当作 wiki link 触发跳转（这是我们真正要阻止的）。但 preventDefault
-			// 会顺带压掉文本选择、原生右键等浏览器默认行为，副作用过大。
+			// 点击交互：吞冒泡（防 Obsidian 把 .internal-embed 当 wiki link 跳转）+
+			// 点击代码区切换聚焦全屏（toolbar 按钮不触发、有文本选中不触发）。
 			el.addEventListener("click", (e: MouseEvent) => {
 				e.stopPropagation();
+				if ((e.target as HTMLElement).closest("button")) return;
+				const sel = window.getSelection();
+				if (sel && sel.toString().length > 0) return;
+				const focused = el.classList.toggle("code-embed-focused");
+				if (focused) {
+					const onEsc = (ev: KeyboardEvent) => {
+						if (ev.key === "Escape") {
+							el.classList.remove("code-embed-focused");
+							document.removeEventListener("keydown", onEsc);
+						}
+					};
+					document.addEventListener("keydown", onEsc);
+				}
 			});
 		} else {
 			targetElement.empty();
