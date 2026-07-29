@@ -62,11 +62,11 @@ export function buildEmbedStorageTab(
 
 	new Setting(embedGroup)
 		.setName("Fold mode")
-		.setDesc("完整展开: 展开后显示全部；部分展开: 展开后仍限高可滚动；不折叠: 不折叠。")
+		.setDesc("Full expands to all content; partial keeps a limited scrollable height; none disables folding.")
 		.addDropdown((dropdown) => {
-			dropdown.addOption("full", "完整展开");
-			dropdown.addOption("partial", "部分展开");
-			dropdown.addOption("none", "不折叠");
+			dropdown.addOption("full", "Full expand");
+			dropdown.addOption("partial", "Partial expand");
+			dropdown.addOption("none", "No folding");
 			dropdown.setValue(plugin.settings.foldMode);
 			dropdown.onChange(async (value) => {
 				plugin.settings.foldMode = value as "full" | "partial" | "none";
