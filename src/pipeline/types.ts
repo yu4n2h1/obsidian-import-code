@@ -37,10 +37,14 @@ export interface SlicedContent {
 export interface RenderOptions {
 	/** 是否显示行号 */
 	showLineNumbers?: boolean;
+	/** 折叠模式：full / partial / none */
+	foldMode?: "full" | "partial" | "none";
 	/** 超过多少行自动折叠；0 或 undefined 表示不折叠 */
 	foldThreshold?: number;
 	/** 折叠状态下最多显示多少行（超出部分滚动查看） */
 	foldPreviewLines?: number;
+	/** 展开状态下最多显示多少行（仅 partial 模式） */
+	foldExpandedLines?: number;
 	/** 是否让超长行换行；false 或 undefined = 横向滚动 */
 	wrapLongLines?: boolean;
 }

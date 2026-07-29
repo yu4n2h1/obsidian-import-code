@@ -14,13 +14,9 @@ export function buildEmbedStorageTab(
 		.setDesc("Render code files referenced by internal links as code blocks")
 		.addToggle((toggle) =>
 			toggle
-				.setValue(
-					plugin.settings.codeEmbedEnabled === "enabled"
-				)
+				.setValue(plugin.settings.codeEmbedEnabled)
 				.onChange(async (value: boolean) => {
-					plugin.settings.codeEmbedEnabled = value
-						? "enabled"
-						: "disabled";
+					plugin.settings.codeEmbedEnabled = value;
 					await plugin.saveSettings();
 					plugin.resetMarkdownViews();
 				})
@@ -31,13 +27,9 @@ export function buildEmbedStorageTab(
 		.setDesc("Allow embedding code files from remote URLs (HTTP/HTTPS)")
 		.addToggle((toggle) =>
 			toggle
-				.setValue(
-					plugin.settings.remoteCodeEmbedEnabled === "enabled"
-				)
+				.setValue(plugin.settings.remoteCodeEmbedEnabled)
 				.onChange(async (value: boolean) => {
-					plugin.settings.remoteCodeEmbedEnabled = value
-						? "enabled"
-						: "disabled";
+					plugin.settings.remoteCodeEmbedEnabled = value;
 					await plugin.saveSettings();
 					plugin.resetMarkdownViews();
 				})
@@ -69,6 +61,22 @@ export function buildEmbedStorageTab(
 		);
 
 	new Setting(embedGroup)
+		.setName("Fold mode")
+		.setDesc("Full expands to all content; partial keeps a limited scrollable height; none disables folding.")
+		.addDropdown((dropdown) => {
+			dropdown.addOption("full", "Full expand");
+			dropdown.addOption("partial", "Partial expand");
+			dropdown.addOption("none", "No folding");
+			dropdown.setValue(plugin.settings.foldMode);
+			dropdown.onChange(async (value) => {
+				plugin.settings.foldMode = value as "full" | "partial" | "none";
+				updateFoldVisibility(value);
+				await plugin.saveSettings();
+				plugin.resetMarkdownViews();
+			});
+		});
+
+	const thresholdSetting = new Setting(embedGroup)
 		.setName("Auto-fold threshold")
 		.setDesc("Automatically fold code blocks longer than this many lines. Set 0 to disable folding.")
 		.addText((text) =>
@@ -84,9 +92,9 @@ export function buildEmbedStorageTab(
 				})
 		);
 
-	new Setting(embedGroup)
-		.setName("Folded preview lines")
-		.setDesc("Number of lines visible when a code block is folded. Excess content is scrollable within the folded view.")
+	const collapsedSetting = new Setting(embedGroup)
+		.setName("Folded lines")
+		.setDesc("Number of lines visible when folded. Excess content is scrollable.")
 		.addText((text) =>
 			text
 				.setPlaceholder("10")
@@ -99,6 +107,30 @@ export function buildEmbedStorageTab(
 					plugin.resetMarkdownViews();
 				})
 		);
+
+	const expandedSetting = new Setting(embedGroup)
+		.setName("Expanded lines")
+		.setDesc("Number of lines visible when expanded (partial mode only). Excess content is scrollable.")
+		.addText((text) =>
+			text
+				.setPlaceholder("30")
+				.setValue(String(plugin.settings.foldExpandedLines))
+				.onChange(async (value: string) => {
+					const parsed = parseInt(value, 10);
+					if (isNaN(parsed) || parsed < 0) return;
+					plugin.settings.foldExpandedLines = parsed;
+					await plugin.saveSettings();
+					plugin.resetMarkdownViews();
+				})
+		);
+
+	function updateFoldVisibility(mode: string): void {
+		const show = mode !== "none";
+		thresholdSetting.settingEl.style.display = show ? "" : "none";
+		collapsedSetting.settingEl.style.display = show ? "" : "none";
+		expandedSetting.settingEl.style.display = mode === "partial" ? "" : "none";
+	}
+	updateFoldVisibility(plugin.settings.foldMode);
 
 	new Setting(embedGroup)
 		.setName("Wrap long lines")

@@ -141,12 +141,22 @@
 
 /* Folding —— 超过阈值时代码块默认折叠，工具栏加展开按钮 */
 .code-embed-foldable.code-embed-folded .code-embed-wrapper pre {
-	max-height: var(--code-embed-fold-height, 10em);
+	max-height: var(--fold-collapsed-h, 10em);
 	overflow: auto;
 	position: relative;
 }
 
-.code-embed-foldable.code-embed-folded .code-embed-wrapper pre::after {
+.code-embed-foldable.code-embed-fold-full:not(.code-embed-folded) .code-embed-wrapper pre {
+	max-height: none;
+}
+
+.code-embed-foldable.code-embed-fold-partial:not(.code-embed-folded) .code-embed-wrapper pre {
+	max-height: var(--fold-expanded-h, 20em);
+	overflow: auto;
+}
+
+.code-embed-foldable.code-embed-folded .code-embed-wrapper pre::after,
+.code-embed-foldable.code-embed-fold-partial:not(.code-embed-folded) .code-embed-wrapper pre::after {
 	content: "";
 	position: sticky;
 	left: 0;
@@ -288,6 +298,23 @@
 	border-radius: 4px;
 	font-family: var(--font-monospace);
 	white-space: pre-wrap;
+}
+
+.code-link-error .code-link-retry-btn {
+	margin-top: 0.75em;
+	padding: 4px 14px;
+	font-size: var(--font-small);
+	font-family: var(--font-interface);
+	border: 1px solid var(--background-modifier-error);
+	background: var(--background-modifier-error);
+	color: var(--text-error);
+	border-radius: 4px;
+	cursor: pointer;
+	transition: opacity 0.2s ease;
+}
+
+.code-link-error .code-link-retry-btn:hover {
+	opacity: 0.7;
 }
 
 /* === Storage Path Section (FileModal) === */
@@ -556,4 +583,35 @@ input.extension-table-input::placeholder {
 	margin-top: 0.25em;
 	color: var(--text-muted);
 	font-size: var(--font-smaller);
+}
+
+/* === Focus mode -- 点击代码区域全屏聚焦，再点/ESC 退出 === */
+.code-embed-container .code-embed-wrapper {
+	cursor: zoom-in;
+}
+
+.code-embed-focus-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 1000;
+	display: flex;
+	background: rgba(0, 0, 0, 0.7);
+	padding: 2em;
+	cursor: zoom-out;
+	overflow: auto;
+}
+
+.code-embed-focus-overlay .code-embed-wrapper {
+	max-width: 900px;
+	width: 100%;
+	margin: auto;
+	background: var(--background-primary);
+	border-radius: 8px;
+	cursor: text;
+	-webkit-user-select: text;
+	user-select: text;
+}
+
+.code-embed-focus-overlay .code-embed-wrapper pre {
+	max-height: none;
 }

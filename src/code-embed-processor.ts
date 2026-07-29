@@ -1,8 +1,7 @@
 import { App, Component } from "obsidian";
 import type { CodeEmbedSettings } from "./types";
 import {
-	isRemoteUrl,
-	isAliasPath,
+	classifyPath,
 	isPartialIpv6Url,
 	tryRestoreIpv6Url,
 	parseEmbedSource,
@@ -46,13 +45,13 @@ export class CodeEmbedProcessor {
 	}
 
 	isProcessingAllowed(filePath: string): boolean {
-		if (this.settings.codeEmbedEnabled !== "enabled") return false;
+		if (!this.settings.codeEmbedEnabled) return false;
 
 		const [extension] = getLanguageFromPath(filePath, this.settings);
 		if (!this.supportedExtensions.has(extension)) return false;
 
-		if (isRemoteUrl(filePath) || isAliasPath(filePath)) {
-			return this.settings.remoteCodeEmbedEnabled === "enabled";
+		if (classifyPath(filePath) !== "local") {
+			return this.settings.remoteCodeEmbedEnabled;
 		}
 		return true;
 	}
@@ -138,7 +137,7 @@ export class CodeEmbedProcessor {
 		targetElement.empty();
 		// 本地文件几乎瞬间可用，简单 Loading 文本足矣；远程/alias 会走网络，
 		// 用骨架屏减轻等待时的空白感。
-		const isRemote = isRemoteUrl(filePath) || isAliasPath(filePath);
+		const isRemote = classifyPath(filePath) !== "local";
 		if (isRemote) {
 			const skeleton = targetElement.createDiv({ cls: "code-link-skeleton" });
 			skeleton.createDiv({ cls: "code-link-skeleton-line" });
@@ -178,8 +177,10 @@ export class CodeEmbedProcessor {
 				sourcePath,
 				options: {
 					showLineNumbers: this.settings.showLineNumbers === true,
+					foldMode: this.settings.foldMode,
 					foldThreshold: this.settings.foldThreshold,
 					foldPreviewLines: this.settings.foldPreviewLines,
+					foldExpandedLines: this.settings.foldExpandedLines,
 					wrapLongLines: this.settings.wrapLongLines === true,
 				},
 			});
@@ -188,15 +189,51 @@ export class CodeEmbedProcessor {
 
 			targetElement.empty();
 			targetElement.appendChild(el);
-			// 只吞冒泡，不 preventDefault：冒泡上去会让 Obsidian 把 .internal-embed
-			// 当作 wiki link 触发跳转（这是我们真正要阻止的）。但 preventDefault
-			// 会顺带压掉文本选择、原生右键等浏览器默认行为，副作用过大。
+			// 点击交互：吞冒泡（防 Obsidian 把 .internal-embed 当 wiki link 跳转）+
+			// 点击代码区进入全屏聚焦。用 overlay 挂到 document.body 而非给 container
+			// 加 fixed -- Obsidian 的 markdown 容器常有 transform 祖先，会让 fixed
+			// 相对祖先而非视口，导致全屏失效（缩成一团）。
 			el.addEventListener("click", (e: MouseEvent) => {
 				e.stopPropagation();
+				if ((e.target as HTMLElement).closest("button")) return;
+				const sel = window.getSelection();
+				if (sel && sel.toString().length > 0) return;
+
+				const overlay = document.createElement("div");
+				overlay.className = "code-embed-focus-overlay";
+				// 限制到 workspace-leaf-content 区域，不覆盖侧边栏等
+				const leafContent = el.closest(".view-content");
+				const rect = leafContent?.getBoundingClientRect();
+				if (rect) {
+					overlay.style.top = `${rect.top}px`;
+					overlay.style.left = `${rect.left}px`;
+					overlay.style.width = `${rect.width}px`;
+					overlay.style.height = `${rect.height}px`;
+				}
+				const wrapper = el.querySelector(".code-embed-wrapper");
+				if (wrapper) overlay.appendChild(wrapper.cloneNode(true));
+				document.body.appendChild(overlay);
+
+				const close = () => {
+					overlay.remove();
+					document.removeEventListener("keydown", onEsc);
+				};
+				const onEsc = (ev: KeyboardEvent) => {
+					if (ev.key === "Escape") close();
+				};
+				overlay.addEventListener("click", (ev: MouseEvent) => {
+					// 点击代码区不退出（允许查看/选中），点击遮罩区域退出
+					if ((ev.target as HTMLElement).closest(".code-embed-wrapper")) return;
+					close();
+				});
+				document.addEventListener("keydown", onEsc);
 			});
 		} else {
 			targetElement.empty();
-			const el = renderError(result.error);
+			const el = renderError(result.error, () => {
+				// 重试：重新走一遍 processFile（会更新 token、清空、重新加载）。
+				void this.processFile(filePath, symbolName, targetElement, sourcePath, highlightSpec);
+			});
 			targetElement.appendChild(el);
 		}
 	}

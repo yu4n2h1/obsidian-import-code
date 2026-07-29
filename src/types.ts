@@ -7,17 +7,21 @@ export interface ExtensionEntry {
 }
 
 export interface CodeEmbedSettings {
-	codeEmbedEnabled: "enabled" | "disabled";
-	remoteCodeEmbedEnabled: "enabled" | "disabled";
+	codeEmbedEnabled: boolean;
+	remoteCodeEmbedEnabled: boolean;
 	remoteSkipSslVerify: boolean;
 	codeFileExtensions: ExtensionEntry[];
 	remoteSources: Record<string, RemoteSourceEntry>;
 	/** 是否在代码块左侧显示行号（基于源文件真实行号，考虑 @ 提取的偏移） */
 	showLineNumbers: boolean;
+	/** 折叠模式：full（展开=全部）/ partial（展开=部分）/ none（不折叠） */
+	foldMode: "full" | "partial" | "none";
 	/** 超过多少行时自动折叠代码块，0 = 从不折叠 */
 	foldThreshold: number;
 	/** 折叠状态下最多显示多少行（超出部分滚动查看） */
 	foldPreviewLines: number;
+	/** 展开状态下最多显示多少行（仅 partial 模式，超出部分滚动） */
+	foldExpandedLines: number;
 	/** 是否让超长行换行显示（否则默认横向滚动） */
 	wrapLongLines: boolean;
 }
@@ -108,15 +112,17 @@ export interface PluginSettings
 }
 
 export const DEFAULT_SETTINGS: PluginSettings = {
-	codeEmbedEnabled: "enabled",
-	remoteCodeEmbedEnabled: "enabled",
+	codeEmbedEnabled: true,
+	remoteCodeEmbedEnabled: true,
 	remoteSkipSslVerify: false,
 	codeFileExtensions: buildDefaultExtensions(),
 	fileNameStrategy: "hash",
 	remoteSources: {},
 	showLineNumbers: false,
+	foldMode: "full",
 	foldThreshold: 50,
 	foldPreviewLines: 10,
+	foldExpandedLines: 30,
 	wrapLongLines: false,
 	uploadSources: {
 		Local: {
