@@ -35,6 +35,14 @@ main ← develop ← {bug-fix/xxx, feature/xxx, refactor/xxx, ...}
 - **develop → main 的合并必须停下来问用户**——即便任务已经"看起来做完"、build/lint 都过了，也不主动动手。要用户明确说"合到 main" / "发布" / "上线" 之类才做。
 - 合并策略默认 `--no-ff`（保留分支拓扑），除非用户另有指示。
 
+**操作陷阱：`git rm --cached` 后切分支会丢文件**
+
+`git rm --cached <file>` 只从 index 删除、保留工作区文件，但**切分支时 git 会把工作区同步到目标分支状态**。若目标分支已无此文件（被追踪删除），工作区文件会被一并删掉。本项目已两次踩坑（CHANGELOG.md、paseo.json）。
+
+正确做法（任选其一）：
+- `git rm --cached` 后**先不切分支**，在同分支 commit + merge 完再切；
+- 或切分支前 `cp <file> /tmp/<file>.bak`，合并后从备份恢复。
+
 ## Build & Development
 
 ```bash
