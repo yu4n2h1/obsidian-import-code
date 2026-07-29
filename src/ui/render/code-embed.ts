@@ -78,8 +78,8 @@ export function renderError(message: string, onRetry?: () => void): HTMLElement 
 	if (onRetry) {
 		const retryBtn = document.createElement("button");
 		retryBtn.className = "code-link-retry-btn";
-		retryBtn.textContent = "重试";
-		retryBtn.setAttribute("aria-label", "重新加载");
+		retryBtn.textContent = "Retry";
+		retryBtn.setAttribute("aria-label", "Reload");
 		retryBtn.addEventListener("click", (e) => {
 			e.stopPropagation();
 			onRetry();
@@ -139,8 +139,8 @@ function applyFoldable(
 	const setLabel = (folded: boolean) => {
 		// full 模式展开=全部，显示总行数；partial 模式展开非全部，不显示行数避免误导
 		btn.textContent = folded
-			? (mode === "full" ? `展开 ${totalLines}` : "展开")
-			: "收起";
+			? (mode === "full" ? `Expand ${totalLines}` : "Expand")
+			: "Collapse";
 		btn.setAttribute("aria-expanded", folded ? "false" : "true");
 	};
 	setLabel(true);
@@ -188,7 +188,7 @@ function buildToolbar(
 	const langLabel = toolbar.createEl("button", {
 		cls: "code-block-flair",
 		text: file.language,
-		attr: { "aria-label": "复制" },
+		attr: { "aria-label": "Copy" },
 	});
 	langLabel.dataset.content = displayContent;
 	langLabel.addEventListener("click", (e) => {
@@ -200,10 +200,10 @@ function buildToolbar(
 		void (async () => {
 			try {
 				await navigator.clipboard.writeText(content);
-				btn.textContent = "已复制";
+				btn.textContent = "Copied";
 				setTimeout(() => { btn.textContent = file.language; }, 1500);
 			} catch (err) {
-				console.error("复制失败:", err);
+				console.error("Copy failed:", err);
 			}
 		})();
 	});

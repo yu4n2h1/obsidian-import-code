@@ -130,7 +130,7 @@ export default class importCode extends Plugin {
 
 		this.addCommand({
 			id: "re-reference-last-code",
-			name: "再次引用代码文件",
+			name: "Re-reference last code file",
 			editorCallback: editLastCodeCallback,
 		});
 
