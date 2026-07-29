@@ -590,7 +590,7 @@ input.extension-table-input::placeholder {
 	cursor: zoom-in;
 }
 
-.code-embed-container.code-embed-focused {
+.code-embed-focus-overlay {
 	position: fixed;
 	inset: 0;
 	z-index: 1000;
@@ -599,15 +599,15 @@ input.extension-table-input::placeholder {
 	justify-content: center;
 	background: rgba(0, 0, 0, 0.7);
 	padding: 2em;
-	overflow: visible;
+	cursor: zoom-out;
 }
 
-.code-embed-container.code-embed-focused .code-embed-wrapper {
+.code-embed-focus-overlay .code-embed-wrapper {
 	max-width: 900px;
 	width: 100%;
 	max-height: 90vh;
 	overflow: auto;
 	background: var(--background-primary);
 	border-radius: 8px;
-	cursor: zoom-out;
+	cursor: auto;
 }

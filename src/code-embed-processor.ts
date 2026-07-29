@@ -190,22 +190,35 @@ export class CodeEmbedProcessor {
 			targetElement.empty();
 			targetElement.appendChild(el);
 			// 点击交互：吞冒泡（防 Obsidian 把 .internal-embed 当 wiki link 跳转）+
-			// 点击代码区切换聚焦全屏（toolbar 按钮不触发、有文本选中不触发）。
+			// 点击代码区进入全屏聚焦。用 overlay 挂到 document.body 而非给 container
+			// 加 fixed -- Obsidian 的 markdown 容器常有 transform 祖先，会让 fixed
+			// 相对祖先而非视口，导致全屏失效（缩成一团）。
 			el.addEventListener("click", (e: MouseEvent) => {
 				e.stopPropagation();
 				if ((e.target as HTMLElement).closest("button")) return;
 				const sel = window.getSelection();
 				if (sel && sel.toString().length > 0) return;
-				const focused = el.classList.toggle("code-embed-focused");
-				if (focused) {
-					const onEsc = (ev: KeyboardEvent) => {
-						if (ev.key === "Escape") {
-							el.classList.remove("code-embed-focused");
-							document.removeEventListener("keydown", onEsc);
-						}
-					};
-					document.addEventListener("keydown", onEsc);
-				}
+
+				const overlay = document.createElement("div");
+				overlay.className = "code-embed-focus-overlay";
+				const wrapper = el.querySelector(".code-embed-wrapper");
+				if (wrapper) overlay.appendChild(wrapper.cloneNode(true));
+				document.body.appendChild(overlay);
+
+				const close = () => {
+					overlay.remove();
+					document.removeEventListener("keydown", onEsc);
+				};
+				const onEsc = (ev: KeyboardEvent) => {
+					if (ev.key === "Escape") close();
+				};
+				overlay.addEventListener("click", (ev: MouseEvent) => {
+					// 有文本选中时不退出（允许选中代码）
+					const s = window.getSelection();
+					if (s && s.toString().length > 0) return;
+					close();
+				});
+				document.addEventListener("keydown", onEsc);
 			});
 		} else {
 			targetElement.empty();
