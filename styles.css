@@ -290,6 +290,23 @@
 	white-space: pre-wrap;
 }
 
+.code-link-error .code-link-retry-btn {
+	margin-top: 0.75em;
+	padding: 4px 14px;
+	font-size: var(--font-small);
+	font-family: var(--font-interface);
+	border: 1px solid var(--background-modifier-error);
+	background: var(--background-modifier-error);
+	color: var(--text-error);
+	border-radius: 4px;
+	cursor: pointer;
+	transition: opacity 0.2s ease;
+}
+
+.code-link-error .code-link-retry-btn:hover {
+	opacity: 0.7;
+}
+
 /* === Storage Path Section (FileModal) === */
 
 .code-import-file-modal .storage-path-section {

@@ -65,11 +65,24 @@ export async function renderSuccess(
 	return container;
 }
 
-export function renderError(message: string): HTMLElement {
+export function renderError(message: string, onRetry?: () => void): HTMLElement {
 	const container = document.createElement("div");
 	container.className = "code-embed-container";
 	const errorDiv = container.createDiv({ cls: "code-link-error" });
 	errorDiv.textContent = `Error: ${message}`;
+
+	if (onRetry) {
+		const retryBtn = document.createElement("button");
+		retryBtn.className = "code-link-retry-btn";
+		retryBtn.textContent = "重试";
+		retryBtn.setAttribute("aria-label", "重新加载");
+		retryBtn.addEventListener("click", (e) => {
+			e.stopPropagation();
+			onRetry();
+		});
+		errorDiv.appendChild(retryBtn);
+	}
+
 	return container;
 }
 
