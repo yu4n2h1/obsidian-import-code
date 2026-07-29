@@ -52,13 +52,17 @@ export async function renderSuccess(
 		}
 	}
 
-	// 折叠：只在超过阈值时启用。默认折叠状态，用户点按钮切换。
+	// 折叠：none 模式不折叠；其余模式超阈值才折叠。
+	const foldMode = options?.foldMode ?? "full";
 	const foldThreshold = options?.foldThreshold ?? 0;
-	if (foldThreshold > 0) {
+	if (foldMode !== "none" && foldThreshold > 0) {
 		const totalLines = displayContent.split("\n").length;
 		if (totalLines > foldThreshold) {
-			const previewLines = options?.foldPreviewLines ?? 10;
-			applyFoldable(container, wrapper, totalLines, previewLines);
+			applyFoldable(container, totalLines, {
+				mode: foldMode,
+				collapsedLines: options?.foldPreviewLines ?? 10,
+				expandedLines: options?.foldExpandedLines ?? 30,
+			});
 		}
 	}
 
@@ -91,26 +95,41 @@ export function renderError(message: string, onRetry?: () => void): HTMLElement 
 /**
  * 给容器挂折叠状态与展开/收起按钮。
  *
- * 默认折叠（container 加 .code-embed-folded），wrapper 上的 CSS
- * 限制 max-height 只显示前几行，并加渐变遮罩暗示"下面还有"。
- * 折叠态下 pre 仍可滚动查看完整内容。按钮 toggle 折叠 class 与自身文本。
+ * 三种模式由 mode 决定：
+ * - full：折叠态显示 collapsedLines 行，展开态无限制（看全部）
+ * - partial：折叠态 collapsedLines 行，展开态 expandedLines 行（仍可滚动）
+ * - none：不应进入此函数（renderSuccess 已过滤）
  *
- * previewLines 通过 CSS 变量 --code-embed-fold-height 传给 pre 的 max-height，
- * 避免硬编码行数。
+ * 通过 CSS 变量 --fold-collapsed-h / --fold-expanded-h 传行高，
+ * class code-embed-fold-{mode} 让 CSS 区分展开态行为。
  */
+interface FoldOptions {
+	mode: "full" | "partial";
+	collapsedLines: number;
+	expandedLines: number;
+}
+
 function applyFoldable(
 	container: HTMLElement,
-	wrapper: HTMLElement,
 	totalLines: number,
-	previewLines: number,
+	opts: FoldOptions,
 ): void {
-	void wrapper;
-	container.classList.add("code-embed-foldable", "code-embed-folded");
-	// previewLines 行 × 1.5em 行高 + 一点 padding，作为折叠态可见高度。
-	container.style.setProperty(
-		"--code-embed-fold-height",
-		`calc(${previewLines} * 1.5em + 1em)`,
+	const { mode, collapsedLines, expandedLines } = opts;
+	container.classList.add(
+		"code-embed-foldable",
+		"code-embed-folded",
+		`code-embed-fold-${mode}`,
 	);
+	container.style.setProperty(
+		"--fold-collapsed-h",
+		`calc(${collapsedLines} * 1.5em + 1em)`,
+	);
+	if (mode === "partial") {
+		container.style.setProperty(
+			"--fold-expanded-h",
+			`calc(${expandedLines} * 1.5em + 1em)`,
+		);
+	}
 
 	const toolbar = container.querySelector(".code-embed-toolbar");
 	if (!toolbar) return;
@@ -118,7 +137,10 @@ function applyFoldable(
 	const btn = document.createElement("button");
 	btn.className = "code-embed-fold-btn";
 	const setLabel = (folded: boolean) => {
-		btn.textContent = folded ? `展开 ${totalLines}` : "收起";
+		// full 模式展开=全部，显示总行数；partial 模式展开非全部，不显示行数避免误导
+		btn.textContent = folded
+			? (mode === "full" ? `展开 ${totalLines}` : "展开")
+			: "收起";
 		btn.setAttribute("aria-expanded", folded ? "false" : "true");
 	};
 	setLabel(true);

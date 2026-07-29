@@ -28,6 +28,9 @@ data.json
 paseo.json
 CHANGELOG.md
 
+# Claude Code plan files (session-local)
+.claude/plans/
+
 # Build artifacts & caches
 *.log
 *.tsbuildinfo

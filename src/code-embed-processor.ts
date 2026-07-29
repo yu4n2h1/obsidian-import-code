@@ -177,8 +177,10 @@ export class CodeEmbedProcessor {
 				sourcePath,
 				options: {
 					showLineNumbers: this.settings.showLineNumbers === true,
+					foldMode: this.settings.foldMode,
 					foldThreshold: this.settings.foldThreshold,
 					foldPreviewLines: this.settings.foldPreviewLines,
+					foldExpandedLines: this.settings.foldExpandedLines,
 					wrapLongLines: this.settings.wrapLongLines === true,
 				},
 			});
