@@ -17,7 +17,8 @@ export async function renderSuccess(
 	app: App,
 	plugin: Component,
 	ctx: RenderContext,
-): Promise<HTMLElement> {
+	isCancelled?: () => boolean,
+): Promise<HTMLElement | null> {
 	const { file, slice, sourcePath, options } = ctx;
 	const { displayContent, highlightLines, startLine } = slice;
 	const showLineNumbers = options?.showLineNumbers === true;
@@ -42,6 +43,11 @@ export async function renderSuccess(
 		sourcePath,
 		plugin,
 	);
+
+	// MarkdownRenderer.render 无取消接口，但 await 返回后若 token 已被更新的
+	// processFile 取代，后续的 applyLineHighlights（DFS + replaceChildren）和
+	// applyFoldable 就是白做--直接返回 null，processor 会丢弃这个结果。
+	if (isCancelled?.()) return null;
 
 	// 行高亮 & 行号都需要遍历 <code> 里的行结构，共用一次 DFS 扁平化。
 	// 若只有行号无高亮，也走同一函数，highlightLines 空数组走通默认路径。

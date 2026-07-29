@@ -181,9 +181,10 @@ export class CodeEmbedProcessor {
 					foldPreviewLines: this.settings.foldPreviewLines,
 					wrapLongLines: this.settings.wrapLongLines === true,
 				},
-			});
+			}, isCurrent);
 			// renderSuccess 内部有 await MarkdownRenderer.render，异步返回后再查一次 token。
-			if (!isCurrent()) return;
+			// 若已被取代（el 为 null）或刚被取代，丢弃结果。
+			if (!el || !isCurrent()) return;
 
 			targetElement.empty();
 			targetElement.appendChild(el);
