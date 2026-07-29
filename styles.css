@@ -141,12 +141,22 @@
 
 /* Folding —— 超过阈值时代码块默认折叠，工具栏加展开按钮 */
 .code-embed-foldable.code-embed-folded .code-embed-wrapper pre {
-	max-height: var(--code-embed-fold-height, 10em);
+	max-height: var(--fold-collapsed-h, 10em);
 	overflow: auto;
 	position: relative;
 }
 
-.code-embed-foldable.code-embed-folded .code-embed-wrapper pre::after {
+.code-embed-foldable.code-embed-fold-full:not(.code-embed-folded) .code-embed-wrapper pre {
+	max-height: none;
+}
+
+.code-embed-foldable.code-embed-fold-partial:not(.code-embed-folded) .code-embed-wrapper pre {
+	max-height: var(--fold-expanded-h, 20em);
+	overflow: auto;
+}
+
+.code-embed-foldable.code-embed-folded .code-embed-wrapper pre::after,
+.code-embed-foldable.code-embed-fold-partial:not(.code-embed-folded) .code-embed-wrapper pre::after {
 	content: "";
 	position: sticky;
 	left: 0;

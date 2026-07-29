@@ -61,6 +61,22 @@ export function buildEmbedStorageTab(
 		);
 
 	new Setting(embedGroup)
+		.setName("Fold mode")
+		.setDesc("完整展开: 展开后显示全部；部分展开: 展开后仍限高可滚动；不折叠: 不折叠。")
+		.addDropdown((dropdown) => {
+			dropdown.addOption("full", "完整展开");
+			dropdown.addOption("partial", "部分展开");
+			dropdown.addOption("none", "不折叠");
+			dropdown.setValue(plugin.settings.foldMode);
+			dropdown.onChange(async (value) => {
+				plugin.settings.foldMode = value as "full" | "partial" | "none";
+				updateFoldVisibility(value);
+				await plugin.saveSettings();
+				plugin.resetMarkdownViews();
+			});
+		});
+
+	const thresholdSetting = new Setting(embedGroup)
 		.setName("Auto-fold threshold")
 		.setDesc("Automatically fold code blocks longer than this many lines. Set 0 to disable folding.")
 		.addText((text) =>
@@ -76,9 +92,9 @@ export function buildEmbedStorageTab(
 				})
 		);
 
-	new Setting(embedGroup)
-		.setName("Folded preview lines")
-		.setDesc("Number of lines visible when a code block is folded. Excess content is scrollable within the folded view.")
+	const collapsedSetting = new Setting(embedGroup)
+		.setName("Folded lines")
+		.setDesc("Number of lines visible when folded. Excess content is scrollable.")
 		.addText((text) =>
 			text
 				.setPlaceholder("10")
@@ -91,6 +107,30 @@ export function buildEmbedStorageTab(
 					plugin.resetMarkdownViews();
 				})
 		);
+
+	const expandedSetting = new Setting(embedGroup)
+		.setName("Expanded lines")
+		.setDesc("Number of lines visible when expanded (partial mode only). Excess content is scrollable.")
+		.addText((text) =>
+			text
+				.setPlaceholder("30")
+				.setValue(String(plugin.settings.foldExpandedLines))
+				.onChange(async (value: string) => {
+					const parsed = parseInt(value, 10);
+					if (isNaN(parsed) || parsed < 0) return;
+					plugin.settings.foldExpandedLines = parsed;
+					await plugin.saveSettings();
+					plugin.resetMarkdownViews();
+				})
+		);
+
+	function updateFoldVisibility(mode: string): void {
+		const show = mode !== "none";
+		thresholdSetting.settingEl.style.display = show ? "" : "none";
+		collapsedSetting.settingEl.style.display = show ? "" : "none";
+		expandedSetting.settingEl.style.display = mode === "partial" ? "" : "none";
+	}
+	updateFoldVisibility(plugin.settings.foldMode);
 
 	new Setting(embedGroup)
 		.setName("Wrap long lines")
