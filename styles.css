@@ -595,8 +595,6 @@ input.extension-table-input::placeholder {
 	inset: 0;
 	z-index: 1000;
 	display: flex;
-	align-items: flex-start;
-	justify-content: center;
 	background: rgba(0, 0, 0, 0.7);
 	padding: 2em;
 	cursor: zoom-out;
@@ -606,7 +604,14 @@ input.extension-table-input::placeholder {
 .code-embed-focus-overlay .code-embed-wrapper {
 	max-width: 900px;
 	width: 100%;
+	margin: auto;
 	background: var(--background-primary);
 	border-radius: 8px;
-	cursor: auto;
+	cursor: text;
+	-webkit-user-select: text;
+	user-select: text;
+}
+
+.code-embed-focus-overlay .code-embed-wrapper pre {
+	max-height: none;
 }

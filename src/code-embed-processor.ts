@@ -201,6 +201,15 @@ export class CodeEmbedProcessor {
 
 				const overlay = document.createElement("div");
 				overlay.className = "code-embed-focus-overlay";
+				// 限制到 workspace-leaf-content 区域，不覆盖侧边栏等
+				const leafContent = el.closest(".view-content");
+				const rect = leafContent?.getBoundingClientRect();
+				if (rect) {
+					overlay.style.top = `${rect.top}px`;
+					overlay.style.left = `${rect.left}px`;
+					overlay.style.width = `${rect.width}px`;
+					overlay.style.height = `${rect.height}px`;
+				}
 				const wrapper = el.querySelector(".code-embed-wrapper");
 				if (wrapper) overlay.appendChild(wrapper.cloneNode(true));
 				document.body.appendChild(overlay);
@@ -213,9 +222,8 @@ export class CodeEmbedProcessor {
 					if (ev.key === "Escape") close();
 				};
 				overlay.addEventListener("click", (ev: MouseEvent) => {
-					// 有文本选中时不退出（允许选中代码）
-					const s = window.getSelection();
-					if (s && s.toString().length > 0) return;
+					// 点击代码区不退出（允许查看/选中），点击遮罩区域退出
+					if ((ev.target as HTMLElement).closest(".code-embed-wrapper")) return;
 					close();
 				});
 				document.addEventListener("keydown", onEsc);
