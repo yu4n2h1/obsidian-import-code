@@ -14,13 +14,9 @@ export function buildEmbedStorageTab(
 		.setDesc("Render code files referenced by internal links as code blocks")
 		.addToggle((toggle) =>
 			toggle
-				.setValue(
-					plugin.settings.codeEmbedEnabled === "enabled"
-				)
+				.setValue(plugin.settings.codeEmbedEnabled)
 				.onChange(async (value: boolean) => {
-					plugin.settings.codeEmbedEnabled = value
-						? "enabled"
-						: "disabled";
+					plugin.settings.codeEmbedEnabled = value;
 					await plugin.saveSettings();
 					plugin.resetMarkdownViews();
 				})
@@ -31,13 +27,9 @@ export function buildEmbedStorageTab(
 		.setDesc("Allow embedding code files from remote URLs (HTTP/HTTPS)")
 		.addToggle((toggle) =>
 			toggle
-				.setValue(
-					plugin.settings.remoteCodeEmbedEnabled === "enabled"
-				)
+				.setValue(plugin.settings.remoteCodeEmbedEnabled)
 				.onChange(async (value: boolean) => {
-					plugin.settings.remoteCodeEmbedEnabled = value
-						? "enabled"
-						: "disabled";
+					plugin.settings.remoteCodeEmbedEnabled = value;
 					await plugin.saveSettings();
 					plugin.resetMarkdownViews();
 				})

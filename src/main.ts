@@ -42,6 +42,16 @@ export default class importCode extends Plugin {
 			loadedData.codeFileExtensions = migratedEntries;
 		}
 
+		// Migrate old string-typed toggles ("enabled"/"disabled") to boolean.
+		// 旧版开关存的是 "enabled" | "disabled" 字符串，现统一为 boolean。
+		const legacyToggles = loadedData as Record<string, unknown>;
+		if (typeof legacyToggles.codeEmbedEnabled === "string") {
+			legacyToggles.codeEmbedEnabled = legacyToggles.codeEmbedEnabled === "enabled";
+		}
+		if (typeof legacyToggles.remoteCodeEmbedEnabled === "string") {
+			legacyToggles.remoteCodeEmbedEnabled = legacyToggles.remoteCodeEmbedEnabled === "enabled";
+		}
+
 		// Migrate old global storage-path fields into a default Local upload source.
 		// 旧版本把 storagePathType/absoluteStoragePath/relativeStoragePath 存在顶层，
 		// 唯一化后这些字段已移除，需把它们搬进 uploadSources.Local 以保留用户配置。
@@ -188,7 +198,7 @@ export default class importCode extends Plugin {
 			(entry) => entry.config.skipSslVerify === true
 		);
 		if (
-			this.settings.remoteCodeEmbedEnabled !== "enabled" ||
+			!this.settings.remoteCodeEmbedEnabled ||
 			(!this.settings.remoteSkipSslVerify && !anyServiceSkipSsl)
 		) {
 			return;

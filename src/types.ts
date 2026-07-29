@@ -7,8 +7,8 @@ export interface ExtensionEntry {
 }
 
 export interface CodeEmbedSettings {
-	codeEmbedEnabled: "enabled" | "disabled";
-	remoteCodeEmbedEnabled: "enabled" | "disabled";
+	codeEmbedEnabled: boolean;
+	remoteCodeEmbedEnabled: boolean;
 	remoteSkipSslVerify: boolean;
 	codeFileExtensions: ExtensionEntry[];
 	remoteSources: Record<string, RemoteSourceEntry>;
@@ -108,8 +108,8 @@ export interface PluginSettings
 }
 
 export const DEFAULT_SETTINGS: PluginSettings = {
-	codeEmbedEnabled: "enabled",
-	remoteCodeEmbedEnabled: "enabled",
+	codeEmbedEnabled: true,
+	remoteCodeEmbedEnabled: true,
 	remoteSkipSslVerify: false,
 	codeFileExtensions: buildDefaultExtensions(),
 	fileNameStrategy: "hash",
