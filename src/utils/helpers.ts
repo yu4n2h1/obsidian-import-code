@@ -38,6 +38,20 @@ export function isAliasPath(path: string): boolean {
 	return /^[a-zA-Z0-9_-]+:(?!\/\/)/.test(path);
 }
 
+/** 路径分类：http（远程 URL）/ alias（别名路径）/ local（vault 内文件）。 */
+export type PathMode = "http" | "alias" | "local";
+
+/**
+ * 将 filePath 分到三种模式之一。
+ * 集中在此，供 isProcessingAllowed（守卫）与 ContentResolver.resolve（路由）共用，
+ * 避免两处各写一遍 isRemoteUrl / isAliasPath 判断导致不一致。
+ */
+export function classifyPath(filePath: string): PathMode {
+	if (isRemoteUrl(filePath)) return "http";
+	if (isAliasPath(filePath)) return "alias";
+	return "local";
+}
+
 export function parseAliasPath(path: string): { alias: string; relativePath: string } | null {
 	const match = /^([a-zA-Z0-9_-]+):(?!\/\/)(.+)$/.exec(path);
 	if (!match || !match[1] || !match[2]) return null;

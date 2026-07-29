@@ -1,6 +1,6 @@
 import { App } from "obsidian";
 import type { CodeEmbedSettings } from "../types";
-import { isRemoteUrl, isAliasPath } from "../utils/helpers";
+import { classifyPath } from "../utils/helpers";
 import { HttpResolver } from "./resolvers/http-resolver";
 import { AliasResolver } from "./resolvers/alias-resolver";
 import { LocalResolver } from "./resolvers/local-resolver";
@@ -18,12 +18,13 @@ export class ContentResolver {
 	}
 
 	async resolve(filePath: string, sourcePath: string): Promise<ResolvedContent> {
-		if (isRemoteUrl(filePath)) {
-			return await this.httpResolver.resolve(filePath);
+		switch (classifyPath(filePath)) {
+			case "http":
+				return await this.httpResolver.resolve(filePath);
+			case "alias":
+				return await this.aliasResolver.resolve(filePath);
+			case "local":
+				return await this.localResolver.resolve(filePath, sourcePath);
 		}
-		if (isAliasPath(filePath)) {
-			return await this.aliasResolver.resolve(filePath);
-		}
-		return await this.localResolver.resolve(filePath, sourcePath);
 	}
 }
