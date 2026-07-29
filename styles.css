@@ -584,3 +584,30 @@ input.extension-table-input::placeholder {
 	color: var(--text-muted);
 	font-size: var(--font-smaller);
 }
+
+/* === Focus mode -- 点击代码区域全屏聚焦，再点/ESC 退出 === */
+.code-embed-container .code-embed-wrapper {
+	cursor: zoom-in;
+}
+
+.code-embed-container.code-embed-focused {
+	position: fixed;
+	inset: 0;
+	z-index: 1000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(0, 0, 0, 0.7);
+	padding: 2em;
+	overflow: visible;
+}
+
+.code-embed-container.code-embed-focused .code-embed-wrapper {
+	max-width: 900px;
+	width: 100%;
+	max-height: 90vh;
+	overflow: auto;
+	background: var(--background-primary);
+	border-radius: 8px;
+	cursor: zoom-out;
+}
