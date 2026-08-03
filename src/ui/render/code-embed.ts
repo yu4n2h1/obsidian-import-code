@@ -275,18 +275,24 @@ function applyLineHighlights(
 		const lineEl = document.createElement("span");
 		lineEl.className = isHighlighted ? "code-line code-highlight-line" : "code-line";
 
+		let contentEl: HTMLElement | null = null;
 		if (startLineForNumbering !== null) {
 			const numEl = document.createElement("span");
 			numEl.className = "code-line-no";
 			numEl.textContent = String(startLineForNumbering + lineIdx);
 			lineEl.appendChild(numEl);
+
+			contentEl = document.createElement("span");
+			contentEl.className = "code-line-content";
+			lineEl.appendChild(contentEl);
 		}
 
+		const tokenParent = contentEl ?? lineEl;
 		if (lineTokens.length === 0) {
-			if (isHighlighted) lineEl.textContent = "\u00a0";
+			if (isHighlighted) tokenParent.textContent = "\u00a0";
 		} else {
 			for (const tok of lineTokens) {
-				let parent: HTMLElement = lineEl;
+				let parent: HTMLElement = tokenParent;
 				for (const cls of tok.classes) {
 					const span = document.createElement("span");
 					span.className = cls;
