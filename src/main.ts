@@ -82,6 +82,21 @@ export default class importCode extends Plugin {
 			delete legacy.relativeStoragePath;
 		}
 
+		// Migrate old UploadSourceConfig field names: apiUrl -> url, pathPrefix -> path
+		if (loadedData.uploadSources) {
+			for (const entry of Object.values(loadedData.uploadSources)) {
+				const cfg = entry.config as Record<string, unknown>;
+				if ("apiUrl" in cfg && !("url" in cfg)) {
+					cfg.url = cfg.apiUrl;
+					delete cfg.apiUrl;
+				}
+				if ("pathPrefix" in cfg && !("path" in cfg)) {
+					cfg.path = cfg.pathPrefix;
+					delete cfg.pathPrefix;
+				}
+			}
+		}
+
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, loadedData);
 		if (lastFileReference) {
 			this.lastFileReference = lastFileReference;

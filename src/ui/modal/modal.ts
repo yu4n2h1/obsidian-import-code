@@ -429,12 +429,12 @@ export class FileModal extends Modal {
 				url: cfg.url ?? "",
 				token: cfg.token ?? "",
 				username: cfg.username,
-				path: cfg.pathPrefix,
+				path: cfg.path,
 				skipSslVerify: cfg.skipSslVerify,
 			};
 		} else if (entry.uploadType === "github-gist") {
 			this.selectedServiceConfig = {
-				url: cfg.apiUrl ?? "https://api.github.com",
+				url: cfg.url ?? "https://api.github.com",
 				token: cfg.token ?? "",
 				skipSslVerify: cfg.skipSslVerify,
 			};
@@ -462,7 +462,7 @@ export class FileModal extends Modal {
 			this.summaryEl.setText(`URL: ${cfg.url || "(not set)"}`);
 		} else {
 			this.summaryEl.setText(
-				`API: ${cfg.apiUrl || "https://api.github.com"}`
+				`API: ${cfg.url || "https://api.github.com"}`
 			);
 		}
 	}
