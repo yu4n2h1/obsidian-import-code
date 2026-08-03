@@ -129,6 +129,63 @@ export abstract class BaseExtractor {
 		return defIdx;
 	}
 
+	/**
+	 * 带字符串/行注释感知的花括号块提取（C 风格语言共用辅助）。
+	 *
+	 * 避免字符串字面量（"foo { bar"）和行注释（// { not real）里的 {}
+	 * 误计深度导致块提取范围错。C 风格子类的 extractBlock 可委托此方法。
+	 * 注意：不处理跨行块注释 /* *\/（由 stripComments 在更上层处理行级标记）。
+	 */
+	protected extractBraceBlockAware(
+		lines: string[],
+		startIdx: number,
+	): string[] | null {
+		// 1. 找第一个含 { 的行（匹配旧版逻辑）
+		let openIdx = -1;
+		for (let i = startIdx; i < lines.length; i++) {
+			if (lines[i]!.includes("{")) {
+				openIdx = i;
+				break;
+			}
+		}
+		// 无 { 的定义：返回单行
+		if (openIdx === -1) {
+			const first = lines[startIdx];
+			return first ? [first] : null;
+		}
+
+		// 2. 从 openIdx 开始数深度（带字符串/行注释感知）
+		let depth = 0;
+		let inString: string | null = null;
+		let inLineComment = false;
+		for (let i = openIdx; i < lines.length; i++) {
+			const line = lines[i]!;
+			inLineComment = false;
+			for (let j = 0; j < line.length; j++) {
+				const ch = line[j]!;
+				const next = line[j + 1];
+				if (inLineComment) continue;
+				if (inString) {
+					if (ch === "\\") { j++; continue; }
+					if (ch === inString) inString = null;
+					continue;
+				}
+				if (ch === '"' || ch === "'" || ch === "`") {
+					inString = ch;
+					continue;
+				}
+				if (ch === "/" && next === "/") {
+					inLineComment = true;
+					continue;
+				}
+				if (ch === "{") depth++;
+				if (ch === "}") depth--;
+			}
+			if (depth <= 0) return lines.slice(startIdx, i + 1);
+		}
+		return null;
+	}
+
 	// ---- 语言识别（可选，子类按需覆盖） ----
 
 	/**
