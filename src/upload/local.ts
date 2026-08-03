@@ -23,11 +23,12 @@ export function createLocalUploadService(app: App): UploadService {
 				await app.vault.createFolder(folderPath);
 			}
 
-			// 文件已存在时不覆盖
-			if (!(await app.vault.adapter.exists(fullPath))) {
+			// 文件已存在时不覆盖，返回 created=false 让调用方区分
+			const exists = await app.vault.adapter.exists(fullPath);
+			if (!exists) {
 				await app.vault.create(fullPath, ctx.content);
 			}
-			return { success: true, reference: fullPath };
+			return { success: true, reference: fullPath, created: !exists };
 		},
 	};
 }

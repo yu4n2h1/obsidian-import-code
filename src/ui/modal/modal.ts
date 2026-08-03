@@ -662,7 +662,7 @@ export class FileModal extends Modal {
 				`${storagePath}/${this.generatedFileName}`
 			);
 			linkPath = this.getLinkPath(fullPath);
-			new Notice(`File created: ${fullPath}`);
+			new Notice(result.created ? `File created: ${fullPath}` : `File already exists: ${fullPath}`);
 		} else {
 			// 远程上传：直接使用返回的 URL
 			linkPath = result.reference!;

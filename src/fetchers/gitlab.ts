@@ -24,9 +24,10 @@ export const gitlabService: RemoteService = {
 			const encodedPath = encodeURIComponent(fullPath);
 			const url = `${baseUrl}/api/v4/projects/${encodedRepo}/repository/files/${encodedPath}?ref=${encodeURIComponent(branch)}`;
 
-			const headers: Record<string, string> = {
-				"PRIVATE-TOKEN": config.token,
-			};
+			const headers: Record<string, string> = {};
+			if (config.token) {
+				headers["PRIVATE-TOKEN"] = config.token;
+			}
 
 			const resp = await dispatchHttpRequest({ url, skipSslVerify, headers });
 			const body = JSON.parse(resp.text) as GitLabFileResponse;
