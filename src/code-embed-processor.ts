@@ -201,6 +201,15 @@ export class CodeEmbedProcessor {
 
 				const overlay = document.createElement("div");
 				overlay.className = "code-embed-focus-overlay";
+				// 复制行号/换行 class：聚焦态克隆的是 wrapper，但行号/换行 CSS 依赖
+				// container 上的 class（.code-embed-with-line-numbers / .code-embed-wrap-lines），
+				// 不复制会导致行号样式丢失、和代码混在一起。
+				if (el.classList.contains("code-embed-with-line-numbers")) {
+					overlay.classList.add("code-embed-with-line-numbers");
+				}
+				if (el.classList.contains("code-embed-wrap-lines")) {
+					overlay.classList.add("code-embed-wrap-lines");
+				}
 				// 限制到 workspace-leaf-content 区域，不覆盖侧边栏等
 				const leafContent = el.closest(".view-content");
 				const rect = leafContent?.getBoundingClientRect();
