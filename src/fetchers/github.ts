@@ -12,7 +12,10 @@ export const githubService: RemoteService = {
 	async read(params: RemoteReadParams): Promise<RemoteReadResult> {
 		const { config, filePath, skipSslVerify } = params;
 		try {
-			const repo = normalizeBaseUrl(config.repo || "");
+			if (!config.repo) {
+				return { success: false, error: "Repository is required (format: owner/repo)" };
+			}
+			const repo = normalizeBaseUrl(config.repo);
 			const branch = config.branch || "main";
 			const fullPath = buildFullPath(config.path, filePath);
 			const encoded = encodePathSegments(fullPath);

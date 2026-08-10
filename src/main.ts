@@ -82,6 +82,21 @@ export default class importCode extends Plugin {
 			delete legacy.relativeStoragePath;
 		}
 
+		// Migrate old UploadSourceConfig field names: apiUrl -> url, pathPrefix -> path
+		if (loadedData.uploadSources) {
+			for (const entry of Object.values(loadedData.uploadSources)) {
+				const cfg = entry.config as Record<string, unknown>;
+				if ("apiUrl" in cfg && !("url" in cfg)) {
+					cfg.url = cfg.apiUrl;
+					delete cfg.apiUrl;
+				}
+				if ("pathPrefix" in cfg && !("path" in cfg)) {
+					cfg.path = cfg.pathPrefix;
+					delete cfg.pathPrefix;
+				}
+			}
+		}
+
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, loadedData);
 		if (lastFileReference) {
 			this.lastFileReference = lastFileReference;
@@ -142,9 +157,18 @@ export default class importCode extends Plugin {
 
 		this.registerEditorExtension(
 			ViewPlugin.define((view: EditorView) => {
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				const sourcePath = markdownView?.file?.path || "";
+				// 从 view 所属的 MarkdownView 取 sourcePath，而非 getActiveViewOfType
+				// 后者返回焦点所在 pane，分屏下非活动 pane 的 embed 会用错误路径解析相对链接
+				const getSourcePath = (): string => {
+					for (const leaf of this.app.workspace.getLeavesOfType("markdown")) {
+						if (leaf.view instanceof MarkdownView && leaf.view.containerEl.contains(view.dom)) {
+							return leaf.view.file?.path || "";
+						}
+					}
+					return "";
+				};
 
+				const sourcePath = getSourcePath();
 				setTimeout(
 					() => this.codeProcessor.processEmbeds(view.dom, sourcePath),
 					50
@@ -153,8 +177,7 @@ export default class importCode extends Plugin {
 				return {
 					update: (update) => {
 						if (update.docChanged || update.viewportChanged) {
-							const currentView = this.app.workspace.getActiveViewOfType(MarkdownView);
-							const currentSourcePath = currentView?.file?.path || "";
+							const currentSourcePath = getSourcePath();
 							setTimeout(
 								() => this.codeProcessor.processEmbeds(view.dom, currentSourcePath),
 								50

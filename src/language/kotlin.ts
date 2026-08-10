@@ -56,48 +56,6 @@ export class KotlinExtractor extends BaseExtractor {
 		startIdx: number,
 		_defIndent: string
 	): string[] | null {
-		let i = startIdx;
-		let found = false;
-		for (; i < lines.length; i++) {
-			const line = lines[i];
-			if (line && line.includes("{")) {
-				found = true;
-				break;
-			}
-		}
-		if (!found) {
-			const firstLine = lines[startIdx];
-			return firstLine ? [firstLine] : null;
-		}
-
-		const result: string[] = [];
-		for (let j = startIdx; j <= i; j++) {
-			result.push(lines[j]!);
-		}
-
-		const openLine = lines[i];
-		if (!openLine) return null;
-
-		let depth = 0;
-		for (const ch of openLine) {
-			if (ch === "{") depth++;
-			if (ch === "}") depth--;
-		}
-
-		if (depth === 0) return result;
-
-		for (let j = i + 1; j < lines.length; j++) {
-			const line = lines[j];
-			result.push(line!);
-			if (line) {
-				for (const ch of line) {
-					if (ch === "{") depth++;
-					if (ch === "}") depth--;
-				}
-			}
-			if (depth === 0) return result;
-		}
-
-		return null;
+		return this.extractBraceBlockAware(lines, startIdx);
 	}
 }
