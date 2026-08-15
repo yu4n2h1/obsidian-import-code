@@ -84,22 +84,23 @@ yarn test       # vitest 单测（tests/）
 
 ## 架构说明
 
-**`docs/architecture.md` 是本项目的架构真实来源**——它是通读所有 `src/` 源文件后整理的分层、数据流、已知设计权衡、命名陷阱。改代码前建议先读一遍，尤其是数据流图和"发现的问题"一节。以下是极简概要，细节以 architecture.md 为准。
+**`docs/architecture.md` 是本项目的架构真实来源**——它是通读所有 `src/` 源文件后整理的分层、数据流、已知设计权衡、命名陷阱。改代码前建议先读一遍，尤其是数据流图和"发现的问题"一节。总览在 `architecture.md`，各层细节拆在 `docs/architecture/` 子目录（映射如下）。以下是极简概要，细节以架构文档为准。
 
-**`architecture.md` 是活文档，不是一次性快照**。任何改动以下分层结构的 commit，**必须同步更新 `docs/architecture.md` 的对应小节**，否则视为不完整：
+**架构文档是活文档，不是一次性快照**。任何改动以下分层结构的 commit，**必须同步更新 `docs/architecture/` 下对应文件**，否则视为不完整：
 
-| 分层 | 对应 architecture.md 小节 | 触发更新条件 |
+| 分层 | 对应架构文档 | 触发更新条件 |
 |---|---|---|
-| `src/main.ts` | 1. 入口 & 生命周期 | 注册扩展点变化（post-processor / ViewPlugin / `vault.on`） |
-| `src/code-embed-processor.ts` | 2. 核心处理器 | 渲染触发路径 / 去重逻辑变化 |
-| `src/pipeline/`（`execute.ts`、`range-converter.ts`、`content-resolver.ts`、`resolvers/`、`types.ts`） | 3. Pipeline | 阶段编排或数据结构变化 |
-| `src/fetchers/`（`index.ts` 注册表与各 service 实现） | 4. 数据源抓取层 | 新增/删除/改动远程读源 |
-| `src/upload/`（`index.ts` 工厂与各 service 实现） | 5. 上传层 | 新增/删除/改动写源 |
-| `src/language/`（`base-extractor.ts`、`index.ts` 注册表与各 extractor 子类） | 6. 语言处理层 | 新增语言、改模板方法、调整遍历顺序 |
-| `src/ui/`（`render/`、`modal/`、`settings/`） | 7. UI 层 | 渲染层或交互层结构变化 |
-| `src/utils/` | 8. Utils | 共享工具变化 |
+| `src/main.ts` | `architecture/main.md` | 注册扩展点变化（post-processor / ViewPlugin / `vault.on`） |
+| `src/code-embed-processor.ts` | `architecture/processor.md` | 渲染触发路径 / 去重逻辑变化 |
+| `src/pipeline/`（`execute.ts`、`range-converter.ts`、`content-resolver.ts`、`resolvers/`、`types.ts`） | `architecture/pipeline.md` | 阶段编排或数据结构变化 |
+| `src/fetchers/`（`index.ts` 注册表与各 service 实现） | `architecture/fetchers.md` | 新增/删除/改动远程读源 |
+| `src/upload/`（`index.ts` 工厂与各 service 实现） | `architecture/upload.md` | 新增/删除/改动写源 |
+| `src/language/`（`base-extractor.ts`、`index.ts` 注册表与各 extractor 子类） | `architecture/language.md` | 新增语言、改模板方法、调整遍历顺序 |
+| `src/ui/`（`render/`、`modal/`、`settings/`） | `architecture/ui.md` | 渲染层或交互层结构变化 |
+| `src/utils/` | `architecture/utils.md` | 共享工具变化 |
+| 设计权衡 / 陷阱 | `architecture/decisions.md` | 新发现的设计陷阱与权衡 |
 
-更新要求：改了哪层就更新该层对应小节；新增/删除文件要同步更新"数据流图"与"分层依赖图"；发现的新设计陷阱补到"发现的问题"一节。`architecture.md` 头部不再绑定具体分支与时点——它描述的是当前代码库的架构状态。
+更新要求：改了哪层就更新该层文档；新增/删除文件要同步更新总览 `architecture.md` 里的"分层依赖图"；发现的新设计陷阱补到 `architecture/decisions.md`。架构文档头部不再绑定具体分支与时点——它们描述的是当前代码库的架构状态。
 
 ### 三条渲染触发路径都汇聚到 `CodeEmbedProcessor`
 
