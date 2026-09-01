@@ -23,14 +23,17 @@ export async function renderSuccess(
 	const showLineNumbers = options?.showLineNumbers === true;
 	const wrapLongLines = options?.wrapLongLines === true;
 
-	const container = document.createElement("div");
-	container.className = "code-embed-container";
+	const container = createDiv({ cls: "code-embed-container" });
 	if (showLineNumbers) container.classList.add("code-embed-with-line-numbers");
 	if (wrapLongLines) container.classList.add("code-embed-wrap-lines");
 
 	buildToolbar(container, file, displayContent, sourcePath, app);
 
 	const wrapper = container.createDiv({ cls: "code-embed-wrapper" });
+	// mermaid 等图表需要更大的展示高度（用类标记替代 CSS :has，兼容旧 iOS）
+	if (file.language === "mermaid") {
+		wrapper.classList.add("code-embed-has-mermaid");
+	}
 	// MarkdownRenderer.render 是异步的：先 await 让 Obsidian 把 code 元素渲染上，
 	// 再做 querySelector 与高亮。历史上这里用 `void MarkdownRenderer.render(...)`
 	// 后紧接着 querySelector，依赖 Obsidian 当前实现里 render 同步落 DOM 的巧合——
@@ -50,6 +53,11 @@ export async function renderSuccess(
 		if (codeEl) {
 			applyLineHighlights(codeEl, highlightLines, showLineNumbers ? startLine : null);
 		}
+	}
+
+	// 渲染完成后兜底检测 mermaid 产物（language 判断可能漏掉自定义 dialect）
+	if (wrapper.querySelector(".mermaid")) {
+		wrapper.classList.add("code-embed-has-mermaid");
 	}
 
 	// 折叠：none 模式不折叠；其余模式超阈值才折叠。
@@ -73,16 +81,16 @@ export async function renderSuccess(
 }
 
 export function renderError(message: string, onRetry?: () => void): HTMLElement {
-	const container = document.createElement("div");
-	container.className = "code-embed-container";
+	const container = createDiv({ cls: "code-embed-container" });
 	const errorDiv = container.createDiv({ cls: "code-link-error" });
 	errorDiv.textContent = `Error: ${message}`;
 
 	if (onRetry) {
-		const retryBtn = document.createElement("button");
-		retryBtn.className = "code-link-retry-btn";
-		retryBtn.textContent = "Retry";
-		retryBtn.setAttribute("aria-label", "Reload");
+		const retryBtn = createEl("button", {
+			cls: "code-link-retry-btn",
+			text: "Retry",
+			attr: { "aria-label": "Reload" },
+		});
 		retryBtn.addEventListener("click", (e) => {
 			e.stopPropagation();
 			onRetry();
@@ -137,8 +145,7 @@ function applyFoldable(
 	const toolbar = container.querySelector(".code-embed-toolbar");
 	if (!toolbar) return;
 
-	const btn = document.createElement("button");
-	btn.className = "code-embed-fold-btn";
+	const btn = createEl("button", { cls: "code-embed-fold-btn" });
 	const setLabel = (folded: boolean) => {
 		// full 模式展开=全部，显示总行数；partial 模式展开非全部，不显示行数避免误导
 		btn.textContent = folded
@@ -275,13 +282,15 @@ function applyLineHighlights(
 	lines.forEach((lineTokens, lineIdx) => {
 		const isHighlighted = highlightSet.has(lineIdx);
 
-		const lineEl = document.createElement("span");
-		lineEl.className = isHighlighted ? "code-line code-highlight-line" : "code-line";
+		const lineEl = createSpan({
+			cls: isHighlighted ? "code-line code-highlight-line" : "code-line",
+		});
 
 		if (startLineForNumbering !== null) {
-			const numEl = document.createElement("span");
-			numEl.className = "code-line-no";
-			numEl.textContent = String(startLineForNumbering + lineIdx);
+			const numEl = createSpan({
+				cls: "code-line-no",
+				text: String(startLineForNumbering + lineIdx),
+			});
 			lineEl.appendChild(numEl);
 		}
 
@@ -291,8 +300,7 @@ function applyLineHighlights(
 			for (const tok of lineTokens) {
 				let parent: HTMLElement = lineEl;
 				for (const cls of tok.classes) {
-					const span = document.createElement("span");
-					span.className = cls;
+					const span = createSpan({ cls });
 					parent.appendChild(span);
 					parent = span;
 				}

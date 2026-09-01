@@ -53,10 +53,10 @@ export class EditLinkModal extends Modal {
 		this.createInfoRow(infoSection, "Extension", `.${this.lastRef.extension}`);
 
 		// Rendered code block
-		const codeLabel = contentEl.createEl("div", { cls: "setting-item" });
+		const codeLabel = contentEl.createDiv({ cls: "setting-item" });
 		codeLabel
-			.createEl("div", { cls: "setting-item-info" })
-			.createEl("div", {
+			.createDiv({ cls: "setting-item-info" })
+			.createDiv({
 				cls: "setting-item-name",
 				text: "File content preview",
 			});
@@ -110,7 +110,7 @@ export class EditLinkModal extends Modal {
 		const previewSection = contentEl.createDiv({
 			cls: "link-preview-section",
 		});
-		previewSection.createEl("div", {
+		previewSection.createDiv({
 			cls: "setting-item-name",
 			text: "Link preview",
 		});
@@ -120,7 +120,7 @@ export class EditLinkModal extends Modal {
 		this.updateLinkPreview();
 
 		// Buttons
-		const buttonContainer = contentEl.createEl("div", {
+		const buttonContainer = contentEl.createDiv({
 			cls: "modal-button-container",
 		});
 
@@ -146,8 +146,8 @@ export class EditLinkModal extends Modal {
 		value: string
 	): void {
 		const row = container.createDiv({ cls: "edit-link-info-row" });
-		row.createEl("span", { cls: "edit-link-info-label", text: label });
-		row.createEl("span", { cls: "edit-link-info-value", text: value });
+		row.createSpan({ cls: "edit-link-info-label", text: label });
+		row.createSpan({ cls: "edit-link-info-value", text: value });
 	}
 
 	private buildLinkText(): string {

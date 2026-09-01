@@ -300,12 +300,12 @@ export class FileModal extends Modal {
 			});
 
 		// 7. File content textarea
-		const contentLabel = contentEl.createEl("div", { cls: "setting-item" });
+		const contentLabel = contentEl.createDiv({ cls: "setting-item" });
 		contentLabel
-			.createEl("div", { cls: "setting-item-info" })
-			.createEl("div", { cls: "setting-item-name", text: "File content" });
+			.createDiv({ cls: "setting-item-info" })
+			.createDiv({ cls: "setting-item-name", text: "File content" });
 
-		const textareaContainer = contentEl.createEl("div", {
+		const textareaContainer = contentEl.createDiv({
 			cls: "file-content-container",
 		});
 		const textarea = textareaContainer.createEl("textarea", {
@@ -325,7 +325,7 @@ export class FileModal extends Modal {
 		});
 
 		// 8. Buttons
-		const buttonContainer = contentEl.createEl("div", {
+		const buttonContainer = contentEl.createDiv({
 			cls: "modal-button-container",
 		});
 

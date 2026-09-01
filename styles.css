@@ -36,8 +36,9 @@
 	overflow: auto;
 }
 
-/* mermaid 展示范围扩大：突破代码块 500px 高度限制 */
-.code-embed-wrapper:has(> .mermaid) {
+/* mermaid 展示范围扩大：突破代码块 500px 高度限制
+   （由 JS 在渲染时给 wrapper 加 .code-embed-has-mermaid，替代 :has 选择器） */
+.code-embed-wrapper.code-embed-has-mermaid {
 	max-height: 80vh;
 }
 
@@ -47,12 +48,14 @@
 	height: auto;
 }
 
-.code-embed-wrapper pre code {
-	font-size: var(--font-smaller) !important;
-	font-family: var(--font-monospace) !important;
+/* 注：本文件用「同类名叠加」提高特异性（如 .code-embed-wrapper.code-embed-wrapper）
+   来压过主题样式，替代 !important。 */
+.code-embed-wrapper.code-embed-wrapper pre code {
+	font-size: var(--font-smaller);
+	font-family: var(--font-monospace);
 	min-height: calc(3 * 1.5em);
 	display: block;
-	white-space: pre !important;
+	white-space: pre;
 }
 
 /* Toolbar */
@@ -68,8 +71,8 @@
 	overflow: hidden;
 }
 
-.code-embed-container .code-block-flair,
-.code-embed-container .code-embed-open-btn {
+.code-embed-container .code-block-flair.code-block-flair,
+.code-embed-container .code-embed-open-btn.code-embed-open-btn {
 	appearance: none;
 	height: 32px;
 	padding: 0 10px;
@@ -79,12 +82,12 @@
 	background: var(--code-bracket-background);
 	transition: all 0.2s ease;
 	cursor: pointer;
-	border: none !important;
-	border-radius: 0 !important;
+	border: none;
+	border-radius: 0;
 }
 
-.code-embed-container .code-embed-open-btn + .code-block-flair {
-	border-left: 2px solid rgba(255, 255, 255, 0.1) !important;
+.code-embed-container .code-embed-open-btn + .code-block-flair.code-block-flair {
+	border-left: 2px solid rgba(255, 255, 255, 0.1);
 }
 
 .code-embed-container .code-block-flair {
@@ -104,7 +107,7 @@
 	flex-direction: row;
 }
 
-.code-embed-focus-overlay .code-embed-zoom-btn {
+.code-embed-focus-overlay .code-embed-zoom-btn.code-embed-zoom-btn {
 	appearance: none;
 	height: 32px;
 	width: 32px;
@@ -115,13 +118,13 @@
 	background: var(--code-bracket-background);
 	transition: all 0.2s ease;
 	cursor: pointer;
-	border: none !important;
-	border-left: 2px solid rgba(255, 255, 255, 0.1) !important;
-	border-radius: 0 !important;
+	border: none;
+	border-left: 2px solid rgba(255, 255, 255, 0.1);
+	border-radius: 0;
 }
 
-.code-embed-focus-overlay .code-embed-zoom-btn:hover {
-	background: var(--background-modifier-hover) !important;
+.code-embed-focus-overlay .code-embed-zoom-btn.code-embed-zoom-btn:hover {
+	background: var(--background-modifier-hover);
 }
 
 .code-embed-focus-overlay .code-embed-zoom-btn svg {
@@ -233,7 +236,7 @@
 
 /* 折叠按钮复用工具栏其他按钮的样式（.code-block-flair / .code-embed-open-btn），
    保持视觉统一；仅 uppercase 与 lang flair 区分，这里不要 uppercase */
-.code-embed-container .code-embed-fold-btn {
+.code-embed-container .code-embed-fold-btn.code-embed-fold-btn {
 	appearance: none;
 	height: 32px;
 	padding: 0 10px;
@@ -243,8 +246,8 @@
 	background: var(--code-bracket-background);
 	transition: all 0.2s ease;
 	cursor: pointer;
-	border: none !important;
-	border-radius: 0 !important;
+	border: none;
+	border-radius: 0;
 	font-size: var(--font-smaller);
 }
 
@@ -254,15 +257,15 @@
 }
 
 /* Wrap long lines —— 启用时代码块超长行换行显示（否则横向滚动） */
-.code-embed-wrap-lines .code-embed-wrapper pre code {
-	white-space: pre-wrap !important;
+.code-embed-wrap-lines .code-embed-wrapper.code-embed-wrapper pre code {
+	white-space: pre-wrap;
 	word-break: break-word;
 }
 
 /* Hide Obsidian's default copy button inside our code embeds */
-.code-embed-container button.copy-code-button,
-.code-embed-wrapper button.copy-code-button {
-	display: none !important;
+.code-embed-container button.copy-code-button.copy-code-button,
+.code-embed-wrapper button.copy-code-button.copy-code-button {
+	display: none;
 }
 
 /* === Editor Mode Override Styles === */
@@ -292,27 +295,27 @@
 }
 
 /* Hide Obsidian's built-in copy button inside our code embeds in editor */
-.markdown-source-view.mod-cm6 .code-embed-container button.copy-code-button,
-.markdown-source-view.mod-cm6 .code-embed-wrapper button.copy-code-button {
-	display: none !important;
+.markdown-source-view.mod-cm6 .code-embed-container button.copy-code-button.copy-code-button,
+.markdown-source-view.mod-cm6 .code-embed-wrapper button.copy-code-button.copy-code-button {
+	display: none;
 }
 
 /* Reset Obsidian's default .code-block-flair styles in editor */
-.markdown-source-view.mod-cm6 .code-embed-container .code-block-flair {
+.markdown-source-view.mod-cm6 .code-embed-container .code-block-flair.code-block-flair {
 	position: static;
 	text-transform: uppercase;
-	border: none !important;
-	border-radius: 0 !important;
-	border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
-	box-shadow: none !important;
-	outline: none !important;
+	border: none;
+	border-radius: 0;
+	border-left: 1px solid rgba(255, 255, 255, 0.1);
+	box-shadow: none;
+	outline: none;
 }
 
-.markdown-source-view.mod-cm6 .code-embed-container .code-embed-open-btn {
-	border: none !important;
-	border-radius: 0 !important;
-	box-shadow: none !important;
-	outline: none !important;
+.markdown-source-view.mod-cm6 .code-embed-container .code-embed-open-btn.code-embed-open-btn {
+	border: none;
+	border-radius: 0;
+	box-shadow: none;
+	outline: none;
 }
 
 /* === File Modal Styles === */
@@ -572,16 +575,16 @@
 }
 
 /* Plain text inputs — borderless, blend into the row */
-input.extension-table-input {
+.extension-table-row .extension-table-input.extension-table-input {
 	width: 100%;
 	height: var(--input-height, 32px);
 	padding: 0 0.25em;
 	margin: 0;
-	border: none !important;
-	border-radius: 0 !important;
-	outline: none !important;
-	box-shadow: none !important;
-	background: transparent !important;
+	border: none;
+	border-radius: 0;
+	outline: none;
+	box-shadow: none;
+	background: transparent;
 	color: var(--text-normal);
 	font-size: var(--font-ui-small);
 	font-family: var(--font-interface);
@@ -590,15 +593,15 @@ input.extension-table-input {
 	transition: background 0.15s;
 }
 
-input.extension-table-input:hover {
-	background: var(--background-modifier-hover) !important;
+.extension-table-row .extension-table-input.extension-table-input:hover {
+	background: var(--background-modifier-hover);
 }
 
-input.extension-table-input:focus {
-	background: var(--background-modifier-hover) !important;
-	border: none !important;
-	outline: none !important;
-	box-shadow: none !important;
+.extension-table-row .extension-table-input.extension-table-input:focus {
+	background: var(--background-modifier-hover);
+	border: none;
+	outline: none;
+	box-shadow: none;
 }
 
 input.extension-table-input::placeholder {
@@ -606,12 +609,12 @@ input.extension-table-input::placeholder {
 }
 
 /* Strip Obsidian's Setting-item chrome inside grid cells (toggle & delete columns) */
-.extension-table-col .setting-item {
-	border: none !important;
-	padding: 0 !important;
-	margin: 0 !important;
-	background: transparent !important;
-	box-shadow: none !important;
+.extension-table-row .extension-table-col .setting-item.setting-item {
+	border: none;
+	padding: 0;
+	margin: 0;
+	background: transparent;
+	box-shadow: none;
 }
 
 .extension-table-col .setting-item-info {

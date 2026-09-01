@@ -205,8 +205,7 @@ export class CodeEmbedProcessor {
 				const leafContent = el.closest(".view-content");
 				if (!leafContent) return;
 
-				const overlay = document.createElement("div");
-				overlay.className = "code-embed-focus-overlay";
+				const overlay = createDiv({ cls: "code-embed-focus-overlay" });
 				// 复制容器上的行号/换行修饰类到 overlay：否则只克隆了 .code-embed-wrapper，
 				// 失去 .code-embed-with-line-numbers 祖先，行号 gutter 的 CSS 选择器不再命中，
 				// .code-line-no 退化为默认 inline，行号直接贴在代码前没有间距/竖线。
@@ -220,8 +219,7 @@ export class CodeEmbedProcessor {
 				leafContent.classList.add("code-embed-focus-anchor");
 
 				// 聚焦卡片：只包含缩放按钮组 + wrapper，不克隆原 toolbar 的其他按钮。
-				const card = document.createElement("div");
-				card.className = "code-embed-focus-card";
+				const card = createDiv({ cls: "code-embed-focus-card" });
 
 				const wrapper = el.querySelector(".code-embed-wrapper");
 				if (wrapper) card.appendChild(wrapper.cloneNode(true));
