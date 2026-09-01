@@ -1,4 +1,4 @@
-# Obsidian Import Code
+# Import Code
 
 将本地代码文件或远程代码仓库中的文件嵌入到 Obsidian 笔记中，支持语法高亮、符号/行范围提取、行高亮，以及多平台远程源（GitHub、GitLab、Gitea、WebDAV、Generic URL）的免配置引用。
 
@@ -36,7 +36,7 @@
 ### 手动安装
 
 1. 从最新 Release 下载 `main.js`、`manifest.json`、`styles.css`
-2. 放入 `<vault>/.obsidian/plugins/obsidian-import-code/`
+2. 放入 `<vault>/.obsidian/plugins/import-code/`
 3. 重新加载 Obsidian，在 **设置 -> 第三方插件** 中启用
 
 ### 从源码构建

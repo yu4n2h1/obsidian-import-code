@@ -1,6 +1,6 @@
 {
-	"name": "obsidian-import-code",
-	"version": "1.0.0",
+	"name": "import-code",
+	"version": "1.4.0",
 	"description": "Embed and render code files in Obsidian notes via ![[file.ext]] syntax with syntax highlighting",
 	"main": "main.js",
 	"type": "module",

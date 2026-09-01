@@ -23,6 +23,7 @@ data.json
 
 # Local tool state (memory / fts index)
 .lingxiao/
+.codegraph/
 
 # Personal tool configs (not project-related)
 paseo.json
