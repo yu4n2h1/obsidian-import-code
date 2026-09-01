@@ -1,45 +1,47 @@
 # Import Code
 
-将本地代码文件或远程代码仓库中的文件嵌入到 Obsidian 笔记中，支持语法高亮、符号/行范围提取、行高亮，以及多平台远程源（GitHub、GitLab、Gitea、WebDAV、Generic URL）的免配置引用。
+[中文文档 (Chinese)](README.zh-CN.md)
 
-## 功能
+Embed local code files or files from remote repositories directly into your Obsidian notes, with syntax highlighting, symbol and line-range extraction, line highlighting, and zero-config references to multi-platform remote sources (GitHub, GitLab, Gitea, WebDAV, Generic URL).
 
-### 嵌入与渲染
+## Features
 
-- **代码嵌入** - `![[file.ext]]` 嵌入本地代码文件，`![[alias:path/file.ext]]` 嵌入远程代码文件
-- **符号提取** - `![[file.ext@函数名]]` 提取指定函数/类/方法（支持 JS/TS/Java/C/Go/Rust 等大括号语言，以及 Python/Ruby/YAML 缩进语言）
-- **行范围提取** - `![[file.ext@10-30]]` 提取指定行范围，`@5` 提取单行
-- **行高亮** - `![[file.ext#5-10]]` 高亮渲染结果中的指定行，可与 `@` 组合使用
-- **HTML 元素提取** - `![[file.html@.container]]` 通过 CSS 选择器提取 HTML 元素
-- **语法高亮** - 基于文件扩展名自动识别语言，通过 Obsidian 内置 MarkdownRenderer 渲染
-- **行号显示** - 可选在代码块左侧显示源文件真实行号（考虑 `@` 提取的偏移）
-- **代码折叠** - 超过阈值的代码块自动折叠，折叠态可滚动查看，预览行数可调
-- **长行换行** - 可选让超长行换行显示（默认横向滚动）
-- **加载骨架屏** - 远程/alias 拉取时显示脉动骨架占位
+### Embedding & Rendering
 
-### 远程与上传
+- **Code embeds** - `![[file.ext]]` embeds a local code file; `![[alias:path/file.ext]]` embeds a remote one
+- **Symbol extraction** - `![[file.ext@functionName]]` extracts a specific function/class/method (supports brace languages like JS/TS/Java/C/Go/Rust, and indentation languages like Python/Ruby/YAML)
+- **Line range extraction** - `![[file.ext@10-30]]` extracts a line range; `@5` extracts a single line
+- **Line highlighting** - `![[file.ext#5-10]]` highlights specific lines in the rendered result; combinable with `@`
+- **HTML element extraction** - `![[file.html@.container]]` extracts an HTML element via a CSS selector
+- **Syntax highlighting** - language auto-detected from file extension, rendered through Obsidian's built-in MarkdownRenderer
+- **Line numbers** - optionally show real source-file line numbers beside the code block (offset-aware for `@` extraction)
+- **Code folding** - blocks exceeding a threshold fold automatically, scrollable while collapsed, preview lines configurable
+- **Long line wrapping** - optionally wrap overly long lines (default: horizontal scroll)
+- **Loading skeleton** - pulsing placeholder while remote/alias content is fetched
 
-- **远程源别名** - 在设置中预配置远程服务（GitHub / GitLab / Gitea / WebDAV / Generic URL / Local Directory），通过别名引用，无需每次输入完整 URL
-- **上传源** - 从剪贴板创建代码文件时，可上传到 Local vault / WebDAV / GitHub Gist，自动生成嵌入链接
-- **SSL 跳过验证** - 支持自签名/过期证书的 HTTPS 服务器（桌面端），带启动诊断和优雅降级
+### Remote & Upload
 
-### 交互
+- **Remote source aliases** - pre-configure remote services in settings (GitHub / GitLab / Gitea / WebDAV / Generic URL / Local Directory) and reference them by alias instead of typing full URLs every time
+- **Upload sources** - when creating a code file from the clipboard, upload it to Local vault / WebDAV / GitHub Gist with an embed link generated automatically
+- **SSL skip verification** - supports HTTPS servers with self-signed/expired certificates (desktop only), with startup diagnostics and graceful degradation
 
-- **工具栏** - 每个嵌入块右上角提供"打开源文件"按钮和"一键复制代码"按钮（含编程语言标记），超阈值代码块另附"展开/收起"按钮
-- **双模式支持** - 同时支持阅读模式（MarkdownPostProcessor）和实时预览（CodeMirror ViewPlugin）
-- **自动刷新** - 本地文件修改后自动重新渲染（300ms 防抖）
-- **插入代码文件** - 从剪贴板创建代码文件并插入嵌入链接，自动检测编程语言
-- **再次引用** - 快速引用上一次插入的代码文件，可修改截取范围和高亮范围
+### Interaction
 
-## 安装
+- **Toolbar** - each embed block has "open source file" and "copy code" buttons (with language tag) in the top-right corner; oversized blocks also get an expand/collapse button
+- **Dual mode support** - works in both Reading view (MarkdownPostProcessor) and Live Preview (CodeMirror ViewPlugin)
+- **Auto refresh** - local file changes trigger re-render automatically (300ms debounce)
+- **Insert code file** - create a code file from clipboard content and insert an embed link, with automatic language detection
+- **Re-reference** - quickly re-reference the last inserted code file, with adjustable extraction and highlight ranges
 
-### 手动安装
+## Installation
 
-1. 从最新 Release 下载 `main.js`、`manifest.json`、`styles.css`
-2. 放入 `<vault>/.obsidian/plugins/import-code/`
-3. 重新加载 Obsidian，在 **设置 -> 第三方插件** 中启用
+### Manual installation
 
-### 从源码构建
+1. Download `main.js`, `manifest.json`, and `styles.css` from the latest Release
+2. Put them in `<vault>/.obsidian/plugins/import-code/`
+3. Reload Obsidian and enable the plugin in **Settings -> Community plugins**
+
+### Build from source
 
 ```bash
 git clone https://github.com/yu4n2h1/obsidian-import-code.git
@@ -48,9 +50,9 @@ yarn install
 yarn build
 ```
 
-## 使用方法
+## Usage
 
-### 基本嵌入
+### Basic embeds
 
 ```markdown
 ![[src/utils.ts]]
@@ -58,7 +60,7 @@ yarn build
 ![[scripts/deploy.sh]]
 ```
 
-### 符号提取（`@`）
+### Symbol extraction (`@`)
 
 ```markdown
 ![[src/utils.ts@parseConfig]]
@@ -66,23 +68,23 @@ yarn build
 ![[lib/helper.rs@process_data]]
 ```
 
-### 行范围（`@` 数字）
+### Line ranges (`@` with numbers)
 
 ```markdown
 ![[src/utils.ts@10-30]]
 ![[data/schema.sql@5]]
 ```
 
-### 行高亮（`#`）
+### Line highlighting (`#`)
 
 ```markdown
 ![[src/app.ts#5-10]]
 ![[src/main.ts@init#5-12]]
 ```
 
-### HTML 元素提取（`@` CSS 选择器）
+### HTML element extraction (`@` with a CSS selector)
 
-对于 `.html` 文件，`@` 后支持 CSS 选择器来提取特定元素：
+For `.html` files, `@` accepts a CSS selector to extract a specific element:
 
 ```markdown
 ![[template.html@.container]]
@@ -91,114 +93,114 @@ yarn build
 ![[index.html@section > p]]
 ```
 
-| 选择器示例 | 提取内容 |
-|-----------|----------|
-| `.container` | 提取 `class="container"` 的元素 |
-| `[id="main"]` | 提取 `id="main"` 的元素 |
-| `div.content` | 提取 `<div class="content">` |
-| `nav > a` | 提取 `<nav>` 下的 `<a>` |
+| Selector example | Extracted content |
+|------------------|-------------------|
+| `.container` | the element with `class="container"` |
+| `[id="main"]` | the element with `id="main"` |
+| `div.content` | the `<div class="content">` |
+| `nav > a` | `<a>` elements directly under `<nav>` |
 
-> **注意**：由于 `#` 在 embed 语法中已用作高亮分隔符（如 `#5-10`），请使用属性选择器 `[id="xxx"]` 代替 ID 选择器 `#xxx`。
+> **Note**: since `#` is already used as the highlight separator in embed syntax (e.g. `#5-10`), use the attribute selector `[id="xxx"]` instead of the ID selector `#xxx`.
 
-与行高亮组合使用：
+Combined with line highlighting:
 
 ```markdown
 ![[page.html@[id="main"]#5-10]]
 ```
 
-### 远程 URL（直接链接）
+### Remote URL (direct link)
 
 ```markdown
 ![[https://raw.githubusercontent.com/user/repo/main/src/example.py]]
 ```
 
-### 远程源别名
+### Remote source aliases
 
-先在 **设置 -> Remote Sources** 中配置远程源，例如：
+First configure a remote source in **Settings -> Remote Sources**, for example:
 
-| 配置项 | 示例值 |
-|--------|--------|
+| Field | Example value |
+|-------|---------------|
 | Alias | `Code` |
-| Service type | `Gitea` (或 `GitHub` / `GitLab` / `WebDAV` / `Generic URL` / `Local Directory`) |
+| Service type | `Gitea` (or `GitHub` / `GitLab` / `WebDAV` / `Generic URL` / `Local Directory`) |
 | URL | `https://gitea.example.com` |
-| Token | `your-access-token` (可选，访问私有仓库) |
-| Repository | `owner/repo` (Gitea/GitHub/GitLab 必填) |
+| Token | `your-access-token` (optional, for private repos) |
+| Repository | `owner/repo` (required for Gitea/GitHub/GitLab) |
 | Branch | `main` |
-| Path | `PYTHON` (可选，基础路径前缀) |
+| Path | `PYTHON` (optional, base path prefix) |
 
-然后通过别名引用：
+Then reference it by alias:
 
 ```markdown
-![[Code:PYTHON/cursor测试/federated/federated_learning.py]]
+![[Code:PYTHON/demos/crawler/federated_learning.py]]
 ![[Code:src/lib/helper.py@MyClass#10-20]]
 ```
 
-> 配置 `Path` 后，嵌入路径会自动拼接在基础路径之后。
+> When `Path` is configured, embed paths are automatically appended to the base path.
 
-### 命令
+### Commands
 
-| 命令 | 说明 |
-|------|------|
-| **Insert embed code** | 从剪贴板读取代码，识别语言，上传到配置的 Upload Source 并插入 `![[...]]` |
-| **再次引用代码文件** | 加载上次插入的代码，可修改截取/高亮范围后重新引用 |
+| Command | Description |
+|---------|-------------|
+| **Insert embed code** | Reads code from the clipboard, detects the language, uploads it to the configured Upload Source, and inserts `![[...]]` |
+| **Re-reference code file** | Loads the last inserted code and re-references it with adjustable extraction/highlight ranges |
 
-## 设置
+## Settings
 
-设置页分 4 个 Tab：
+The settings page has 4 tabs:
 
 ### Embed & Storage
 
-| 设置项 | 说明 | 默认值 |
-|--------|------|--------|
-| Enable code embed | 开关代码嵌入功能 | 启用 |
-| Enable remote code embed | 允许嵌入远程代码 | 启用 |
-| Skip SSL certificate verification | 跳过 HTTPS 证书验证（仅桌面端） | 关闭 |
-| Show line numbers | 代码块左侧显示行号（基于源文件真实行号） | 关闭 |
-| Auto-fold threshold | 超过多少行自动折叠，0 = 不折叠 | 50 |
-| Folded preview lines | 折叠态显示多少行，超出可滚动 | 10 |
-| Wrap long lines | 超长行换行显示（否则横向滚动） | 关闭 |
-| File name strategy | `hash`（SHA256 内容哈希）/ `custom`（自定义）/ `auto`（基于内容） | `hash` |
+| Setting | Description | Default |
+|---------|-------------|---------|
+| Enable code embed | Toggle the code embed feature | Enabled |
+| Enable remote code embed | Allow embedding remote code | Enabled |
+| Skip SSL certificate verification | Skip HTTPS certificate verification (desktop only) | Disabled |
+| Show line numbers | Show line numbers beside the code block (real source-file line numbers) | Disabled |
+| Auto-fold threshold | Fold blocks exceeding this many lines; 0 = never fold | 50 |
+| Folded preview lines | Lines shown while folded; extra content is scrollable | 10 |
+| Wrap long lines | Wrap overly long lines instead of horizontal scrolling | Disabled |
+| File name strategy | `hash` (SHA256 content hash) / `custom` / `auto` (content-based) | `hash` |
 
 ### File Extensions
 
-表格化管理支持的文件扩展名，每条可配置后缀（suffix）、显示方言（dialect）、启用开关。默认覆盖 40+ 种编程语言。
+A table for managing supported file extensions. Each entry has a suffix, a display dialect, and an enable toggle. 40+ languages are covered by default.
 
 ### Remote Sources
 
-配置化远程读源，每个别名对应一种服务（GitHub / GitLab / Gitea / WebDAV / Generic URL / Local Directory），含 URL、Token、Repo、Branch、Path 等字段，可单独配置 SSL 跳过。
+Configured remote read sources. Each alias maps to one service (GitHub / GitLab / Gitea / WebDAV / Generic URL / Local Directory) with URL, Token, Repo, Branch, and Path fields; SSL skip can be configured per source.
 
 ### Upload Sources
 
-配置化写源，"Insert embed code" 命令会把代码上传到选中的源：
+Configured write sources. The "Insert embed code" command uploads code to the selected source:
 
-| 类型 | 说明 | 返回引用 |
-|------|------|----------|
-| Local | 写入 vault 内指定目录（绝对/相对路径） | vault 相对路径 |
-| WebDAV | PUT 到 WebDAV 服务器 | 上传 URL |
-| GitHub Gist | 创建私有 Gist | raw URL |
+| Type | Description | Returned reference |
+|------|-------------|--------------------|
+| Local | Writes to a directory inside the vault (absolute/relative path) | vault-relative path |
+| WebDAV | PUTs to a WebDAV server | upload URL |
+| GitHub Gist | Creates a private Gist | raw URL |
 
-每个上传源可配置是否生成带别名的 wiki 链接（`![[path|alias]]` vs `![[path]]`）。
+Each upload source can be configured to generate wiki links with or without an alias (`![[path|alias]]` vs `![[path]]`).
 
-## 支持的文件类型
+## Supported file types
 
-在 **设置 -> File Extensions** 中管理，默认启用：
+Managed in **Settings -> File Extensions**, enabled by default:
 
 `js, ts, py, java, c, cpp, go, rs, rb, php, sh, sql, html, css, json, yaml, xml`
 
-覆盖 40+ 种编程语言的语法高亮与符号提取。
+Covering syntax highlighting and symbol extraction for 40+ programming languages.
 
-## 环境要求
+## Requirements
 
 - Obsidian v0.15.0+
-- 远程 SSL 跳过功能仅支持桌面端（Electron）
+- Remote SSL skip is desktop-only (Electron)
 
-## 开发
+## Development
 
 ```bash
-yarn install   # 安装依赖
-yarn dev       # 监听模式，改动 src/ 自动重建 main.js
-yarn build     # 生产构建（类型检查 + 压缩）
-yarn lint      # 运行 eslint
+yarn install   # install dependencies
+yarn dev       # watch mode; rebuilds main.js on src/ changes
+yarn build     # production build (type check + minify)
+yarn lint      # run eslint
 ```
 
-`yarn dev` 只跑 esbuild 不跑 tsc；类型错误只有 `yarn build` 才会暴露。
+`yarn dev` runs esbuild only; type errors only surface with `yarn build`.
