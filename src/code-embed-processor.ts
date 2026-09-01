@@ -217,7 +217,7 @@ export class CodeEmbedProcessor {
 					overlay.classList.add("code-embed-wrap-lines");
 				}
 				// 确保父容器是定位上下文（Obsidian 的 .view-content 默认通常已是 relative）
-				(leafContent as HTMLElement).style.position = "relative";
+				leafContent.classList.add("code-embed-focus-anchor");
 
 				// 聚焦卡片：只包含缩放按钮组 + wrapper，不克隆原 toolbar 的其他按钮。
 				const card = document.createElement("div");
@@ -238,6 +238,7 @@ export class CodeEmbedProcessor {
 
 				const close = () => {
 					overlay.remove();
+					leafContent.classList.remove("code-embed-focus-anchor");
 					document.removeEventListener("keydown", onEsc);
 				};
 				const onEsc = (ev: KeyboardEvent) => {

@@ -648,6 +648,11 @@ input.extension-table-input::placeholder {
 	cursor: zoom-in;
 }
 
+/* 聚焦时给 .view-content 加的定位锚点（替代 JS 直接设 style.position） */
+.code-embed-focus-anchor {
+	position: relative;
+}
+
 .code-embed-focus-overlay {
 	position: absolute;
 	inset: 0;

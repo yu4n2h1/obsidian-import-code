@@ -2,15 +2,10 @@ import { requestUrl } from "obsidian";
 
 // ---- Helpers ----
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyObj = Record<string, any>;
+type UnknownObj = Record<string, unknown>;
 
-function win(): AnyObj {
-	return window as unknown as AnyObj;
-}
-
-function glob(): AnyObj {
-	return globalThis as unknown as AnyObj;
+function win(): UnknownObj {
+	return window as unknown as UnknownObj;
 }
 
 // ---- SSL error detection ----
@@ -26,31 +21,14 @@ let _requireFn: ((id: string) => unknown) | null | undefined = undefined;
 let _httpsModule: unknown = undefined;
 
 function getRequire(): (id: string) => unknown {
-	if (_requireFn !== undefined) return _requireFn as (id: string) => unknown;
+	if (_requireFn) return _requireFn;
 
-	// 1. window.require (Obsidian preload)
+	// window.require is injected by Obsidian's preload script on desktop.
 	const winReq: unknown = win().require;
 	if (typeof winReq === "function") {
 		_requireFn = winReq as (id: string) => unknown;
 		return _requireFn;
 	}
-
-	// 2. globalThis.require (might differ from window in some contexts)
-	const globalReq: unknown = glob().require;
-	if (typeof globalReq === "function" && globalReq !== winReq) {
-		_requireFn = globalReq as (id: string) => unknown;
-		return _requireFn;
-	}
-
-	// 3. CJS free-variable require via indirect eval
-	try {
-		// eslint-disable-next-line no-eval
-		const cjsReq: unknown = (0, eval)("typeof require === 'function' ? require : undefined");
-		if (typeof cjsReq === "function") {
-			_requireFn = cjsReq as (id: string) => unknown;
-			return _requireFn;
-		}
-	} catch { /* not available */ }
 
 	_requireFn = null;
 	throw new Error(
@@ -74,7 +52,8 @@ function loadHttpsModule(): unknown {
 
 	try {
 		const mod = requireFn("https");
-		if (mod && typeof (mod as AnyObj).request === "function") {
+		const requestFn: unknown = mod ? (mod as UnknownObj).request : undefined;
+		if (typeof requestFn === "function") {
 			return mod;
 		}
 		throw new Error("Loaded https module is missing the request() method");
@@ -208,7 +187,7 @@ interface HttpsRequest {
 }
 
 interface HttpsModule {
-	request(opts: AnyObj, cb: (res: HttpsResponse) => void): HttpsRequest;
+	request(opts: UnknownObj, cb: (res: HttpsResponse) => void): HttpsRequest;
 }
 
 function getHttpsModule(): HttpsModule {

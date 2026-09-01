@@ -204,7 +204,7 @@ function buildToolbar(
 			try {
 				await navigator.clipboard.writeText(content);
 				btn.textContent = "Copied";
-				setTimeout(() => { btn.textContent = file.language; }, 1500);
+				window.setTimeout(() => { btn.textContent = file.language; }, 1500);
 			} catch (err) {
 				console.error("Copy failed:", err);
 			}
@@ -367,8 +367,8 @@ export function attachZoom(container: HTMLElement, wrapper: HTMLElement): void {
 		zoom = 1;
 		const targets = getZoomTargets();
 		targets.forEach((el) => {
-			el.style.width = "";
-			el.style.height = "";
+			el.style.removeProperty("width");
+			el.style.removeProperty("height");
 		});
 	}
 

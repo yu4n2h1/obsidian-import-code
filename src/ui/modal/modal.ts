@@ -269,12 +269,12 @@ export class FileModal extends Modal {
 					});
 				});
 
-			this.absoluteRowEl = this.pathInputEl.querySelector(
+			this.absoluteRowEl = this.pathInputEl.querySelector<HTMLElement>(
 				".setting-item:nth-child(1)"
-			) as HTMLElement;
-			this.relativeRowEl = this.pathInputEl.querySelector(
+			);
+			this.relativeRowEl = this.pathInputEl.querySelector<HTMLElement>(
 				".setting-item:nth-child(2)"
-			) as HTMLElement;
+			);
 		}
 
 		// 5. @ symbol input

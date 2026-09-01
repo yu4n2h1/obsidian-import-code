@@ -145,7 +145,7 @@ export default class importCode extends Plugin {
 				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
 				const sourcePath = markdownView?.file?.path || "";
 
-				setTimeout(
+				window.setTimeout(
 					() => this.codeProcessor.processEmbeds(view.dom, sourcePath),
 					50
 				);
@@ -155,7 +155,7 @@ export default class importCode extends Plugin {
 						if (update.docChanged || update.viewportChanged) {
 							const currentView = this.app.workspace.getActiveViewOfType(MarkdownView);
 							const currentSourcePath = currentView?.file?.path || "";
-							setTimeout(
+							window.setTimeout(
 								() => this.codeProcessor.processEmbeds(view.dom, currentSourcePath),
 								50
 							);

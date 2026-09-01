@@ -92,23 +92,21 @@ export function parseLineRange(raw: string): LineRange | null {
 
 // ---- debounce ----
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function debounce<T extends (...args: any[]) => void>(
+export function debounce<T extends (...args: never[]) => void>(
 	fn: T,
 	delay: number
 ): T {
 	let timeoutId: number | null = null;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	return ((...args: any[]) => {
+	const debounced = (...args: Parameters<T>) => {
 		if (timeoutId !== null) {
 			window.clearTimeout(timeoutId);
 		}
 		timeoutId = window.setTimeout(() => {
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 			fn(...args);
 			timeoutId = null;
 		}, delay);
-	}) as T;
+	};
+	return debounced as T;
 }
 
 // ---- extension support ----
