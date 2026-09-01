@@ -10,7 +10,7 @@ import {
 import { getLanguageFromPath } from "./utils/language";
 import { ContentResolver } from "./pipeline/content-resolver";
 import { executePipeline } from "./pipeline/execute";
-import { renderSuccess, renderError } from "./ui/render/code-embed";
+import { renderSuccess, renderError, attachZoom } from "./ui/render/code-embed";
 import type { PipelineResult } from "./pipeline/types";
 
 /** 解析后的 embed 引用：filePath + @symbol + #highlight。 */
@@ -199,20 +199,42 @@ export class CodeEmbedProcessor {
 				const sel = window.getSelection();
 				if (sel && sel.toString().length > 0) return;
 
+				// 挂到 view-content 内部：overlay 作为视图树子节点存在，
+				// 切换标签页时 Obsidian 会隐藏/移除旧 leaf 的 DOM，overlay 自然消失。
+				// 不再挂到 document.body -- 那样脱离了标签页生命周期控制。
+				const leafContent = el.closest(".view-content");
+				if (!leafContent) return;
+
 				const overlay = document.createElement("div");
 				overlay.className = "code-embed-focus-overlay";
-				// 限制到 workspace-leaf-content 区域，不覆盖侧边栏等
-				const leafContent = el.closest(".view-content");
-				const rect = leafContent?.getBoundingClientRect();
-				if (rect) {
-					overlay.style.top = `${rect.top}px`;
-					overlay.style.left = `${rect.left}px`;
-					overlay.style.width = `${rect.width}px`;
-					overlay.style.height = `${rect.height}px`;
+				// 复制容器上的行号/换行修饰类到 overlay：否则只克隆了 .code-embed-wrapper，
+				// 失去 .code-embed-with-line-numbers 祖先，行号 gutter 的 CSS 选择器不再命中，
+				// .code-line-no 退化为默认 inline，行号直接贴在代码前没有间距/竖线。
+				if (el.classList.contains("code-embed-with-line-numbers")) {
+					overlay.classList.add("code-embed-with-line-numbers");
 				}
+				if (el.classList.contains("code-embed-wrap-lines")) {
+					overlay.classList.add("code-embed-wrap-lines");
+				}
+				// 确保父容器是定位上下文（Obsidian 的 .view-content 默认通常已是 relative）
+				(leafContent as HTMLElement).style.position = "relative";
+
+				// 聚焦卡片：只包含缩放按钮组 + wrapper，不克隆原 toolbar 的其他按钮。
+				const card = document.createElement("div");
+				card.className = "code-embed-focus-card";
+
 				const wrapper = el.querySelector(".code-embed-wrapper");
-				if (wrapper) overlay.appendChild(wrapper.cloneNode(true));
-				document.body.appendChild(overlay);
+				if (wrapper) card.appendChild(wrapper.cloneNode(true));
+
+				overlay.appendChild(card);
+				leafContent.appendChild(overlay);
+
+				// 对卡片内的克隆 wrapper 挂缩放交互（按钮 + wheel + 双击）。
+				// 克隆不携带监听器，必须重新挂载。
+				const clonedWrapper = card.querySelector(".code-embed-wrapper");
+				if (clonedWrapper) {
+					attachZoom(card, clonedWrapper as HTMLElement);
+				}
 
 				const close = () => {
 					overlay.remove();
@@ -222,8 +244,8 @@ export class CodeEmbedProcessor {
 					if (ev.key === "Escape") close();
 				};
 				overlay.addEventListener("click", (ev: MouseEvent) => {
-					// 点击代码区不退出（允许查看/选中），点击遮罩区域退出
-					if ((ev.target as HTMLElement).closest(".code-embed-wrapper")) return;
+					// 点击卡片内不退出（允许查看/选中/点按钮），点击遮罩区域退出
+					if ((ev.target as HTMLElement).closest(".code-embed-focus-card")) return;
 					close();
 				});
 				document.addEventListener("keydown", onEsc);

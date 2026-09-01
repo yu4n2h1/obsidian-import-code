@@ -12,13 +12,39 @@
 .code-embed-wrapper {
 	text-align: left;
 	width: 100%;
+	/* 统一背景层：pre 和 mermaid 等非 pre 产物共用，避免背景不贴合 */
+	background: var(--code-background);
+	border-radius: inherit;
+	overflow: auto;
+	max-height: 500px;
 }
 
+/* pre 产物：继承 wrapper 背景，去掉重复约束 */
 .code-embed-wrapper pre {
 	margin: 0;
 	border-radius: 0;
-	max-height: 500px;
+	max-height: none;
+	background: transparent;
+}
+
+/* mermaid 等非 pre 产物：居中 + 适配 wrapper 滚动 */
+.code-embed-wrapper > .mermaid,
+.code-embed-wrapper > div:not(pre) {
+	padding: 1em;
+	text-align: center;
+	background: transparent;
 	overflow: auto;
+}
+
+/* mermaid 展示范围扩大：突破代码块 500px 高度限制 */
+.code-embed-wrapper:has(> .mermaid) {
+	max-height: 80vh;
+}
+
+.code-embed-wrapper .mermaid svg {
+	/* 不缩小：保持 mermaid 原始渲染尺寸，超宽时在 wrapper 内横向滚动 */
+	max-width: none;
+	height: auto;
 }
 
 .code-embed-wrapper pre code {
@@ -67,6 +93,38 @@
 }
 
 .code-embed-container .code-embed-open-btn svg {
+	width: 14px;
+	height: 14px;
+	opacity: 0.7;
+}
+
+/* Zoom controls -- 缩放按钮组，只在聚焦态注入 */
+.code-embed-focus-overlay .code-embed-zoom-controls {
+	display: flex;
+	flex-direction: row;
+}
+
+.code-embed-focus-overlay .code-embed-zoom-btn {
+	appearance: none;
+	height: 32px;
+	width: 32px;
+	padding: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--code-bracket-background);
+	transition: all 0.2s ease;
+	cursor: pointer;
+	border: none !important;
+	border-left: 2px solid rgba(255, 255, 255, 0.1) !important;
+	border-radius: 0 !important;
+}
+
+.code-embed-focus-overlay .code-embed-zoom-btn:hover {
+	background: var(--background-modifier-hover) !important;
+}
+
+.code-embed-focus-overlay .code-embed-zoom-btn svg {
 	width: 14px;
 	height: 14px;
 	opacity: 0.7;
@@ -591,7 +649,7 @@ input.extension-table-input::placeholder {
 }
 
 .code-embed-focus-overlay {
-	position: fixed;
+	position: absolute;
 	inset: 0;
 	z-index: 1000;
 	display: flex;
@@ -601,17 +659,48 @@ input.extension-table-input::placeholder {
 	overflow: auto;
 }
 
-.code-embed-focus-overlay .code-embed-wrapper {
+/* 聚焦卡片：toolbar + wrapper 同一背景容器，按钮不会超出背景 */
+.code-embed-focus-overlay .code-embed-focus-card {
 	max-width: 900px;
 	width: 100%;
+	max-height: 100%;
 	margin: auto;
 	background: var(--background-primary);
 	border-radius: 8px;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
 	cursor: text;
 	-webkit-user-select: text;
 	user-select: text;
 }
 
+/* 卡片内 toolbar：顶部横排，不再 absolute */
+.code-embed-focus-overlay .code-embed-toolbar {
+	position: static;
+	flex-shrink: 0;
+	border-radius: 8px 8px 0 0;
+	overflow: hidden;
+}
+
+/* 卡片内 wrapper：填满剩余空间，内部滚动 */
+.code-embed-focus-overlay .code-embed-wrapper {
+	flex: 1;
+	min-height: 0;
+	max-height: none;
+	background: transparent;
+	overflow: auto;
+	border-radius: 0;
+}
+
 .code-embed-focus-overlay .code-embed-wrapper pre {
 	max-height: none;
+	background: transparent;
+}
+
+/* 聚焦态行号 gutter —— 聚焦卡片宽度更大，行号列同步加宽，保持与代码列分离 */
+.code-embed-focus-overlay .code-line-no {
+	width: 4em;
+	padding-right: 1.5em;
+	margin-right: 1em;
 }

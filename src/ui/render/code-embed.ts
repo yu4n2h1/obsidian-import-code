@@ -66,6 +66,9 @@ export async function renderSuccess(
 		}
 	}
 
+	// 缩放交互只在聚焦模式挂载（code-embed-processor.ts 聚焦 overlay 里调用 attachZoom），
+	// 非聚焦态不注入缩放按钮，保持阅读视图干净。
+
 	return container;
 }
 
@@ -304,4 +307,141 @@ function applyLineHighlights(
 	});
 
 	codeEl.replaceChildren(...newNodes);
+}
+
+/**
+ * 缩放控制：对 wrapper 内的图形渲染产物（mermaid SVG 等）支持缩放。
+ *
+ * - 只作用于图形元素（.mermaid svg, svg, img, canvas），不干预 pre/code 的文本滚动。
+ * - 缩放比例 0.3x–5x。
+ * - macOS trackpad pinch: ctrlKey=true + deltaY 小且连续 -> 指数比例缩放（丝滑）
+ * - 鼠标 Ctrl+滚轮: deltaY 大（~100） -> 步进缩放
+ * - 双击图形元素重置缩放到 1x。
+ * - 按钮：在 container 内的 .code-embed-toolbar 注入 [＋] [－] [↺]；没有 toolbar 则创建。
+ */
+export function attachZoom(container: HTMLElement, wrapper: HTMLElement): void {
+	let zoom = 1;
+	const MIN = 0.3;
+	const MAX = 5;
+
+	// 缩放目标：只匹配 .mermaid 内的 SVG（Obsidian 图形渲染产物）。
+	// 不用通用 svg 选择器 -- Obsidian 的 copy 按钮也含 SVG 图标，
+	// 会导致常规代码块被误判为可缩放目标。
+	function getZoomTargets(): HTMLElement[] {
+		return Array.from(wrapper.querySelectorAll<HTMLElement>(
+			".mermaid svg",
+		));
+	}
+
+	// 没有图形元素 -> 不是 mermaid 等图形渲染产物 -> 直接退出，
+	// 不创建缩放 toolbar，不挂 wheel 监听，常规代码保持原状。
+	if (getZoomTargets().length === 0) return;
+
+	// 记录每个图形元素的原始尺寸（首次访问时缓存），缩放基于原始值计算，
+	// 避免连续缩放误差累积。
+	const baseSizes = new WeakMap<HTMLElement, { w: number; h: number }>();
+
+	function getBaseSize(el: HTMLElement): { w: number; h: number } {
+		let base = baseSizes.get(el);
+		if (!base) {
+			const rect = el.getBoundingClientRect();
+			// transform 不影响 getBoundingClientRect 之前的 offsetWidth/offsetHeight
+			base = { w: el.offsetWidth || rect.width, h: el.offsetHeight || rect.height };
+			baseSizes.set(el, base);
+		}
+		return base;
+	}
+
+	function applyZoom(): void {
+		const targets = getZoomTargets();
+		targets.forEach((el) => {
+			// 用真实 width/height 缩放（非 transform）：布局尺寸真实变化，
+			// 滚动容器的 scrollWidth/scrollHeight 自动重算，放大后仍可滚动查看全貌。
+			const base = getBaseSize(el);
+			el.style.width = `${Math.round(base.w * zoom)}px`;
+			el.style.height = `${Math.round(base.h * zoom)}px`;
+		});
+	}
+
+	function resetZoom(): void {
+		zoom = 1;
+		const targets = getZoomTargets();
+		targets.forEach((el) => {
+			el.style.width = "";
+			el.style.height = "";
+		});
+	}
+
+	// --- 独立缩放工具栏（不克隆原 toolbar，只含缩放按钮）---
+	if (container.querySelector(".code-embed-zoom-controls")) return;
+	const zoomToolbar = container.createDiv({ cls: "code-embed-toolbar code-embed-zoom-toolbar" });
+	const controls = zoomToolbar.createDiv({ cls: "code-embed-zoom-controls" });
+
+	const btnIn = controls.createEl("button", { cls: "code-embed-zoom-btn" });
+	btnIn.setAttribute("aria-label", "Zoom in");
+	setZoomButtonIcon(btnIn, "plus");
+	btnIn.addEventListener("click", (e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		zoom = Math.min(MAX, zoom + 0.2);
+		applyZoom();
+	});
+
+	const btnOut = controls.createEl("button", { cls: "code-embed-zoom-btn" });
+	btnOut.setAttribute("aria-label", "Zoom out");
+	setZoomButtonIcon(btnOut, "minus");
+	btnOut.addEventListener("click", (e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		zoom = Math.max(MIN, zoom - 0.2);
+		applyZoom();
+	});
+
+	const btnReset = controls.createEl("button", { cls: "code-embed-zoom-btn" });
+	btnReset.setAttribute("aria-label", "Reset zoom");
+	setZoomButtonIcon(btnReset, "rotate-ccw");
+	btnReset.addEventListener("click", (e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		resetZoom();
+	});
+
+	// --- wheel ---
+	wrapper.addEventListener("wheel", (e: WheelEvent) => {
+		if (!e.ctrlKey) return;
+		e.preventDefault();
+		e.stopPropagation();
+
+		if (Math.abs(e.deltaY) < 50) {
+			const factor = Math.exp(-e.deltaY * 0.01);
+			zoom = Math.max(MIN, Math.min(MAX, zoom * factor));
+		} else {
+			const step = 0.15;
+			const delta = e.deltaY < 0 ? step : -step;
+			zoom = Math.max(MIN, Math.min(MAX, zoom + delta));
+		}
+
+		applyZoom();
+	}, { passive: false });
+
+	// --- 双击重置 ---
+	wrapper.addEventListener("dblclick", (e: MouseEvent) => {
+		const target = e.target as HTMLElement;
+		if (!target.closest("svg, img, canvas, .mermaid")) return;
+		e.preventDefault();
+		e.stopPropagation();
+		resetZoom();
+	});
+}
+
+/**
+ * 安全地设置按钮图标 -- Obsidian setIcon 依赖 lucide 名称。
+ */
+function setZoomButtonIcon(btn: HTMLElement, iconId: string): void {
+	try {
+		setIcon(btn, iconId);
+	} catch {
+		// setIcon 在某些 Obsidian 版本可能找不到图标名，退化为文字
+		btn.textContent = iconId === "plus" ? "＋" : iconId === "minus" ? "－" : "↺";
+	}
 }

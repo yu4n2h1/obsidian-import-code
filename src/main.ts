@@ -260,6 +260,9 @@ export default class importCode extends Plugin {
 	onunload() {
 		console.debug("Unloading importCode plugin");
 
+		// 清理可能残留的聚焦 overlay（旧版本可能挂在 document.body 上）
+		document.querySelectorAll(".code-embed-focus-overlay").forEach((el) => el.remove());
+
 		this.app.workspace.iterateAllLeaves((leaf) => {
 			if (leaf.view instanceof MarkdownView) {
 				const container = leaf.view.containerEl;
