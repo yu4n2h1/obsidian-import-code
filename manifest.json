@@ -1,7 +1,7 @@
 {
 	"id": "import-code",
 	"name": "Import Code",
-	"version": "1.4.3",
+	"version": "1.4.4",
 	"minAppVersion": "1.4.0",
 	"description": "Import and embed local or remote code files into your notes using ![[file.ext]] syntax, with syntax highlighting, symbol and line extraction, and auto-refresh.",
 	"author": "yu4n2h1",
