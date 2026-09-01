@@ -535,6 +535,24 @@
 	display: block;
 }
 
+/* Declarative settings (Obsidian 1.13+): rows rendered via custom renderers
+   reuse the legacy tab builders inside the control area — make the row
+   stack vertically and let the control take the full width. */
+.code-import-definition-panel.code-import-definition-panel {
+	flex-direction: column;
+	align-items: stretch;
+}
+
+.code-import-definition-panel .setting-item-info {
+	display: none;
+}
+
+.code-import-definition-panel .setting-item-control {
+	width: 100%;
+	align-items: stretch;
+	flex-wrap: wrap;
+}
+
 /* === Extension Table (Settings) === */
 
 .extension-table-section {
