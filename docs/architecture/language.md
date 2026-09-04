@@ -23,7 +23,7 @@
 - `allExtractors` 数组的**顺序即语言识别遍历顺序**——注释明确说"TypeScript 必须在 JavaScript 之前"（因为 TS 是 JS 的超集，先匹配到 TS 才能拿到 tsx/interface 等特征）。
 - 用 for 循环把 `extractor.languages` 各个语言名注册到 `registry: Map<string, BaseExtractor>`。
 - **`DefaultExtractor` 的 `languages = []`**：故意不进 registry，只作为 `registry.get(lang) ?? defaultExtractor` 的 `??` 兜底——用于任何没被显式注册的语言（比如用户在 settings 里自定义了 dialect）。这是有意的设计，不是遗漏。
-- 对外暴露 `findSymbolLineRange` 与 `extractFirstSymbolName`，签名与老 `code-extractor.ts` 完全兼容——这是"重构外部签名不变"的策略。
+- 对外暴露 `findSymbolLineRange` 与 `extractFirstSymbolName`，签名与老 `code-extractor.ts` 完全兼容——这是"重构外部签名不变"的策略。另暴露 `findSymbolLineRanges`（复数）：返回**所有**匹配的行范围数组，默认实现包装单区间，只有 `HtmlExtractor` 覆写成 `querySelectorAll` 语义（CSS 选择器命中多个元素时多区间拼接展示，见 pipeline.md）。
 
 > 🟡 **模块顶层初始化的隐性依赖**：`allExtractors` 是模块顶层 `const`（`new PythonExtractor()` 等 21 次 new），在 `language/index.ts` 被 import 的那一刻就跑完。不构成循环依赖，但对 import 顺序敏感——如果某个 extractor 子类文件在 import 时又引用了 `getAllExtractors`（`language.ts` 里的 `guessExtensionFromContent` 就是这么用的），需要确保子类文件不在自己的顶层调用 `getAllExtractors`。目前所有 extractor 子类都只做类定义、不做顶层调用，所以是安全的。
 

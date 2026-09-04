@@ -9,10 +9,10 @@ contentResolver.resolve(filePath, sourcePath)   // 阶段 1：拿内容 + 语言
         ↓ ResolvedContent { content, language, filePath, sourceMode }
 classifyTargets(symbolName, highlightSpec)      // 阶段 2：@ 与 # 分别 → Target
         ↓ TargetResult { display, highlight }
-computeDisplayRange(display, content, language) // 阶段 3：display target → 1-based LineRange
-        ↓ LineRange { start, end }
-sliceContent(content, range, highlight, lang)   // 阶段 4：切内容 + 高亮索引
-        ↓ SlicedContent { displayContent, highlightLines[], startLine }
+computeDisplayRanges(display, content, language) // 阶段 3：display target → LineRange[]（多匹配语义）
+        ↓ LineRange[]（单匹配时为单元素数组）
+sliceContent(content, ranges, highlight, lang)  // 阶段 4：逐区间切内容 + 空行分隔 + 高亮索引
+        ↓ SlicedContent { displayContent, highlightLines[], startLine, lineNumbers? }
 return { success:true, file, slice }            // 交给 renderSuccess()
 ```
 
@@ -24,4 +24,4 @@ return { success:true, file, slice }            // 交给 renderSuccess()
 - **`resolvers/alias-resolver.ts`**：`parseAliasPath()` 拆 `alias:path`；`settings.remoteSources[alias]` 拿配置；`readFromService(serviceType, config, path, skipSsl)`（fetchers/index）。
 - **`resolvers/local-resolver.ts`**：`app.metadataCache.getFirstLinkpathDest(filePath, sourcePath)` → `TFile` → `vault.read()`。
 - **`target-resolver.ts`**：`resolveTarget(raw)` 只做一件事：`parseLineRange` 匹配到就是 `line`，非空字符串就是 `symbol`，空就是 `null`。`classifyTargets` 里注释解释得很清楚："# 不提升为 @"，两个独立解析，否则 `#symbol` 会退化成提取。
-- **`range-converter.ts`**：`computeDisplayRange`、`computeHighlightLines`、`sliceContent`。`sliceContent` 会 `split("\n")` 出行，切出显示内容（返回带 `startLine: displayRange.start` 供行号显示），再对显示内容里的 highlight 目标算 0-based 索引数组。**注意**：`computeDisplayRange` 的 symbol 分支在找不到时 throw `Symbol "..." not found`，被 `executePipeline` 的 try/catch 兜底成 `{success:false, error}`。
+- **`range-converter.ts`**：`computeDisplayRanges`、`computeHighlightLines`、`sliceContent`。`computeDisplayRanges` 返回 `LineRange[]`——symbol 目标调 `findSymbolLineRanges`（多匹配语义，HTML CSS 选择器命中多个元素时返回多区间，其余语言默认单元素数组）；**找不到 symbol 时 throw** `Symbol "..." not found`，被 `executePipeline` 的 try/catch 兜底成 `{success:false, error}`。`sliceContent` 会 `split("\n")` 出行，逐区间切出显示内容后拼接——**区间之间插入一个空行分隔**，同时产出 `lineNumbers: (number|null)[]` 记录每条展示行的源文件真实行号（分隔空行为 `null`）；单区间时省略 `lineNumbers`（与 `startLine + i` 等价，保持旧 shape），多区间时行号跳跃保留（如 `3, 12, 40`）。再对显示内容里的 highlight 目标算 0-based 索引数组——`#` 行号语义**相对于拼接后的展示内容**；symbol 高亮会把 symbol 的所有匹配区间全部高亮。
