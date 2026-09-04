@@ -107,7 +107,7 @@ export class HtmlExtractor extends BaseExtractor {
 	// ==================== private helpers ====================
 
 	/**
-	 * 在源码行数组中定位单个 DOM 元素的 0-based 行区间，失败返回 null。
+	 * 在源码行数组中定位单个 DOM 元素的 1-based 行区间（start/end 均为包含），失败返回 null。
 	 * 通过标签名 + id/class 签名匹配开标签，再追踪同标签深度找闭合行。
 	 */
 	private locateElementRange(
@@ -166,17 +166,17 @@ export class HtmlExtractor extends BaseExtractor {
 
 		// ---- void 元素 / 自闭合标签 → 单行 ----
 		if (VOID_ELEMENTS.has(tag)) {
-			return { start: startLine, end: startLine };
+			return { start: startLine + 1, end: startLine + 1 };
 		}
 
 		const startText = lines[startLine];
 		if (startText && /\/\s*>$/.test(startText)) {
-			return { start: startLine, end: startLine };
+			return { start: startLine + 1, end: startLine + 1 };
 		}
 
 		// ---- 追踪标签深度，定位闭合行 ----
 		const endLine = this.findClosingLine(lines, startLine, tag);
-		return { start: startLine, end: endLine };
+		return { start: startLine + 1, end: endLine + 1 };
 	}
 
 	/**
