@@ -10,7 +10,7 @@
 
 - `renderSuccess(app, plugin, ctx: RenderContext): Promise<HTMLElement>`（**async**，内部 `await MarkdownRenderer.render`）——组装 `.code-embed-container`，含 toolbar（open 按钮 + 语言 chip/复制按钮）、`.code-embed-wrapper` 用 `MarkdownRenderer.render(app, \`\`\`\`\${lang}\n...\n\`\`\`)` 交给 Obsidian 生成 Prism 高亮。支持**行号**（`showLineNumbers` + `startLine` 显示源文件真实行号）、**折叠**（`foldMode/foldThreshold/foldPreviewLines/foldExpandedLines` + 折叠按钮）、**长行换行**（`wrapLongLines`）。
   - **`sourceMode` 分支**：`local` 走 `app.workspace.openLinkText`，`http/alias` 走 `window.open(url, "_blank")`。
-  - **`applyLineHighlights(codeEl, highlightLines, startLineForNumbering)`**（模块私有）：这段有一大段注释解释为什么不能用 `innerHTML.split("\n")`——因为 PHP 这类 markup-templating 的 Prism token span 会跨行，切开 span 会让 DOMParser 重解析乱套。改为 DFS 扁平化叶子文本节点（每个节点带 class 栈），按 `\n` 切分成逻辑行重建，每行包一个 `.code-line`，命中的加 `.code-highlight-line`。
+  - **`applyLineHighlights(codeEl, highlightLines, startLineForNumbering, lineNumbers?)`**（模块私有）：这段有一大段注释解释为什么不能用 `innerHTML.split("\n")`——因为 PHP 这类 markup-templating 的 Prism token span 会跨行，切开 span 会让 DOMParser 重解析乱套。改为 DFS 扁平化叶子文本节点（每个节点带 class 栈），按 `\n` 切分成逻辑行重建，每行包一个 `.code-line`，命中的加 `.code-highlight-line`。行号：`lineNumbers` 存在时（HTML 多区间拼接）逐行取源文件真实行号，分隔空行为 `null` 不渲染行号；否则按 `startLineForNumbering + lineIdx` 递增。
 - `renderError(message, onRetry?): HTMLElement`——`.code-link-error` 显示 `Error: xxx`，失败态带 Retry 按钮，点击回调重新走 `processFile`。
 
 ## `ui/renderer/code-embed.ts` — 已删除 ✅
