@@ -65,6 +65,18 @@ export abstract class BaseExtractor {
 		return { start: start + 1, end: end + 1 };
 	}
 
+	/**
+	 * 查找命名符号的多个 1-based 行范围（多匹配场景，如 HTML CSS 选择器）。
+	 * 默认实现包装单区间结果；需要多匹配语义的子类覆写。
+	 */
+	findSymbolLineRanges(
+		content: string,
+		symbolName: string
+	): { start: number; end: number }[] | null {
+		const range = this.findSymbolLineRange(content, symbolName);
+		return range ? [range] : null;
+	}
+
 	// ---- 共享算法（操作 this.defPatterns，与语言策略无关） ----
 
 	/**
