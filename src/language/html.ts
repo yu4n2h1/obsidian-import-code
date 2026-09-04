@@ -11,6 +11,9 @@ import type { DefPattern } from "./base-extractor";
  *   ![[file.html@div.content]]      → 提取 <div class="content">
  *   ![[file.html@section > p]]      → 提取 <section> 下的 <p>
  *
+ * 选择器命中多个元素时按文档顺序全部提取（querySelectorAll 语义），
+ * 由 pipeline 侧做多区间拼接展示。
+ *
  * 注意：由于 `#` 在 embed 语法中已用作高亮分隔符，
  * 请使用属性选择器 [id="xxx"] 代替 ID 选择器 #xxx。
  */
@@ -47,35 +50,82 @@ export class HtmlExtractor extends BaseExtractor {
 	}
 
 	/**
-	 * 使用 CSS 选择器在 HTML 源码中定位元素，返回 1-based 行范围。
-	 *
-	 * 策略：
-	 * 1. DOMParser 解析 → querySelector 确认元素存在
-	 * 2. 通过标签名 + id/class 签名在源码中定位开标签
-	 * 3. 追踪同标签深度找到闭合标签
+	 * 使用 CSS 选择器在 HTML 源码中定位元素，返回首个匹配的 1-based 行范围。
+	 * 多匹配语义见 findSymbolLineRanges。
 	 */
 	findSymbolLineRange(
 		content: string,
 		selector: string
 	): { start: number; end: number } | null {
+		const ranges = this.findSymbolLineRanges(content, selector);
+		return ranges ? (ranges[0] ?? null) : null;
+	}
+
+	/**
+	 * 使用 CSS 选择器在 HTML 源码中定位**所有**匹配元素，按文档顺序返回 1-based 行范围数组。
+	 *
+	 * 策略（对每个匹配元素）：
+	 * 1. DOMParser 解析 → querySelectorAll 取全部匹配
+	 * 2. 通过标签名 + id/class 签名在源码中定位开标签
+	 * 3. 追踪同标签深度找到闭合标签
+	 *
+	 * 兜底：任一元素在源码中定位失败（来源与 DOM 序列化差异）时，
+	 * 整体回退到全文件单区间——避免出现「一半精确一半全文」的混乱拼接。
+	 */
+	findSymbolLineRanges(
+		content: string,
+		selector: string
+	): { start: number; end: number }[] | null {
 		// ---- 1. DOM 解析 & 查询 ----
 		const parser = new DOMParser();
 		const doc = parser.parseFromString(content, "text/html");
 
-		let el: Element | null;
+		let elements: NodeListOf<Element>;
 		try {
-			el = doc.querySelector(selector);
+			elements = doc.querySelectorAll(selector);
 		} catch {
 			return null;
 		}
-		if (!el) return null;
+		if (elements.length === 0) return null;
 
+		const lines = content.split("\n");
+		const ranges: { start: number; end: number }[] = [];
+		// 已被前序元素消费的开标签行号（0-based）：同签名多元素时，
+		// 后续元素需跳过已消费行再匹配，否则全部命中第一个出现处、区间重合
+		const consumed = new Set<number>();
+
+		// ---- 2. 逐元素定位源码区间（NodeList 顺序即文档顺序）----
+		for (const el of Array.from(elements)) {
+			const range = this.locateElementRange(lines, el, consumed);
+			if (!range) {
+				// 定位失败：整体回退全文件
+				return [{ start: 1, end: lines.length }];
+			}
+			consumed.add(range.start - 1);
+			ranges.push(range);
+		}
+
+		return ranges;
+	}
+
+	// ==================== private helpers ====================
+
+	/**
+	 * 在源码行数组中定位单个 DOM 元素的 1-based 行区间（start/end 均为包含），失败返回 null。
+	 * 通过标签名 + id/class 签名匹配开标签，再追踪同标签深度找闭合行。
+	 * skipLines 为已被其它元素消费的开标签行号（0-based），同签名多元素时用于跳过已占用的行。
+	 */
+	private locateElementRange(
+		lines: string[],
+		el: Element,
+		skipLines: Set<number>
+	): { start: number; end: number } | null {
 		const tag = el.tagName.toLowerCase();
 		const id = el.id;
 		const classStr =
 			typeof el.className === "string" ? el.className.trim() : "";
 
-		// ---- 2. 确定该元素在同标签兄弟中的序号 ----
+		// ---- 确定该元素在同标签兄弟中的序号 ----
 		let nth = 0;
 		let prev = el.previousElementSibling;
 		while (prev) {
@@ -83,28 +133,30 @@ export class HtmlExtractor extends BaseExtractor {
 			prev = prev.previousElementSibling;
 		}
 
-		// ---- 3. 构造开标签匹配正则 ----
+		// ---- 构造开标签匹配正则 ----
 		const openRe = this.buildOpenTagRegex(tag, id, classStr);
 
-		// ---- 4. 在源码中定位开标签所在行 ----
-		const lines = content.split("\n");
+		// ---- 在源码中定位开标签所在行 ----
 		let startLine = -1;
 
 		if (id || classStr) {
-			// 有 id/class 签名：直接匹配第一个即命中
+			// 有 id/class 签名：按出现顺序匹配第一个未被消费的行
 			for (let i = 0; i < lines.length; i++) {
 				const line = lines[i];
-				if (line && openRe.test(line)) {
+				if (!line) continue;
+				if (skipLines.has(i)) continue;
+				if (openRe.test(line)) {
 					startLine = i;
 					break;
 				}
 			}
 		} else {
-			// 无签名：按 nth 序号匹配
+			// 无签名：按 nth 序号匹配（跳过已消费行）
 			let count = 0;
 			for (let i = 0; i < lines.length; i++) {
 				const line = lines[i];
 				if (!line) continue;
+				if (skipLines.has(i)) continue;
 				openRe.lastIndex = 0;
 				while (openRe.exec(line) !== null) {
 					if (count === nth) {
@@ -118,11 +170,10 @@ export class HtmlExtractor extends BaseExtractor {
 		}
 
 		if (startLine === -1) {
-			// 签名匹配失败（来源与 DOM 序列化差异），回退到全文件
-			return { start: 1, end: lines.length };
+			return null;
 		}
 
-		// ---- 5. void 元素 / 自闭合标签 → 单行 ----
+		// ---- void 元素 / 自闭合标签 → 单行 ----
 		if (VOID_ELEMENTS.has(tag)) {
 			return { start: startLine + 1, end: startLine + 1 };
 		}
@@ -132,12 +183,10 @@ export class HtmlExtractor extends BaseExtractor {
 			return { start: startLine + 1, end: startLine + 1 };
 		}
 
-		// ---- 6. 追踪标签深度，定位闭合行 ----
+		// ---- 追踪标签深度，定位闭合行 ----
 		const endLine = this.findClosingLine(lines, startLine, tag);
 		return { start: startLine + 1, end: endLine + 1 };
 	}
-
-	// ==================== private helpers ====================
 
 	/**
 	 * 构造用于匹配开标签的正则。

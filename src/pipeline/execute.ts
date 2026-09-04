@@ -1,6 +1,6 @@
 import type { ContentResolver } from "./content-resolver";
 import { classifyTargets } from "./target-resolver";
-import { computeDisplayRange, sliceContent } from "./range-converter";
+import { computeDisplayRanges, sliceContent } from "./range-converter";
 import type { PipelineResult } from "./types";
 
 export async function executePipeline(
@@ -14,7 +14,7 @@ export async function executePipeline(
 		const resolved = await contentResolver.resolve(filePath, sourcePath);
 		const targets = classifyTargets(symbolName, highlightSpec);
 
-		const displayRange = computeDisplayRange(
+		const displayRanges = computeDisplayRanges(
 			targets.display,
 			resolved.content,
 			resolved.language,
@@ -22,7 +22,7 @@ export async function executePipeline(
 
 		const sliced = sliceContent(
 			resolved.content,
-			displayRange,
+			displayRanges,
 			targets.highlight,
 			resolved.language,
 		);

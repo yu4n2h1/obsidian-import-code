@@ -71,52 +71,6 @@ export class JavaScriptExtractor extends BaseExtractor {
 		startIdx: number,
 		_defIndent: string
 	): string[] | null {
-		// 1. 找到第一个包含 { 的行
-		let i = startIdx;
-		let found = false;
-		for (; i < lines.length; i++) {
-			const line = lines[i];
-			if (line && line.includes("{")) {
-				found = true;
-				break;
-			}
-		}
-		if (!found) {
-			const firstLine = lines[startIdx];
-			return firstLine ? [firstLine] : null;
-		}
-
-		// 2. 收集从 startIdx 到 { 行的全部行
-		const result: string[] = [];
-		for (let j = startIdx; j <= i; j++) {
-			result.push(lines[j]!);
-		}
-
-		// 3. 计算 { 行上的括号深度
-		const openLine = lines[i];
-		if (!openLine) return null;
-
-		let depth = 0;
-		for (const ch of openLine) {
-			if (ch === "{") depth++;
-			if (ch === "}") depth--;
-		}
-
-		if (depth === 0) return result;
-
-		// 4. 继续收集直到深度归零
-		for (let j = i + 1; j < lines.length; j++) {
-			const line = lines[j];
-			result.push(line!);
-			if (line) {
-				for (const ch of line) {
-					if (ch === "{") depth++;
-					if (ch === "}") depth--;
-				}
-			}
-			if (depth === 0) return result;
-		}
-
-		return null;
+		return this.extractBraceBlockAware(lines, startIdx);
 	}
 }

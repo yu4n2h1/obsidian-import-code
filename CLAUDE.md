@@ -1,47 +1,61 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+本文件为 Claude Code 在本仓库中工作提供指导，遵循项目模板结构。
 
-## 语言规范
+## 项目概览
 
-本项目所有对话、代码注释、文档均使用中文。代码内已有的中文注释和 UI 字符串保持中文风格。
+**Obsidian Import Code** —— Obsidian 插件，用内部链接语法 `![[file.ext]]` 在笔记中嵌入并渲染外部代码文件。目标用户：需要在笔记中展示、维护外部代码文件的 Obsidian 用户。
+
+核心能力：
+- 语法高亮（Prism）、文件变更自动刷新（`vault.on("modify")` 监听）、复制到剪贴板按钮。
+- 定位语法：`![[file.ts@symbol]]` 定位符号、`![[file.ts@10-20]]` 定位行范围，支持高亮标记。
+- 远程读源：`local`（Node `fs` 读 vault **外**目录）、`webdav`、`github`、`gitlab`、`gitea`、`generic`。
+- 远程写源：`local`（Obsidian vault 写 vault **内**）、`webdav`、`github-gist`。
+
+技术栈：TypeScript + esbuild + Obsidian API + CodeMirror。核心入口 `src/main.ts`，打包产物 `main.js`。启动方式见下文「Build & Development」。
+
+## 语言与文档
+
+（固定）对话与文档用中文，文档用 markdown。代码注释与 UI 字符串同样保持中文，代码内已有的中文注释和 UI 字符串保持中文风格。
+
+## 工作协议
+
+（固定）
+- 动手前先通读本文件与项目结构。
+- 不影响全局的事（分支命名、常规 commit）自主执行，不逐件询问。
+- 硬闸门（发布 / 上线 / 删数据 / 改共享配置）必须经用户确认。
+- 改动与既有规范冲突时，先指出冲突点再动手。
 
 ## Git 工作流
 
-**分支模型（Git flow 变体）**：
+（固定）分支模型：`main ← develop ← {bug-fix/xxx, feature/xxx, refactor/xxx, ...}`
 
-```
-main ← develop ← {bug-fix/xxx, feature/xxx, refactor/xxx, ...}
-```
+1. **签出 develop**：从 main 签出，落后则先 rebase/pull。
+2. **签出任务分支**：从 develop 签出，命名 `<type>/<slug>`（bug-fix / feature / refactor / docs）。
+3. **开发 + 本地验证**：构建、lint、全部单测、类型检查（有 E2E 也跑）。
+4. **合回 develop**：默认快速合并（--ff）。门禁：有全套自动化测试（单测 + 类型检查 + E2E）跑通即合；否则等人工测试通过再合。任务分支可并行，不用等其它就绪。
+5. **develop 集成测试**：冲突与联调问题都在此解决，不回任务分支反复改。
+6. **合入 main**：保留 merge 节点（--no-ff，除非另有指示），同样过测试门禁，且必须经用户确认。main 不做直接开发。
 
-改代码时必须严格遵守以下流程，不能省略中间层：
+**自主 / 需确认**：
+- 自主：分支命名（按改动性质选 `bug-fix` / `feature` / `refactor` / `docs` 前缀，slug 用简洁英文 kebab-case，不需要每次问用户）、任务分支 commit、全套自动化测试下任务分支 → develop 的合并。
+- 停下问用户：无全套自动化测试时的合并前人工测试、develop → main 的一切合并、大改版本号。
+- 用户说"改一下 X"时若在 main / develop 上，先按流程签出任务分支，不要在 main / develop 上直接改代码。
+- 用户可随时打断或暂停。
 
-1. **从 main 签出 develop**（若本地 develop 落后于 main，先 rebase/pull 到最新 main）。
-2. **从 develop 签出任务分支**，命名遵守 `<type>/<slug>`：
-   - `bug-fix/xxx` — bug 修复
-   - `feature/xxx` — 新功能
-   - `refactor/xxx` — 重构
-   - `docs/xxx` — 仅文档改动
-3. **在任务分支上完成改动 + 本地验证**（`yarn build` + `yarn lint` 都要过）。
-4. **把任务分支合回 develop**。可以并行签多条任务分支；合回 develop 无需等其它分支就绪。合完后如果还有下一件事，可以立刻再从最新的 develop 签新分支——不用等 main。
-5. **在 develop 上统一集成测试**——多条分支合到一起后可能有冲突或语义冲突（编译过但行为不对），**冲突和联调问题都在 develop 上解决**，不要回到任务分支反复来回改。
-6. **develop 合并到 main —— 必须由用户单独确认后才能执行**。这是整个流程的唯一硬闸门。main 上不做任何直接开发。
+> **本项目的门禁实况**：有 vitest 单测（见「Build & Development」），但无 E2E、渲染结果靠真实 Obsidian vault 手测，因此任务分支 → develop 的合并属于"等人工测试通过"一类——至少 build + lint + test 全过，关键功能需在实际 vault 里手测通过。
 
-**给 Claude Code 的约束**：
+**已知陷阱：`git rm --cached` 后切分支会丢文件**
+`git rm --cached <file>` 只删 index，但切分支会把工作区同步到目标分支状态，若目标分支已无此文件则工作区文件被一并删除（本项目已两次踩坑：CHANGELOG.md、paseo.json）。规避：先不切分支、同分支 commit + merge 完再切；或切前备份、合并后恢复。
 
-- 用户说"改一下 X" / "修个 bug" 时，**先检查当前分支**：若在 main / develop 上，主动提示需要按上述流程签出任务分支后再动手，不要在 main / develop 上直接改代码。
-- **分支名自主决定**——按改动性质选前缀（bug-fix / feature / refactor / docs），slug 用简洁的英文 kebab-case 描述内容。不需要每次问用户，除非分支目标本身就模糊到不足以命名。命完就用，不要停下来征求同意。
-- 任务分支上的 commit、以及**任务分支 → develop 的合并**可以在改动完成 + 本地验证通过后自主执行，不需要每次都问；用户可随时打断或要求先暂停。
-- **develop → main 的合并必须停下来问用户**——即便任务已经"看起来做完"、build/lint 都过了，也不主动动手。要用户明确说"合到 main" / "发布" / "上线" 之类才做。
-- 合并策略默认 `--no-ff`（保留分支拓扑），除非用户另有指示。
+## 版本号规范
 
-**操作陷阱：`git rm --cached` 后切分支会丢文件**
+版本号 `xx.xx.xx.xx`，由低到高：第4段 bug 修复 +1、第3段新功能 +1、第2段重构 +1、第1段大改 +1。
+- **仅第1段（大改）** +1 前必须经用户确认，且其余三段清零（如 `1.2.3.4` → `2.0.0.0`）。
+- **第2/3段 +1 时低阶位不动**（如 `1.5.3.2` 新增功能 → `1.5.4.2`）。
+- 发布时 `git tag` 打标签，格式 `v` + 版本号（如 `v1.2.3.4`）。
 
-`git rm --cached <file>` 只从 index 删除、保留工作区文件，但**切分支时 git 会把工作区同步到目标分支状态**。若目标分支已无此文件（被追踪删除），工作区文件会被一并删掉。本项目已两次踩坑（CHANGELOG.md、paseo.json）。
-
-正确做法（任选其一）：
-- `git rm --cached` 后**先不切分支**，在同分支 commit + merge 完再切；
-- 或切分支前 `cp <file> /tmp/<file>.bak`，合并后从备份恢复。
+> **迁移备注**：当前 `manifest.json` / `versions.json` 仍为三段式 `1.3.1`。下次发布起视为 `1.3.1.0` 按四段式递增——例：bug 修复 → `1.3.1.1`、新功能 → `1.3.2.0`。
 
 ## Build & Development
 
@@ -50,15 +64,43 @@ yarn install    # 安装依赖
 yarn dev        # esbuild watch 模式，改动 src/ 自动重建 main.js
 yarn build      # 生产构建 = tsc -noEmit + esbuild 压缩，release 前必跑
 yarn lint       # eslint（含 obsidianmd 规则）
+yarn test       # vitest 单测（tests/）
 ```
 
-发布产物固定三个：`main.js`（CommonJS bundle，从 `src/main.ts` 打包）、`manifest.json`、`styles.css`，都在插件根目录。`yarn dev` 只跑 esbuild 不跑 tsc；类型错误只有 `yarn build` 才会暴露。
+- 产物路径：固定三个——`main.js`（CommonJS bundle，从 `src/main.ts` 打包）、`manifest.json`、`styles.css`，都在插件根目录。
+- 验证方式：`yarn test` 跑 vitest 单测（`tests/helpers.test.ts`、`tests/pipeline.test.ts`，覆盖纯函数）+ 在真实 Obsidian vault 里手测渲染效果。
+- 通用注意：`yarn dev` 只跑 esbuild 不跑 tsc；类型错误只有 `yarn build` 才会暴露——release 前必跑 build。
 
-无单元测试框架，验证靠 build + lint + 在真实 Obsidian vault 里手测。
+## 代码约定
 
-## 深入的架构说明
+- **`data-code-link-handled` 属性 + `.code-link-processed` CSS class** 标记已被本插件处理过的 embed，防止重复渲染。`onunload` 时会全部清掉。
+- **CSS 用插件作用域选择器**：`.code-embed-container button.copy-code-button` 而非裸 `button.copy-code-button`，避免影响其他插件。
+- **异步操作用 `.catch()` 记录错误**——不要静默 `void promise` 或吞异常。
+- **SSL 跳过是**每请求**的 `rejectUnauthorized: false`**，不改全局 `NODE_TLS_REJECT_UNAUTHORIZED`。
+- **`main.ts` 保持极简**：只放生命周期、命令注册、processor 初始化。业务不放这里。
+- **`saveSettings()` 后重建 processor**（`initProcessors()`），因此 `supportedExtensions` 可以在 processor 构造时一次性缓存。
+- **`applyLineHighlights` 不用 `innerHTML.split("\n")`**：PHP 等 markup-templating 语言的 Prism token span 会跨行，切开会让 DOMParser 重解析乱套。用 DFS 扁平化叶子文本 + class 栈，按 `\n` 切行重建。改行高亮时必须遵守这个约束。
+- 测试框架为 **vitest**（跑法 `yarn test`）；单测覆盖 pipeline 与 helpers 的纯函数，渲染层无自动化测试、靠手测。
 
-**`docs/architecture.md` 是本项目的架构真实来源**——它是通读所有 `src/` 源文件后整理的分层、数据流、已知设计权衡、命名陷阱。改代码前建议先读一遍，尤其是数据流图和"发现的问题"一节。以下是极简概要，细节以 architecture.md 为准。
+## 架构说明
+
+**`docs/architecture.md` 是本项目的架构真实来源**——它是通读所有 `src/` 源文件后整理的分层、数据流、已知设计权衡、命名陷阱。改代码前建议先读一遍，尤其是数据流图和"发现的问题"一节。总览在 `architecture.md`，各层细节拆在 `docs/architecture/` 子目录（映射如下）。以下是极简概要，细节以架构文档为准。
+
+**架构文档是活文档，不是一次性快照**。任何改动以下分层结构的 commit，**必须同步更新 `docs/architecture/` 下对应文件**，否则视为不完整：
+
+| 分层 | 对应架构文档 | 触发更新条件 |
+|---|---|---|
+| `src/main.ts` | `architecture/main.md` | 注册扩展点变化（post-processor / ViewPlugin / `vault.on`） |
+| `src/code-embed-processor.ts` | `architecture/processor.md` | 渲染触发路径 / 去重逻辑变化 |
+| `src/pipeline/`（`execute.ts`、`range-converter.ts`、`content-resolver.ts`、`resolvers/`、`types.ts`） | `architecture/pipeline.md` | 阶段编排或数据结构变化 |
+| `src/fetchers/`（`index.ts` 注册表与各 service 实现） | `architecture/fetchers.md` | 新增/删除/改动远程读源 |
+| `src/upload/`（`index.ts` 工厂与各 service 实现） | `architecture/upload.md` | 新增/删除/改动写源 |
+| `src/language/`（`base-extractor.ts`、`index.ts` 注册表与各 extractor 子类） | `architecture/language.md` | 新增语言、改模板方法、调整遍历顺序 |
+| `src/ui/`（`render/`、`modal/`、`settings/`） | `architecture/ui.md` | 渲染层或交互层结构变化 |
+| `src/utils/` | `architecture/utils.md` | 共享工具变化 |
+| 设计权衡 / 陷阱 | `architecture/decisions.md` | 新发现的设计陷阱与权衡 |
+
+更新要求：改了哪层就更新该层文档；新增/删除文件要同步更新总览 `architecture.md` 里的"分层依赖图"；发现的新设计陷阱补到 `architecture/decisions.md`。架构文档头部不再绑定具体分支与时点——它们描述的是当前代码库的架构状态。
 
 ### 三条渲染触发路径都汇聚到 `CodeEmbedProcessor`
 
@@ -123,12 +165,12 @@ sliceContent(content, range, highlight, lang)   → { displayContent, highlightL
 
 Settings 迁移逻辑在 `main.ts` 的 `loadSettings()` 里：`codeFileExtensions` 从旧逗号分隔字符串迁到 `ExtensionEntry[]`；旧顶层 `storagePathType / absoluteStoragePath / relativeStoragePath` 迁到 `uploadSources.Local.config`。
 
-## 关键约定
+## 已知陷阱与经验教训
 
-- **`data-code-link-handled` 属性 + `.code-link-processed` CSS class** 标记已被本插件处理过的 embed，防止重复渲染。`onunload` 时会全部清掉。
-- **CSS 用插件作用域选择器**：`.code-embed-container button.copy-code-button` 而非裸 `button.copy-code-button`，避免影响其他插件。
-- **异步操作用 `.catch()` 记录错误**——不要静默 `void promise` 或吞异常。
-- **SSL 跳过是**每请求**的 `rejectUnauthorized: false`**，不改全局 `NODE_TLS_REJECT_UNAUTHORIZED`。
-- **`main.ts` 保持极简**：只放生命周期、命令注册、processor 初始化。业务不放这里。
-- **`saveSettings()` 后重建 processor**（`initProcessors()`），因此 `supportedExtensions` 可以在 processor 构造时一次性缓存。
-- **`applyLineHighlights` 不用 `innerHTML.split("\n")`**：PHP 等 markup-templating 语言的 Prism token span 会跨行，切开会让 DOMParser 重解析乱套。用 DFS 扁平化叶子文本 + class 栈，按 `\n` 切行重建。改行高亮时必须遵守这个约束。
+按「症状 → 原因 → 规避」记录，新踩的坑持续补充：
+
+- **`git rm --cached` 后切分支丢文件**：症状——`git rm --cached <file>` 后切分支，工作区文件被一并删除。原因——`git rm --cached` 只删 index，切分支会把工作区同步到目标分支状态，目标分支已无此文件时工作区文件被删。规避——`git rm --cached` 后先不切分支，同分支 commit + merge 完再切；或切前 `cp <file> /tmp/<file>.bak`，合并后从备份恢复。（已踩两次：CHANGELOG.md、paseo.json）
+- **`local` 服务两边语义相反**：症状——fetchers 与 upload 同用 `serviceType: "local"`，混淆读/写方向报错。原因——`fetchers/local` 用 Node `fs` 读 vault 外目录，`upload/local` 用 Obsidian `vault.create` 写 vault 内。规避——始终明确"读走 fetchers、写走 upload"再选目录。
+- **`yarn dev` 不暴露类型错误**：症状——dev 模式一切正常，release 构建 `tsc` 报错。原因——`yarn dev` 只跑 esbuild 不跑 tsc。规避——release 前必跑 `yarn build`。
+- **行高亮跨行被切开**：症状——PHP 等 markup-templating 语言高亮错乱。原因——Prism token span 跨行，`innerHTML.split("\n")` 切开让 DOMParser 重解析乱套。规避——`applyLineHighlights` 用 DFS 扁平化叶子文本 + class 栈按 `\n` 切行重建。
+- **渲染路径漏做 IPv6 URL 还原**：症状——远程 embed 在部分触发路径下失效。原因——三条渲染路径中某条未走 `processEmbedElement` 公共 seam。规避——任何新渲染入口都必须汇到 `processEmbedElement`，还原逻辑不另起炉灶。

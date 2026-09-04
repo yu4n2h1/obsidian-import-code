@@ -18,13 +18,16 @@ export class ContentResolver {
 	}
 
 	async resolve(filePath: string, sourcePath: string): Promise<ResolvedContent> {
-		switch (classifyPath(filePath)) {
+		const mode = classifyPath(filePath);
+		switch (mode) {
 			case "http":
 				return await this.httpResolver.resolve(filePath);
 			case "alias":
 				return await this.aliasResolver.resolve(filePath);
 			case "local":
 				return await this.localResolver.resolve(filePath, sourcePath);
+			default:
+				throw new Error(`Unsupported path mode: ${JSON.stringify(mode)}`);
 		}
 	}
 }

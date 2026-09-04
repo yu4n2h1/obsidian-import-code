@@ -198,9 +198,26 @@
 	/* 不参与 Prism 语法着色 */
 	font-family: var(--font-monospace);
 	font-variant-numeric: tabular-nums;
+	box-sizing: border-box;
 }
 
 /* Folding —— 超过阈值时代码块默认折叠，工具栏加展开按钮 */
+.code-embed-wrap-lines.code-embed-with-line-numbers .code-line {
+	display: inline-flex;
+	width: 100%;
+}
+
+.code-embed-wrap-lines.code-embed-with-line-numbers .code-line-no {
+	flex-shrink: 0;
+	display: block;
+}
+
+.code-embed-wrap-lines.code-embed-with-line-numbers .code-line-content {
+	flex: 1;
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
 .code-embed-foldable.code-embed-folded .code-embed-wrapper pre {
 	max-height: var(--fold-collapsed-h, 10em);
 	overflow: auto;

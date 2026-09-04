@@ -229,9 +229,9 @@ function buildWebdavFields(
 		.setDesc("Directory path on the WebDAV server, e.g. uploads/code")
 		.addText((text) => {
 			text.setPlaceholder("Uploads/code");
-			text.setValue(cfg.pathPrefix ?? "");
+			text.setValue(cfg.path ?? "");
 			text.onChange(async (value) => {
-				cfg.pathPrefix = value.trim() || undefined;
+				cfg.path = value.trim() || undefined;
 				await plugin.saveSettings();
 			});
 		});
@@ -271,9 +271,9 @@ function buildGistFields(
 		.setDesc("GitHub API base URL, defaults to https://api.github.com")
 		.addText((text) => {
 			text.setPlaceholder("https://api.github.com");
-			text.setValue(cfg.apiUrl ?? "");
+			text.setValue(cfg.url ?? "");
 			text.onChange(async (value) => {
-				cfg.apiUrl = value.trim() || undefined;
+				cfg.url = value.trim() || undefined;
 				await plugin.saveSettings();
 			});
 		});

@@ -8,12 +8,18 @@ export default tseslint.config(
 		languageOptions: {
 			globals: {
 				...globals.browser,
+				// Obsidian 全局 DOM helper（createDiv/createSpan/createEl 等），
+				// obsidianmd 插件的 globals 未覆盖，手动补齐避免 no-undef 误报
+				createDiv: "readonly",
+				createSpan: "readonly",
+				createEl: "readonly",
 			},
 			parserOptions: {
 				projectService: {
 					allowDefaultProject: [
 						'eslint.config.js',
-						'manifest.json'
+						'manifest.json',
+						'vitest.config.ts'
 					]
 				},
 				tsconfigRootDir: import.meta.dirname,
@@ -45,5 +51,6 @@ export default tseslint.config(
 		"versions.json",
 		"main.js",
 		"tests",
+		"e2e",
 	]),
 );

@@ -86,6 +86,18 @@ export function findSymbolLineRange(
 }
 
 /**
+ * 查找命名符号的所有 1-based 行范围（多匹配场景，如 HTML CSS 选择器命中多个元素）。
+ * 默认返回单元素数组；未找到时返回 null。
+ */
+export function findSymbolLineRanges(
+	content: string,
+	symbolName: string,
+	language: string
+): { start: number; end: number }[] | null {
+	return getExtractor(language).findSymbolLineRanges(content, symbolName);
+}
+
+/**
  * 返回代码内容中第一个函数/类/方法的名称。
  * 用于自动生成文件名（auto 策略）。未找到时返回 null。
  */

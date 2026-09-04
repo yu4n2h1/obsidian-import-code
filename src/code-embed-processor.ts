@@ -148,7 +148,10 @@ export class CodeEmbedProcessor {
 		}
 
 		let result: PipelineResult;
-		const inflight = this.inFlight.get(filePath);
+		// key 包含 symbolName + highlightSpec：同文件不同符号的嵌入各自独立走 pipeline，
+		// 避免 funcA 的切片串进 funcB 的容器（filePath-only key 的历史 bug）
+		const cacheKey = `${filePath}\0${symbolName}\0${highlightSpec}`;
+		const inflight = this.inFlight.get(cacheKey);
 		if (inflight) {
 			result = await inflight;
 		} else {
@@ -159,11 +162,11 @@ export class CodeEmbedProcessor {
 				symbolName,
 				highlightSpec,
 			);
-			this.inFlight.set(filePath, promise);
+			this.inFlight.set(cacheKey, promise);
 			try {
 				result = await promise;
 			} finally {
-				this.inFlight.delete(filePath);
+				this.inFlight.delete(cacheKey);
 			}
 		}
 

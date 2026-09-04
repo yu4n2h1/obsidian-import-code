@@ -19,7 +19,7 @@ export async function renderSuccess(
 	ctx: RenderContext,
 ): Promise<HTMLElement> {
 	const { file, slice, sourcePath, options } = ctx;
-	const { displayContent, highlightLines, startLine } = slice;
+	const { displayContent, highlightLines, startLine, lineNumbers } = slice;
 	const showLineNumbers = options?.showLineNumbers === true;
 	const wrapLongLines = options?.wrapLongLines === true;
 
@@ -51,7 +51,12 @@ export async function renderSuccess(
 	if (highlightLines.length > 0 || showLineNumbers) {
 		const codeEl = wrapper.querySelector("code");
 		if (codeEl) {
-			applyLineHighlights(codeEl, highlightLines, showLineNumbers ? startLine : null);
+			applyLineHighlights(
+				codeEl,
+				highlightLines,
+				showLineNumbers ? startLine : null,
+				lineNumbers,
+			);
 		}
 	}
 
@@ -237,6 +242,7 @@ function applyLineHighlights(
 	codeEl: HTMLElement,
 	highlightLines: number[],
 	startLineForNumbering: number | null,
+	lineNumbers?: (number | null)[],
 ): void {
 	interface FlatToken { text: string; classes: string[]; }
 
@@ -286,19 +292,30 @@ function applyLineHighlights(
 			cls: isHighlighted ? "code-line code-highlight-line" : "code-line",
 		});
 
-		if (startLineForNumbering !== null) {
+		let contentEl: HTMLElement | null = null;
+		// 行号：多区间拼接时 lineNumbers 提供每行的真实源文件行号
+		//（分隔空行为 null，不渲染行号）；否则按 startLine 递增推算。
+		const rawLineNo = lineNumbers ? lineNumbers[lineIdx] : lineIdx;
+
+		if (startLineForNumbering !== null && rawLineNo !== null) {
 			const numEl = createSpan({
 				cls: "code-line-no",
-				text: String(startLineForNumbering + lineIdx),
+				text: String(
+					lineNumbers ? rawLineNo : startLineForNumbering + lineIdx,
+				),
 			});
 			lineEl.appendChild(numEl);
+
+			contentEl = createSpan({ cls: "code-line-content" });
+			lineEl.appendChild(contentEl);
 		}
 
+		const tokenParent = contentEl ?? lineEl;
 		if (lineTokens.length === 0) {
-			if (isHighlighted) lineEl.textContent = "\u00a0";
+			if (isHighlighted) tokenParent.textContent = "\u00a0";
 		} else {
 			for (const tok of lineTokens) {
-				let parent: HTMLElement = lineEl;
+				let parent: HTMLElement = tokenParent;
 				for (const cls of tok.classes) {
 					const span = createSpan({ cls });
 					parent.appendChild(span);

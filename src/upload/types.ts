@@ -17,6 +17,8 @@ export interface UploadResult {
 	success: boolean;
 	reference?: string;
 	error?: string;
+	/** 本地上传时是否真正新建了文件（false = 已存在未覆盖） */
+	created?: boolean;
 }
 
 /**

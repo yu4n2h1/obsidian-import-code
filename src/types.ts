@@ -78,16 +78,14 @@ export interface RemoteSourceEntry {
 // ---- Upload Sources ----
 
 export interface UploadSourceConfig {
-	/** WebDAV 服务 URL */
+	/** 服务 URL（WebDAV / GitHub Gist API） */
 	url?: string;
 	/** 认证令牌 (WebDAV / GitHub Gist) */
 	token?: string;
 	/** WebDAV 用户名（Basic 认证） */
 	username?: string;
 	/** 远程路径前缀 */
-	pathPrefix?: string;
-	/** GitHub Gist API URL（默认 https://api.github.com） */
-	apiUrl?: string;
+	path?: string;
 	/** 跳过 SSL 证书验证 */
 	skipSslVerify?: boolean;
 	/** 本地存储路径类型 */
