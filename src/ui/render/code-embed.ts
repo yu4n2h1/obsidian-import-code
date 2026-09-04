@@ -19,7 +19,7 @@ export async function renderSuccess(
 	ctx: RenderContext,
 ): Promise<HTMLElement> {
 	const { file, slice, sourcePath, options } = ctx;
-	const { displayContent, highlightLines, startLine } = slice;
+	const { displayContent, highlightLines, startLine, lineNumbers } = slice;
 	const showLineNumbers = options?.showLineNumbers === true;
 	const wrapLongLines = options?.wrapLongLines === true;
 
@@ -48,7 +48,12 @@ export async function renderSuccess(
 	if (highlightLines.length > 0 || showLineNumbers) {
 		const codeEl = wrapper.querySelector("code");
 		if (codeEl) {
-			applyLineHighlights(codeEl, highlightLines, showLineNumbers ? startLine : null);
+			applyLineHighlights(
+				codeEl,
+				highlightLines,
+				showLineNumbers ? startLine : null,
+				lineNumbers,
+			);
 		}
 	}
 
@@ -227,6 +232,7 @@ function applyLineHighlights(
 	codeEl: HTMLElement,
 	highlightLines: number[],
 	startLineForNumbering: number | null,
+	lineNumbers?: (number | null)[],
 ): void {
 	interface FlatToken { text: string; classes: string[]; }
 
@@ -276,10 +282,16 @@ function applyLineHighlights(
 		lineEl.className = isHighlighted ? "code-line code-highlight-line" : "code-line";
 
 		let contentEl: HTMLElement | null = null;
-		if (startLineForNumbering !== null) {
+		// 行号：多区间拼接时 lineNumbers 提供每行的真实源文件行号
+		//（分隔空行为 null，不渲染行号）；否则按 startLine 递增推算。
+		const rawLineNo = lineNumbers ? lineNumbers[lineIdx] : lineIdx;
+
+		if (startLineForNumbering !== null && rawLineNo !== null) {
 			const numEl = document.createElement("span");
 			numEl.className = "code-line-no";
-			numEl.textContent = String(startLineForNumbering + lineIdx);
+			numEl.textContent = String(
+				lineNumbers ? rawLineNo : startLineForNumbering + lineIdx,
+			);
 			lineEl.appendChild(numEl);
 
 			contentEl = document.createElement("span");

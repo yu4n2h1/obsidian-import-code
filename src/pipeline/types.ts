@@ -30,6 +30,11 @@ export interface SlicedContent {
 	highlightLines: number[];
 	/** displayContent 首行在源文件中的 1-based 行号（用于行号显示） */
 	startLine: number;
+	/**
+	 * 每条展示行对应的源文件 1-based 行号；分隔空行等无对应行记 null。
+	 * 多区间拼接时存在；undefined 表示连续区间，行号可由 startLine + i 推算。
+	 */
+	lineNumbers?: (number | null)[];
 }
 
 // ── 渲染输入 ──
