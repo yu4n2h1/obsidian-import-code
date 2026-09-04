@@ -90,14 +90,18 @@ export class HtmlExtractor extends BaseExtractor {
 
 		const lines = content.split("\n");
 		const ranges: { start: number; end: number }[] = [];
+		// 已被前序元素消费的开标签行号（0-based）：同签名多元素时，
+		// 后续元素需跳过已消费行再匹配，否则全部命中第一个出现处、区间重合
+		const consumed = new Set<number>();
 
 		// ---- 2. 逐元素定位源码区间（NodeList 顺序即文档顺序）----
 		for (const el of Array.from(elements)) {
-			const range = this.locateElementRange(lines, el);
+			const range = this.locateElementRange(lines, el, consumed);
 			if (!range) {
 				// 定位失败：整体回退全文件
 				return [{ start: 1, end: lines.length }];
 			}
+			consumed.add(range.start - 1);
 			ranges.push(range);
 		}
 
@@ -109,10 +113,12 @@ export class HtmlExtractor extends BaseExtractor {
 	/**
 	 * 在源码行数组中定位单个 DOM 元素的 1-based 行区间（start/end 均为包含），失败返回 null。
 	 * 通过标签名 + id/class 签名匹配开标签，再追踪同标签深度找闭合行。
+	 * skipLines 为已被其它元素消费的开标签行号（0-based），同签名多元素时用于跳过已占用的行。
 	 */
 	private locateElementRange(
 		lines: string[],
-		el: Element
+		el: Element,
+		skipLines: Set<number>
 	): { start: number; end: number } | null {
 		const tag = el.tagName.toLowerCase();
 		const id = el.id;
@@ -134,20 +140,23 @@ export class HtmlExtractor extends BaseExtractor {
 		let startLine = -1;
 
 		if (id || classStr) {
-			// 有 id/class 签名：直接匹配第一个即命中
+			// 有 id/class 签名：按出现顺序匹配第一个未被消费的行
 			for (let i = 0; i < lines.length; i++) {
 				const line = lines[i];
-				if (line && openRe.test(line)) {
+				if (!line) continue;
+				if (skipLines.has(i)) continue;
+				if (openRe.test(line)) {
 					startLine = i;
 					break;
 				}
 			}
 		} else {
-			// 无签名：按 nth 序号匹配
+			// 无签名：按 nth 序号匹配（跳过已消费行）
 			let count = 0;
 			for (let i = 0; i < lines.length; i++) {
 				const line = lines[i];
 				if (!line) continue;
+				if (skipLines.has(i)) continue;
 				openRe.lastIndex = 0;
 				while (openRe.exec(line) !== null) {
 					if (count === nth) {
