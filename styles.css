@@ -566,6 +566,7 @@
 .code-import-definition-panel > .setting-item-control {
 	display: block;
 	width: 100%;
+	text-align: left;
 }
 
 /* === Extension Table (Settings) === */
