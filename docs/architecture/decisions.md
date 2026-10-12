@@ -13,6 +13,12 @@
 - `ui/render/code-embed.ts` 是**渲染层函数**（`renderSuccess` 为 async、`renderError` 带可选 Retry），OK。
 - `code-embed-processor.ts` 放在 `src/` 根下，不在 `src/ui/` 也不在 `src/pipeline/`。这个位置其实合理——它是"协调器"，跨越 UI 层与 pipeline 层——但可以考虑挪到 `src/pipeline/processor.ts` 或 `src/embed/processor.ts` 让分层更明显。
 
+## 🟡 声明式设置容器的 CSS 不能使用后代选择器
+
+- Obsidian 1.13+ 在 `getSettingDefinitions()` 返回非空数组时跳过 `display()`。复杂设置页通过 `render` 回调把旧的表单 builder 放在外层 `Setting.controlEl` 中。
+- `.code-import-definition-panel` 标记的是这个外层容器；若用 `.code-import-definition-panel .setting-item-info` 或 `.setting-item-control`，会连带匹配嵌套 builder 生成的每个真实设置行，导致字段名称/说明被隐藏或控件布局被覆盖。
+- 对外层行的样式应限定为直接子元素（`.code-import-definition-panel > .setting-item-info` / `.setting-item-control`），让内部 `Setting` 保持 Obsidian 默认样式。
+
 ## ✅ 已解决：`isRemoteUrl / isAliasPath` 两处重复判断 → 抽 `classifyPath`
 
 - 旧状：`code-embed-processor.isProcessingAllowed(filePath)` 作守卫、`ContentResolver.resolve()` 作路由，两处各写一遍 `isRemoteUrl / isAliasPath` if/else 链，形状重复。

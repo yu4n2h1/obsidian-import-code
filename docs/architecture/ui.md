@@ -27,7 +27,11 @@
 
 ## `ui/settings/`
 
-tab bar 容器是 **`src/settings.ts`（不在 `ui/settings/` 下，68 行）**——4 个 tab 按钮，把 panel 分别交给六个 build 文件：
+`settings-tab.ts` 定义 `importCodeSettingsTab`，包含两种设置页入口：Obsidian 1.13+ 通过 `getSettingDefinitions()` 提供可搜索的子页面；较旧版本忽略该方法并使用 `display()` 构建原有的 4 个 tab。声明式子页面把复杂的旧表单 builder 放进自定义 `render` 回调的 `Setting.controlEl`。
+
+自定义 renderer 外层的 `.code-import-definition-panel` 只是布局容器。对应 CSS 必须使用直接子选择器定位外层 `.setting-item-info` / `.setting-item-control`；后代选择器会误伤里面由旧 builder 创建的真实 `Setting` 行，隐藏它们的标题与说明并覆盖控件布局。
+
+4 个 panel 分别由以下 builder 构建：
 
 - `embed-storage-tab.ts` — 全局开关（codeEmbedEnabled / remoteCodeEmbedEnabled / remoteSkipSslVerify）与文件名策略
 - `extensions-tab.ts` — `ExtensionEntry[]` 的增删改（suffix / dialect / active toggle）
