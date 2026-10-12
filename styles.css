@@ -552,22 +552,20 @@
 	display: block;
 }
 
-/* Declarative settings (Obsidian 1.13+): rows rendered via custom renderers
-   reuse the legacy tab builders inside the control area — make the row
-   stack vertically and let the control take the full width. */
+/* Obsidian 1.13+ 的声明式设置把旧表单放进外层 Setting 的 control 区。
+   样式只作用于外层容器，避免影响内部 Setting 的标题、说明和控件布局。 */
 .code-import-definition-panel.code-import-definition-panel {
 	flex-direction: column;
 	align-items: stretch;
 }
 
-.code-import-definition-panel .setting-item-info {
+.code-import-definition-panel > .setting-item-info {
 	display: none;
 }
 
-.code-import-definition-panel .setting-item-control {
+.code-import-definition-panel > .setting-item-control {
+	display: block;
 	width: 100%;
-	align-items: stretch;
-	flex-wrap: wrap;
 }
 
 /* === Extension Table (Settings) === */

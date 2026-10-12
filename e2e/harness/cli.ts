@@ -20,9 +20,16 @@ export function obsidian(args: string[]): string {
 	return out;
 }
 
-/** 打开一个笔记（path 按 vault 内精确路径）。 */
-export function openFile(path: string): void {
+/** 打开一个笔记并切换到指定视图（path 按 vault 内精确路径）。 */
+export function openFile(path: string, mode: "source" | "preview" = "preview"): void {
 	obsidian(["open", `path=${path}`]);
+	const currentMode = obsidian([
+		"eval",
+		"code=app.workspace.activeLeaf.view.getMode()",
+	]);
+	if (!currentMode.endsWith(mode)) {
+		obsidian(["command", "id=markdown:toggle-preview"]);
+	}
 }
 
 /** 执行一个 Obsidian 命令（含插件命令），返回命令的 stdout。 */

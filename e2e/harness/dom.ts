@@ -26,6 +26,33 @@ export function queryDom(selector: string, opts: DomQueryOptions = {}): string {
 	return obsidian(args);
 }
 
+/** 查询当前活动窗口的 DOM（Modal 等浮窗会渲染在 activeDocument 中）。 */
+export function queryActiveDom(
+	selector: string,
+	opts: DomQueryOptions = {},
+): string {
+	const value = opts.text
+		? "el.textContent"
+		: opts.inner
+			? "el.innerHTML"
+			: opts.attr
+				? `el.getAttribute(${JSON.stringify(opts.attr)})`
+				: "el.outerHTML";
+	const code = `JSON.stringify(Array.from(activeDocument.querySelectorAll(${JSON.stringify(selector)})).map(el => ${value}))`;
+	const output = obsidian(["eval", `code=${code}`]);
+	const values = JSON.parse(output.replace(/^=>\s*/, "")) as (string | null)[];
+	const normalized = values.map((item) => item ?? "");
+	return opts.all ? normalized.join("\n") : (normalized[0] ?? "");
+}
+
+/** 查询当前活动窗口中匹配元素的数量。 */
+export function countActiveDom(selector: string): number {
+	const code = `activeDocument.querySelectorAll(${JSON.stringify(selector)}).length`;
+	const output = obsidian(["eval", `code=${code}`]);
+	const n = Number.parseInt(output.replace(/^=>\s*/, ""), 10);
+	return Number.isNaN(n) ? 0 : n;
+}
+
 /** 查询匹配元素数量。 */
 export function countDom(selector: string): number {
 	const out = obsidian(["dev:dom", `selector=${selector}`, "total"]);
@@ -45,6 +72,20 @@ export async function waitForSelector(
 		await sleep(intervalMs);
 	}
 	throw new Error(`等待 selector 超时：${selector}`);
+}
+
+/** 轮询等待当前活动窗口中的 selector 出现。 */
+export async function waitForActiveSelector(
+	selector: string,
+	timeoutMs = 5000,
+	intervalMs = 200,
+): Promise<void> {
+	const deadline = Date.now() + timeoutMs;
+	while (Date.now() < deadline) {
+		if (countActiveDom(selector) > 0) return;
+		await sleep(intervalMs);
+	}
+	throw new Error(`等待活动窗口 selector 超时：${selector}`);
 }
 
 function sleep(ms: number): Promise<void> {
