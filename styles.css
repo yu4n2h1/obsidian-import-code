@@ -58,6 +58,17 @@
 	white-space: pre;
 }
 
+/* 隐藏代码块纵横滚动条（保留滚轮/触控板滚动） */
+.code-embed-wrapper.code-embed-wrapper,
+.code-embed-wrapper.code-embed-wrapper * {
+	scrollbar-width: none;
+}
+
+.code-embed-wrapper.code-embed-wrapper::-webkit-scrollbar,
+.code-embed-wrapper.code-embed-wrapper *::-webkit-scrollbar {
+	display: none;
+}
+
 /* Toolbar */
 .code-embed-container .code-embed-toolbar {
 	position: absolute;
